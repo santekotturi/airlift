@@ -128,12 +128,28 @@ struct HomeView: View {
 
     private var pointCount: Int { engine.stagedMetrics.reduce(0) { $0 + $1.samples.count } }
 
+    /// Counts what the user acts on — nights and metric-days — never raw
+    /// sample counts ("229 points" read as 229 separate decisions when it was
+    /// one day of distance). Sample counts live in the rows and sublines.
     private var queueHeadline: String {
         var parts: [String] = []
         let nights = engine.staged.count
         if nights > 0 { parts.append("\(nights) night\(nights == 1 ? "" : "s")") }
-        if pointCount > 0 { parts.append("\(pointCount.formatted()) points") }
-        return parts.joined(separator: " + ")
+        let batches = engine.stagedMetrics
+        let kinds = Set(batches.map(\.kind))
+        switch (batches.count, kinds.count) {
+        case (0, _):
+            break
+        case (1, _):
+            parts.append("a day of \(batches[0].kind.inlineName)")
+        case (let days, 1):
+            parts.append("\(days) days of \(batches[0].kind.inlineName)")
+        case (let days, _):
+            parts.append("\(days) metric days")
+        }
+        let joined = parts.joined(separator: " + ")
+        // "a day of distance" can lead the banner — give it a capital.
+        return joined.prefix(1).uppercased() + joined.dropFirst()
     }
 
     /// Big banner: counts in sunDeep; automatic mode appends a smaller
@@ -148,13 +164,14 @@ struct HomeView: View {
     }
 
     private var queueSubline: String {
+        let readings = pointCount > 0 ? "\(pointCount.formatted()) readings, fetched & checked" : "Fetched & checked"
         guard engine.syncMode == .automatic else {
-            return "Fetched & checked — waiting for your OK. Nothing is written until you approve it."
+            return "\(readings) — waiting for your OK. Nothing is written until you approve it."
         }
         let lead = autoLandedTodayLead ?? "Clean nights land on their own"
         let nights = engine.staged.count
         let held = switch nights {
-        case 0: "these points are held for review"
+        case 0: "this data is held for review"
         case 1: "\(Self.nightPhrase(for: engine.staged[0].session.end)) is held for review"
         default: "\(nights) nights are held for review"
         }
@@ -538,7 +555,7 @@ struct HomeView: View {
 
     private func metricCaption(_ batch: StagedMetricBatch) -> String {
         let count = batch.samples.count
-        return "\(count) point\(count == 1 ? "" : "s") · \(batch.aggregateDescription) · \(batch.day.formatted(date: .abbreviated, time: .omitted))"
+        return "\(count) reading\(count == 1 ? "" : "s") · \(batch.aggregateDescription) · \(batch.day.formatted(date: .abbreviated, time: .omitted))"
     }
 
     /// A card row that pushes `value` on tap without the List chevron.

@@ -408,7 +408,7 @@ final class SyncEngine {
                         log.record(
                             .autoImported,
                             title: "\(kind.displayName) added to Apple Health",
-                            detail: "\(importedSamples) points across \(imported) day(s) — all checks passed."
+                            detail: "\(importedSamples) readings across \(imported) day(s) — all checks passed."
                         )
                     }
                     setPipelineStep(kind.rawValue, .done(imported: imported, held: held))
@@ -641,7 +641,7 @@ final class SyncEngine {
                 log.record(
                     .autoImported,
                     title: "\(batch.kind.displayName) added to Apple Health",
-                    detail: "\(batch.samples.count) points — all checks passed."
+                    detail: "\(batch.samples.count) readings — all checks passed."
                 )
             }
             return
@@ -674,7 +674,7 @@ final class SyncEngine {
                 log.record(
                     .autoImported,
                     title: "\(batch.kind.displayName) added to Apple Health",
-                    detail: "\(batch.samples.count) points across \(Self.dayText(batch.day)) — all checks passed."
+                    detail: "\(batch.samples.count) readings from \(Self.dayText(batch.day)) — all checks passed."
                 )
             } catch {
                 Log.sync.error("Auto-import failed for \(batch.id): \(error.localizedDescription)")
@@ -758,7 +758,7 @@ final class SyncEngine {
             log.record(
                 .imported,
                 title: "\(batch.kind.displayName) for \(Self.dayText(batch.day)) added to Apple Health",
-                detail: "\(batch.samples.count) points — you approved it."
+                detail: "\(batch.samples.count) readings — you approved it."
             )
             return
         }
@@ -777,7 +777,7 @@ final class SyncEngine {
             log.record(
                 .imported,
                 title: "\(batch.kind.displayName) for \(Self.dayText(batch.day)) added to Apple Health",
-                detail: "\(batch.samples.count) points — you approved it."
+                detail: "\(batch.samples.count) readings — you approved it."
             )
             Log.sync.info("Imported \(batch.samples.count) \(batch.kind.rawValue) sample(s)")
         } catch {

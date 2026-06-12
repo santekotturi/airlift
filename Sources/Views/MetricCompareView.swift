@@ -366,7 +366,7 @@ struct MetricCompareView: View {
 
     private var googleCaption: String {
         guard !batch.samples.isEmpty else { return "no data" }
-        let count = "\(batch.samples.count) point\(batch.samples.count == 1 ? "" : "s")"
+        let count = "\(batch.samples.count) reading\(batch.samples.count == 1 ? "" : "s")"
         if batch.kind.isCumulative { return "total across \(count)" }
         if batch.samples.count == 1 { return "single daily reading" }
         let values = batch.samples.map(\.value)
@@ -457,12 +457,12 @@ struct MetricCompareView: View {
     private func sampleNoun(count: Int) -> String {
         let singular: String
         switch batch.kind {
-        case .heartRate: singular = "heart-rate point"
+        case .heartRate: singular = "heart-rate reading"
         case .restingHeartRate: singular = "resting heart-rate reading"
         case .heartRateVariability: singular = "HRV reading"
         case .oxygenSaturation: singular = "SpO₂ reading"
         case .respiratoryRate: singular = "respiratory-rate reading"
-        case .steps: singular = "step count"
+        case .steps: singular = "hourly step total"
         case .distance: singular = "distance reading"
         }
         return count == 1 ? singular : singular + "s"
