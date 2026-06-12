@@ -1,0 +1,16 @@
+# Local credentials & team ID — each user provides their own (see Config.example.xcconfig)
+Config.xcconfig
+
+# Generated Xcode project (run `xcodegen generate`)
+*.xcodeproj/
+*.xcworkspace/
+
+# Xcode / build artifacts
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+
+# macOS
+.DS_Store

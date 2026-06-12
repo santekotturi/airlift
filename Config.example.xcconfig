@@ -1,0 +1,25 @@
+// AirKit build configuration — EXAMPLE
+// ----------------------------------------------------------------------------
+// Copy this file to `Config.xcconfig` (which is gitignored) and fill in the
+// values from the iOS OAuth client you created in Google Cloud Console.
+//
+//   cp Config.example.xcconfig Config.xcconfig
+//
+// None of these are secrets — iOS OAuth clients are *public* clients with no
+// client secret (we use PKCE). They are kept out of source control only so the
+// repo stays credential-free and each user brings their own client.
+// ----------------------------------------------------------------------------
+
+// Your Apple Developer Team ID (10 chars), required to sign for a real device.
+// Leave blank to build for the Simulator only.
+DEVELOPMENT_TEAM =
+
+// The full iOS OAuth client ID, e.g.
+//   1234567890-abcdefghijklmnop.apps.googleusercontent.com
+GH_CLIENT_ID =
+
+// The *reversed* client ID — the client ID with its two dot-separated halves
+// swapped, e.g.
+//   com.googleusercontent.apps.1234567890-abcdefghijklmnop
+// This becomes the OAuth redirect URL scheme.
+GH_REVERSED_CLIENT_ID =
