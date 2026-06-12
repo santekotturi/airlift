@@ -331,6 +331,10 @@ final class SyncEngine {
 
             var written = 0
 
+            // One snapshot per pass — the stores are UserDefaults-backed and
+            // per-ID lookups against them are linear scans.
+            let seenIDs = dedup.all.union(tossed.all)
+
             // Sleep sessions.
             status = .syncing(phase: "Fetching sleep…")
             setPipelineStep("sleep", .fetching(readings: 0))
@@ -339,7 +343,7 @@ final class SyncEngine {
             }
             setPipelineStep("sleep", .comparing)
             let freshCandidates = sessions.filter {
-                $0.isComplete && !dedup.contains($0.id) && !tossed.contains($0.id)
+                $0.isComplete && !seenIDs.contains($0.id)
             }
             var heldSessions: [StagedSession] = []
             var sleepImported = 0
@@ -398,7 +402,7 @@ final class SyncEngine {
                     var imported = 0
                     var importedSamples = 0
                     var held = 0
-                    for batch in await stageMetric(kind, samples: samples) {
+                    for batch in await stageMetric(kind, samples: samples, seenIDs: seenIDs) {
                         dump.writeStagedBatch(batch)
                         let day = CivilDay.string(from: batch.day)
                         switch SyncGate.action(for: batch.worstSeverity, mode: mode) {
@@ -738,12 +742,22 @@ final class SyncEngine {
     /// Groups one metric's samples into per-day batches with Apple reference
     /// data and checks. High-frequency kinds are downsampled first (so dedup
     /// keys are bucket IDs); already-imported/tossed IDs are filtered out.
-    private func stageMetric(_ kind: MetricKind, samples: [MetricSample]) async -> [StagedMetricBatch] {
+    ///
+    /// `nonisolated`: downsampling and grouping tens of thousands of points
+    /// must not run on the main actor — the UI stays scrollable mid-fetch.
+    /// Seen-ID sets are passed as snapshots for the same reason: per-sample
+    /// `dedup.contains` re-read UserDefaults arrays linearly, which alone
+    /// could pin the main thread for seconds on a heart-rate day.
+    nonisolated private func stageMetric(
+        _ kind: MetricKind,
+        samples: [MetricSample],
+        seenIDs: Set<String>
+    ) async -> [StagedMetricBatch] {
         var samples = samples
         if let bucket = kind.downsampleBucketSeconds {
             samples = samples.downsampled(bucket: bucket, kind: kind)
         }
-        let fresh = samples.filter { !dedup.contains($0.id) && !tossed.contains($0.id) }
+        let fresh = samples.filter { !seenIDs.contains($0.id) }
         guard !fresh.isEmpty else { return [] }
 
         let calendar = Calendar.current
@@ -772,8 +786,9 @@ final class SyncEngine {
         return batches
     }
 
-    /// Loads the Apple-side reference data for a session and runs sanity checks.
-    private func stage(_ session: SleepSession) async -> StagedSession {
+    /// Loads the Apple-side reference data for a session and runs sanity
+    /// checks. `nonisolated` — comparison math stays off the main actor.
+    nonisolated private func stage(_ session: SleepSession) async -> StagedSession {
         // Look 6h either side so a shifted-timezone Apple night still shows up.
         let window = DateInterval(
             start: session.start.addingTimeInterval(-6 * 3600),
