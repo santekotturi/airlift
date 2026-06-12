@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; }
+  body { width: 1024px; height: 1024px; overflow: hidden; }
+</style>
+</head>
+<body>
+<svg id="icon" width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyLight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#FFF6E6"/>
+      <stop offset="46%" stop-color="#FBE2D8"/>
+      <stop offset="100%" stop-color="#D7D1F3"/>
+    </linearGradient>
+    <linearGradient id="skyDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#2C2347"/>
+      <stop offset="55%" stop-color="#1B1736"/>
+      <stop offset="100%" stop-color="#121024"/>
+    </linearGradient>
+    <linearGradient id="gore" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFB066"/>
+      <stop offset="100%" stop-color="#F4753A"/>
+    </linearGradient>
+    <linearGradient id="goreWhiteL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FFEFDC"/>
+    </linearGradient>
+    <linearGradient id="heart" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF7D94"/>
+      <stop offset="100%" stop-color="#FB4D67"/>
+    </linearGradient>
+    <linearGradient id="boxL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F4EDE2"/>
+    </linearGradient>
+    <radialGradient id="glowDark" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0%"  stop-color="#FFB066" stop-opacity="0.32"/>
+      <stop offset="60%" stop-color="#FFB066" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#FFB066" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- sky -->
+  <rect id="sky" width="1024" height="1024" fill="url(#skyLight)"/>
+
+  <!-- night-only: stars + warm glow behind the chute -->
+  <g id="night" style="display:none">
+    <circle cx="512" cy="430" r="560" fill="url(#glowDark)"/>
+    <g fill="#FFFFFF">
+      <circle cx="128" cy="148" r="7" opacity="0.85"/>
+      <circle cx="876" cy="120" r="5" opacity="0.6"/>
+      <circle cx="220" cy="332" r="4" opacity="0.5"/>
+      <circle cx="930" cy="312" r="6" opacity="0.7"/>
+      <circle cx="86  " cy="540" r="5" opacity="0.55"/>
+      <circle cx="804" cy="208" r="3.5" opacity="0.5"/>
+      <circle cx="320" cy="118" r="4" opacity="0.55"/>
+      <circle cx="700" cy="86" r="4.5" opacity="0.6"/>
+      <circle cx="948" cy="560" r="4" opacity="0.45"/>
+      <circle cx="62" cy="300" r="3.5" opacity="0.45"/>
+    </g>
+    <!-- crescent moon -->
+    <g opacity="0.9">
+      <circle cx="170" cy="190" r="58" fill="#F4EFFF"/>
+      <circle cx="200" cy="172" r="52" fill="#1E1A3B"/>
+    </g>
+  </g>
+
+  <!-- day-only: soft warm halo behind the drop -->
+  <g id="day">
+    <circle cx="512" cy="470" r="430" fill="#FFB066" opacity="0.16"/>
+  </g>
+
+  <!-- parachute canopy: semicircular dome, 5 gores, scalloped hem -->
+  <g id="chute">
+    <!-- dome outline with downward-bulging scallops along the hem -->
+    <path d="M242 372 A 273 256 0 0 1 782 372
+             A 54 40 0 0 1 674 372 A 54 40 0 0 1 566 372
+             A 54 40 0 0 1 458 372 A 54 40 0 0 1 350 372
+             A 54 40 0 0 1 242 372 Z" fill="url(#goreWhiteL)"/>
+    <!-- orange gores (2nd and 4th of 5): apex -> seam -> scallop -> seam -->
+    <path d="M512 118 Q 400 250 350 372 A 54 40 0 0 0 458 372 Q 470 250 512 118 Z" fill="url(#gore)"/>
+    <path d="M512 118 Q 554 250 566 372 A 54 40 0 0 0 674 372 Q 624 250 512 118 Z" fill="url(#gore)"/>
+    <!-- apex cap softens the gore tips -->
+    <circle cx="512" cy="130" r="20" fill="url(#gore)"/>
+
+    <!-- shroud lines to the crate -->
+    <g stroke="#A89A87" stroke-width="9" stroke-linecap="round" id="lines">
+      <line x1="252" y1="388" x2="408" y2="660"/>
+      <line x1="404" y1="396" x2="440" y2="652"/>
+      <line x1="620" y1="396" x2="584" y2="652"/>
+      <line x1="772" y1="388" x2="616" y2="660"/>
+    </g>
+  </g>
+
+  <!-- crate with heart -->
+  <g id="crate">
+    <rect x="372" y="640" width="280" height="252" rx="44" fill="url(#boxL)"/>
+    <rect x="372" y="640" width="280" height="252" rx="44" fill="none" stroke="#E4D9C8" stroke-width="6"/>
+    <!-- heart -->
+    <path transform="translate(512 778) scale(5.4)" fill="url(#heart)"
+          d="M0 12 C -2 6 -16 0 -16 -8 C -16 -14.5 -11 -18 -6.5 -18 C -3.5 -18 -1 -16.4 0 -14 C 1 -16.4 3.5 -18 6.5 -18 C 11 -18 16 -14.5 16 -8 C 16 0 2 6 0 12 Z"/>
+  </g>
+</svg>
+
+<script>
+  if (new URLSearchParams(location.search).get('mode') === 'dark') {
+    document.getElementById('sky').setAttribute('fill', 'url(#skyDark)');
+    document.getElementById('night').style.display = '';
+    document.getElementById('day').style.display = 'none';
+    document.getElementById('lines').setAttribute('stroke', '#CDC4E8');
+    document.querySelectorAll('#crate rect')[1].setAttribute('stroke', '#3B3458');
+  }
+</script>
+</body>
+</html>

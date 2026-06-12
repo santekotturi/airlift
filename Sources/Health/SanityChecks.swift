@@ -1,8 +1,8 @@
 import Foundation
 
 /// Outcome of one validation check on a Google sleep session.
-struct CheckResult: Equatable, Identifiable {
-    enum Severity: Equatable {
+struct CheckResult: Equatable, Hashable, Identifiable {
+    enum Severity: Equatable, Hashable {
         case pass
         case info
         case warn

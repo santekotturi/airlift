@@ -13,6 +13,9 @@ enum SyncStatus: Equatable {
     case fetched(sessions: Int, metricBatches: Int, date: Date)
     /// Items written to HealthKit.
     case success(date: Date, written: Int)
+    /// A gated sync pass finished: `written` items imported on their own,
+    /// `held` items are waiting in the review queue.
+    case autoSynced(written: Int, held: Int, date: Date)
     case failed(String)
 }
 
@@ -24,7 +27,7 @@ struct PipelineItem: Identifiable, Equatable {
         case fetching(page: Int)
         /// Staging: decoding done, comparing against Apple Health + checks.
         case comparing
-        case done(staged: Int)
+        case done(imported: Int, held: Int)
         case failed
     }
 
@@ -36,7 +39,8 @@ struct PipelineItem: Identifiable, Equatable {
 
 /// A Google sleep session staged for human review, bundled with the Apple Watch
 /// data for the same night and the sanity-check results comparing them.
-struct StagedSession: Identifiable, Equatable {
+/// Hashable so it can be a typed `navigationDestination` value.
+struct StagedSession: Identifiable, Equatable, Hashable {
     let session: SleepSession
     let appleSleep: [AppleSleepSegment]
     let heartRate: [HRSample]
@@ -49,7 +53,8 @@ struct StagedSession: Identifiable, Equatable {
 }
 
 /// One day of one quantity metric staged for review, with Apple reference data.
-struct StagedMetricBatch: Identifiable, Equatable {
+/// Hashable so it can be a typed `navigationDestination` value.
+struct StagedMetricBatch: Identifiable, Equatable, Hashable {
     let kind: MetricKind
     /// Start of the local calendar day the samples belong to.
     let day: Date
@@ -116,6 +121,23 @@ final class SyncEngine {
     /// Persisted high-water mark, for display when no sync has run this launch.
     var lastSyncedDate: Date? { state.lastSyncedDate }
 
+    /// How much review stands between fetch and write. Stored mirror of the
+    /// persisted setting so the UI picker is observable; writes flow back.
+    var syncMode: SyncMode {
+        didSet { settings.syncMode = syncMode }
+    }
+
+    /// Which quantity metrics sync at all (observable mirror, persisted).
+    var enabledKinds: Set<MetricKind> {
+        didSet { settings.enabledKinds = enabledKinds }
+    }
+
+    /// Per-(kind, day) sync outcomes — powers the coverage grid.
+    let ledger: SyncLedgerStoring
+
+    /// Plain-language history ("What crossed over").
+    let log: SyncLogStore
+
     /// Persists raw pages + staged items to Documents/Dumps (DEBUG only).
     private let dump = DumpStore()
 
@@ -127,7 +149,18 @@ final class SyncEngine {
     private let dedup: DedupStoring
     private let tossed: DedupStoring
     private var state: SyncStateStoring
+    private var settings: SyncSettingsStoring
     private var healthAuthorized = false
+
+    #if DEBUG
+    /// True when the engine runs on seeded UI-mock fixtures — every
+    /// side-effecting path (HealthKit, network, dedup/ledger persistence)
+    /// becomes a no-op. Set via `applyUIMock`.
+    private(set) var isUIMock = false
+    /// Seeds restored after each mock fetch replay.
+    private var mockStagedSeed: [StagedSession] = []
+    private var mockMetricsSeed: [StagedMetricBatch] = []
+    #endif
 
     init(
         oauth: OAuthClient,
@@ -137,7 +170,10 @@ final class SyncEngine {
         tokens: TokenStoring,
         dedup: DedupStoring,
         tossed: DedupStoring,
-        state: SyncStateStoring
+        state: SyncStateStoring,
+        settings: SyncSettingsStoring,
+        ledger: SyncLedgerStoring,
+        log: SyncLogStore
     ) {
         self.oauth = oauth
         self.api = api
@@ -147,6 +183,11 @@ final class SyncEngine {
         self.dedup = dedup
         self.tossed = tossed
         self.state = state
+        self.settings = settings
+        self.ledger = ledger
+        self.log = log
+        self.syncMode = settings.syncMode
+        self.enabledKinds = settings.enabledKinds
         self.isConnected = tokens.load() != nil
     }
 
@@ -154,12 +195,21 @@ final class SyncEngine {
 
     /// Runs the OAuth consent flow and stores the resulting tokens.
     func connect() async {
+        #if DEBUG
+        if isUIMock {
+            isConnected = true
+            status = .idle
+            log.record(.connected, title: "Connected to Google Health", detail: "The bridge is open — fetches can begin.")
+            return
+        }
+        #endif
         do {
             let stored = try await oauth.authorize()
             try tokens.save(stored)
             isConnected = true
             status = .idle
             Log.sync.info("Connected to Google Health")
+            log.record(.connected, title: "Connected to Google Health", detail: "The bridge is open — fetches can begin.")
         } catch OAuthError.userCancelled {
             // Leave state untouched on cancel.
         } catch {
@@ -170,6 +220,13 @@ final class SyncEngine {
 
     /// Forgets all credentials (used by the "reconnect" path).
     func disconnect() {
+        #if DEBUG
+        if isUIMock {
+            isConnected = false
+            status = .needsConnection
+            return
+        }
+        #endif
         try? tokens.clear()
         isConnected = false
         status = .needsConnection
@@ -177,13 +234,33 @@ final class SyncEngine {
 
     // MARK: - Review flow (fetch → stage → import/toss)
 
-    /// Fetches Google sleep sessions **and all quantity metrics** from the last
-    /// `days` days and stages everything for review with Apple Watch reference
-    /// data. **Writes nothing.**
-    ///
-    /// Sleep failing is fatal for the fetch; individual metric kinds failing are
-    /// logged and skipped so one flaky pre-GA endpoint can't blank the queue.
+    /// Explicit fetch of the last `days` days ("Fetch again · last 7 days").
+    /// Gated by the configured mode like every other pass — in automatic mode
+    /// clean items land on their own, in review-everything nothing is written.
     func fetchForReview(days: Int = 7, now: Date = Date()) async {
+        await run(since: now.addingTimeInterval(-Double(days) * 86_400), now: now, mode: syncMode)
+    }
+
+    /// The main sync path: fetch since the high-water mark (with the usual
+    /// re-pull window), then gate each staged item through the configured
+    /// mode — auto-importing what the checks trust and holding the rest for
+    /// review. Called on launch and from the background task.
+    func syncNow(now: Date = Date()) async {
+        let since = SyncWindow.fetchSince(lastSynced: state.lastSyncedDate, now: now)
+        await run(since: since, now: now, mode: syncMode)
+    }
+
+    /// Shared fetch → stage → gate pass.
+    ///
+    /// Sleep failing is fatal for the pass; individual metric kinds failing are
+    /// logged and skipped so one flaky pre-GA endpoint can't blank the queue.
+    private func run(since: Date, now: Date, mode: SyncMode) async {
+        #if DEBUG
+        if isUIMock {
+            await mockSyncPass(now: now)
+            return
+        }
+        #endif
         guard tokens.load() != nil else {
             status = .needsConnection
             return
@@ -191,17 +268,22 @@ final class SyncEngine {
 
         status = .syncing(phase: "Starting…")
         rawPageCounts = [:]
+        // A re-fetch re-stages anything still unresolved; only newly held
+        // items deserve a history line.
+        let previouslyHeld = Set(staged.map(\.id)).union(stagedMetrics.map(\.id))
+        let kinds = MetricKind.allCases.filter { enabledKinds.contains($0) }
         pipeline = [PipelineItem(id: "sleep", name: "Sleep")]
-            + MetricKind.allCases.map { PipelineItem(id: $0.rawValue, name: $0.displayName) }
+            + kinds.map { PipelineItem(id: $0.rawValue, name: $0.displayName) }
         dump.beginFetch(now: now)
         do {
             try await ensureHealthAuthorized()
-            let since = now.addingTimeInterval(-Double(days) * 86_400)
 
             #if DEBUG
             status = .syncing(phase: "Probing API schemas (debug)…")
             await runDiscoveryProbes(since: since)
             #endif
+
+            var written = 0
 
             // Sleep sessions.
             status = .syncing(phase: "Fetching sleep…")
@@ -213,19 +295,52 @@ final class SyncEngine {
             let freshCandidates = sessions.filter {
                 $0.isComplete && !dedup.contains($0.id) && !tossed.contains($0.id)
             }
-            var freshSessions: [StagedSession] = []
+            var heldSessions: [StagedSession] = []
+            var sleepImported = 0
             for (index, session) in freshCandidates.enumerated() {
                 status = .syncing(phase: "Comparing sleep night \(index + 1) of \(freshCandidates.count) with Apple Health…")
                 let item = await stage(session)
                 dump.writeStagedSession(item)
-                freshSessions.append(item)
+                let day = CivilDay.string(from: item.session.end)
+                switch SyncGate.action(for: item.worstSeverity, mode: mode) {
+                case .autoImport:
+                    do {
+                        try await writer.write(item.session)
+                        dedup.insert(item.id)
+                        ledger.recordSynced(kind: sleepLedgerKind, day: day, samples: 1, at: now)
+                        sleepImported += 1
+                        log.record(
+                            .autoImported,
+                            title: "\(Self.nightName(for: item.session.end)) landed in Apple Health",
+                            detail: "\(Self.durationText(item.session)) of sleep, \(item.session.stages.count) stage samples — all checks passed."
+                        )
+                    } catch {
+                        // Write failed — keep it reviewable instead of losing it.
+                        heldSessions.append(item)
+                        ledger.set(.quarantined, kind: sleepLedgerKind, day: day)
+                        Log.sync.error("Auto-import failed for session \(item.id): \(error.localizedDescription)")
+                    }
+                case .review:
+                    heldSessions.append(item)
+                    ledger.set(SyncGate.heldStatus(for: item.worstSeverity), kind: sleepLedgerKind, day: day)
+                    if mode == .automatic, !previouslyHeld.contains(item.id) {
+                        let flagged = item.checks.filter { $0.severity == .warn || $0.severity == .fail }
+                        log.record(
+                            .held,
+                            title: "\(Self.nightName(for: item.session.end)) held for review",
+                            detail: flagged.first.map { "\($0.name): \($0.detail)" } ?? "Waiting for your OK before it's written."
+                        )
+                    }
+                }
             }
-            staged = freshSessions.sorted { $0.session.start > $1.session.start }
-            setPipelineStep("sleep", .done(staged: freshSessions.count))
+            staged = heldSessions.sorted { $0.session.start > $1.session.start }
+            written += sleepImported
+            setPipelineStep("sleep", .done(imported: sleepImported, held: heldSessions.count))
 
             // Quantity metrics — best-effort per kind.
-            var freshBatches: [StagedMetricBatch] = []
-            for kind in MetricKind.allCases {
+            var heldBatches: [StagedMetricBatch] = []
+            var failedKinds: Set<MetricKind> = []
+            for kind in kinds {
                 status = .syncing(phase: "Fetching \(kind.displayName)…")
                 setPipelineStep(kind.rawValue, .fetching(page: 1))
                 do {
@@ -234,31 +349,128 @@ final class SyncEngine {
                     }
                     status = .syncing(phase: "Comparing \(kind.displayName) with Apple Health…")
                     setPipelineStep(kind.rawValue, .comparing)
-                    let batches = await stageMetric(kind, samples: samples)
-                    for batch in batches { dump.writeStagedBatch(batch) }
-                    freshBatches.append(contentsOf: batches)
-                    setPipelineStep(kind.rawValue, .done(staged: batches.count))
+                    var imported = 0
+                    var importedSamples = 0
+                    var held = 0
+                    for batch in await stageMetric(kind, samples: samples) {
+                        dump.writeStagedBatch(batch)
+                        let day = CivilDay.string(from: batch.day)
+                        switch SyncGate.action(for: batch.worstSeverity, mode: mode) {
+                        case .autoImport:
+                            do {
+                                try await writer.write(batch.samples, kind: kind)
+                                dedup.insertAll(batch.samples.map(\.id))
+                                ledger.recordSynced(kind: kind.rawValue, day: day, samples: batch.samples.count, at: now)
+                                imported += 1
+                                importedSamples += batch.samples.count
+                            } catch {
+                                heldBatches.append(batch)
+                                ledger.set(.quarantined, kind: kind.rawValue, day: day)
+                                Log.sync.error("Auto-import failed for \(batch.id): \(error.localizedDescription)")
+                                held += 1
+                            }
+                        case .review:
+                            heldBatches.append(batch)
+                            ledger.set(SyncGate.heldStatus(for: batch.worstSeverity), kind: kind.rawValue, day: day)
+                            held += 1
+                            if mode == .automatic, !previouslyHeld.contains(batch.id) {
+                                let flagged = batch.checks.first { $0.severity == .warn || $0.severity == .fail }
+                                log.record(
+                                    .held,
+                                    title: "\(kind.displayName) for \(Self.dayText(batch.day)) held for review",
+                                    detail: flagged.map { "\($0.name): \($0.detail)" } ?? "Waiting for your OK before it's written."
+                                )
+                            }
+                        }
+                    }
+                    written += imported
+                    // One history line per kind per pass — per-day lines would
+                    // flood the timeline on a first 7-day sync.
+                    if importedSamples > 0 {
+                        log.record(
+                            .autoImported,
+                            title: "\(kind.displayName) added to Apple Health",
+                            detail: "\(importedSamples) points across \(imported) day(s) — all checks passed."
+                        )
+                    }
+                    setPipelineStep(kind.rawValue, .done(imported: imported, held: held))
                 } catch {
+                    failedKinds.insert(kind)
                     setPipelineStep(kind.rawValue, .failed)
                     dump.writeText("\(error)\n\n\(error.localizedDescription)", name: "google-\(kind.rawValue)-ERROR.txt")
                     Log.sync.error("Fetch failed for \(kind.rawValue): \(error.localizedDescription) — skipping")
                 }
             }
-            stagedMetrics = freshBatches.sorted {
+            stagedMetrics = heldBatches.sorted {
                 ($0.day, $0.kind.displayName) > ($1.day, $1.kind.displayName)
             }
 
-            status = .fetched(sessions: staged.count, metricBatches: stagedMetrics.count, date: now)
-            Log.sync.info("Staged \(self.staged.count) session(s) + \(self.stagedMetrics.count) metric batch(es) for review")
+            // Days the pass covered but nothing arrived for: mark "no data from
+            // the device" so the coverage grid can tell a quiet band from a
+            // failed sync. Today is excluded — it is still accumulating.
+            let yesterday = now.addingTimeInterval(-86_400)
+            if yesterday >= since {
+                for day in CivilDay.days(from: since, through: yesterday) {
+                    ledger.fillIfEmpty(.noData, kind: sleepLedgerKind, day: day)
+                    for kind in kinds where !failedKinds.contains(kind) {
+                        ledger.fillIfEmpty(.noData, kind: kind.rawValue, day: day)
+                    }
+                }
+            }
+
+            // Advance the high-water mark, but never past unresolved items —
+            // a held item must keep falling inside the next fetch window so an
+            // app restart can't strand it. Review-everything passes don't
+            // advance (nothing was written; the window must not move).
+            if mode == .automatic {
+                let oldestHeld = (staged.map(\.session.end) + stagedMetrics.map(\.day)).min()
+                state.lastSyncedDate = min(now, oldestHeld ?? now)
+            }
+
+            let heldCount = staged.count + stagedMetrics.count
+            if mode == .reviewEverything {
+                status = .fetched(sessions: staged.count, metricBatches: stagedMetrics.count, date: now)
+            } else {
+                status = .autoSynced(written: written, held: heldCount, date: now)
+            }
+            let newlyHeld = (staged.map(\.id) + stagedMetrics.map(\.id))
+                .filter { !previouslyHeld.contains($0) }
+                .count
+            if written == 0 && newlyHeld == 0 {
+                log.record(.nothingNew, title: "Checked — nothing new", detail: "Google had no new data. Airlift will look again on next launch.")
+            } else if mode == .reviewEverything {
+                log.record(.fetched, title: "Fetch finished", detail: "\(staged.count) night(s) and \(stagedMetrics.count) metric day(s) are ready for review.")
+            }
+            Log.sync.info("Sync pass done — imported \(written), held \(heldCount) for review")
         } catch OAuthError.noRefreshToken {
             disconnect()
+            log.record(.error, title: "Reconnect needed", detail: "Your weekly Google sign-in expired — reconnect to keep the bridge open.")
         } catch let error as OAuthError {
             status = .needsConnection
+            log.record(.error, title: "Reconnect needed", detail: "Google turned down the sign-in — reconnect to keep the bridge open.")
             Log.sync.error("Auth error during fetch: \(error.localizedDescription)")
         } catch {
             status = .failed(error.localizedDescription)
+            log.record(.error, title: "Fetch didn't finish", detail: error.localizedDescription)
             Log.sync.error("Fetch failed: \(error.localizedDescription)")
         }
+    }
+
+    // MARK: - History phrasing
+
+    private static func nightName(for end: Date) -> String {
+        if Calendar.current.isDateInToday(end) { return "Last night" }
+        if Calendar.current.isDateInYesterday(end) { return "Yesterday's night" }
+        return "\(end.formatted(.dateTime.weekday(.wide))) night"
+    }
+
+    private static func durationText(_ session: SleepSession) -> String {
+        let minutes = Int(session.end.timeIntervalSince(session.start) / 60)
+        return "\(minutes / 60) h \(minutes % 60) m"
+    }
+
+    private static func dayText(_ day: Date) -> String {
+        day.formatted(date: .abbreviated, time: .omitted)
     }
 
     #if DEBUG
@@ -360,14 +572,103 @@ final class SyncEngine {
         )
     }
 
+    /// Sweeps the review queue, importing every staged item whose checks
+    /// raised no warnings or failures (pass/info only); flagged items stay
+    /// queued. Covers items staged before a switch to automatic mode — fresh
+    /// fetches gate inline. Call after fetches and on launch only when the
+    /// stored mode is `.automatic`.
+    func autoImportClean() async {
+        let cleanSessions = staged.filter { $0.worstSeverity == .pass }
+        let cleanBatches = stagedMetrics.filter { $0.worstSeverity == .pass }
+        guard !cleanSessions.isEmpty || !cleanBatches.isEmpty else { return }
+
+        #if DEBUG
+        if isUIMock {
+            for item in cleanSessions {
+                staged.removeAll { $0.id == item.id }
+                log.record(
+                    .autoImported,
+                    title: "\(Self.nightName(for: item.session.end)) landed in Apple Health",
+                    detail: "\(Self.durationText(item.session)) of sleep, \(item.session.stages.count) stage samples — all checks passed."
+                )
+            }
+            for batch in cleanBatches {
+                stagedMetrics.removeAll { $0.id == batch.id }
+                log.record(
+                    .autoImported,
+                    title: "\(batch.kind.displayName) added to Apple Health",
+                    detail: "\(batch.samples.count) points — all checks passed."
+                )
+            }
+            return
+        }
+        #endif
+
+        do { try await ensureHealthAuthorized() } catch { return }
+        let now = Date()
+        for item in cleanSessions {
+            do {
+                try await writer.write(item.session)
+                dedup.insert(item.id)
+                staged.removeAll { $0.id == item.id }
+                ledger.recordSynced(kind: sleepLedgerKind, day: CivilDay.string(from: item.session.end), samples: 1, at: now)
+                log.record(
+                    .autoImported,
+                    title: "\(Self.nightName(for: item.session.end)) landed in Apple Health",
+                    detail: "\(Self.durationText(item.session)) of sleep, \(item.session.stages.count) stage samples — all checks passed."
+                )
+            } catch {
+                Log.sync.error("Auto-import failed for session \(item.id): \(error.localizedDescription)")
+            }
+        }
+        for batch in cleanBatches {
+            do {
+                try await writer.write(batch.samples, kind: batch.kind)
+                dedup.insertAll(batch.samples.map(\.id))
+                stagedMetrics.removeAll { $0.id == batch.id }
+                ledger.recordSynced(kind: batch.kind.rawValue, day: CivilDay.string(from: batch.day), samples: batch.samples.count, at: now)
+                log.record(
+                    .autoImported,
+                    title: "\(batch.kind.displayName) added to Apple Health",
+                    detail: "\(batch.samples.count) points across \(Self.dayText(batch.day)) — all checks passed."
+                )
+            } catch {
+                Log.sync.error("Auto-import failed for \(batch.id): \(error.localizedDescription)")
+            }
+        }
+    }
+
     /// Writes one reviewed session to HealthKit and retires it from the queue.
     func importStaged(_ id: String) async {
         guard let item = staged.first(where: { $0.id == id }) else { return }
+        #if DEBUG
+        if isUIMock {
+            staged.removeAll { $0.id == id }
+            status = .success(date: Date(), written: 1)
+            log.record(
+                .imported,
+                title: "\(Self.nightName(for: item.session.end)) added to Apple Health",
+                detail: "\(Self.durationText(item.session)) of sleep, \(item.session.stages.count) stage samples — you approved it."
+            )
+            return
+        }
+        #endif
         do {
             try await writer.write(item.session)
             dedup.insert(id)
             staged.removeAll { $0.id == id }
+            ledger.recordSynced(
+                kind: sleepLedgerKind,
+                day: CivilDay.string(from: item.session.end),
+                samples: 1,
+                at: Date()
+            )
             status = .success(date: Date(), written: 1)
+            log.record(
+                .imported,
+                title: "\(Self.nightName(for: item.session.end)) added to Apple Health",
+                detail: "\(Self.durationText(item.session)) of sleep, \(item.session.stages.count) stage samples — you approved it."
+            )
             Log.sync.info("Imported session \(id)")
         } catch {
             status = .failed(error.localizedDescription)
@@ -377,6 +678,27 @@ final class SyncEngine {
 
     /// Discards a staged session. The ID is persisted so it never reappears.
     func toss(_ id: String) {
+        #if DEBUG
+        if isUIMock {
+            if let item = staged.first(where: { $0.id == id }) {
+                log.record(
+                    .tossed,
+                    title: "You skipped \(Self.nightName(for: item.session.end).lowercased())",
+                    detail: "Google reported \(Self.durationText(item.session)) — nothing was written, and it won't come back."
+                )
+            }
+            staged.removeAll { $0.id == id }
+            return
+        }
+        #endif
+        if let item = staged.first(where: { $0.id == id }) {
+            ledger.set(.tossed, kind: sleepLedgerKind, day: CivilDay.string(from: item.session.end))
+            log.record(
+                .tossed,
+                title: "You skipped \(Self.nightName(for: item.session.end).lowercased())",
+                detail: "Google reported \(Self.durationText(item.session)) — nothing was written, and it won't come back."
+            )
+        }
         tossed.insert(id)
         staged.removeAll { $0.id == id }
         Log.sync.info("Tossed session \(id)")
@@ -385,11 +707,34 @@ final class SyncEngine {
     /// Writes one reviewed metric batch to HealthKit and retires it.
     func importMetricBatch(_ id: String) async {
         guard let batch = stagedMetrics.first(where: { $0.id == id }) else { return }
+        #if DEBUG
+        if isUIMock {
+            stagedMetrics.removeAll { $0.id == id }
+            status = .success(date: Date(), written: batch.samples.count)
+            log.record(
+                .imported,
+                title: "\(batch.kind.displayName) for \(Self.dayText(batch.day)) added to Apple Health",
+                detail: "\(batch.samples.count) points — you approved it."
+            )
+            return
+        }
+        #endif
         do {
             try await writer.write(batch.samples, kind: batch.kind)
             dedup.insertAll(batch.samples.map(\.id))
             stagedMetrics.removeAll { $0.id == id }
+            ledger.recordSynced(
+                kind: batch.kind.rawValue,
+                day: CivilDay.string(from: batch.day),
+                samples: batch.samples.count,
+                at: Date()
+            )
             status = .success(date: Date(), written: batch.samples.count)
+            log.record(
+                .imported,
+                title: "\(batch.kind.displayName) for \(Self.dayText(batch.day)) added to Apple Health",
+                detail: "\(batch.samples.count) points — you approved it."
+            )
             Log.sync.info("Imported \(batch.samples.count) \(batch.kind.rawValue) sample(s)")
         } catch {
             status = .failed(error.localizedDescription)
@@ -400,56 +745,26 @@ final class SyncEngine {
     /// Discards a staged metric batch; all its sample IDs persist as tossed.
     func tossMetricBatch(_ id: String) {
         guard let batch = stagedMetrics.first(where: { $0.id == id }) else { return }
+        #if DEBUG
+        if isUIMock {
+            stagedMetrics.removeAll { $0.id == id }
+            log.record(
+                .tossed,
+                title: "You skipped \(batch.kind.displayName.lowercased()) for \(Self.dayText(batch.day))",
+                detail: "Nothing was written, and it won't come back."
+            )
+            return
+        }
+        #endif
         tossed.insertAll(batch.samples.map(\.id))
         stagedMetrics.removeAll { $0.id == id }
+        ledger.set(.tossed, kind: batch.kind.rawValue, day: CivilDay.string(from: batch.day))
+        log.record(
+            .tossed,
+            title: "You skipped \(batch.kind.displayName.lowercased()) for \(Self.dayText(batch.day))",
+            detail: "Nothing was written, and it won't come back."
+        )
         Log.sync.info("Tossed metric batch \(id)")
-    }
-
-    // MARK: - Automated sync (future mode — unused until data is trusted)
-
-    /// Fetch → write everything new, no review. Kept for the automation milestone;
-    /// not called from launch or background while data is still being validated.
-    @discardableResult
-    func syncNow(now: Date = Date()) async -> SyncStatus {
-        guard tokens.load() != nil else {
-            status = .needsConnection
-            return status
-        }
-
-        status = .syncing(phase: "Syncing…")
-        do {
-            try await ensureHealthAuthorized()
-            let written = try await runSync(now: now)
-            state.lastSyncedDate = now
-            status = .success(date: now, written: written)
-            Log.sync.info("Sync complete — wrote \(written) new session(s)")
-        } catch OAuthError.noRefreshToken {
-            disconnect()
-        } catch let error as OAuthError {
-            status = .needsConnection
-            Log.sync.error("Auth error during sync: \(error.localizedDescription)")
-        } catch {
-            status = .failed(error.localizedDescription)
-            Log.sync.error("Sync failed: \(error.localizedDescription)")
-        }
-        return status
-    }
-
-    /// Fetch → map → write. Returns the number of newly written sessions.
-    private func runSync(now: Date) async throws -> Int {
-        let since = SyncWindow.fetchSince(lastSynced: state.lastSyncedDate, now: now)
-        let sessions = try await withFreshToken { token in
-            try await self.api.fetchSleepSessions(since: since, accessToken: token, onRawPage: self.captureRaw(key: "sleep"))
-        }
-
-        var written = 0
-        for session in sessions where session.isComplete {
-            guard !dedup.contains(session.id), !tossed.contains(session.id) else { continue }
-            try await writer.write(session)
-            dedup.insert(session.id)
-            written += 1
-        }
-        return written
     }
 
     // MARK: - Fetch & tokens
@@ -530,3 +845,56 @@ final class SyncEngine {
         healthAuthorized = true
     }
 }
+
+#if DEBUG
+// MARK: - UI mock (declared here: `private(set)` setters are file-scoped)
+
+extension SyncEngine {
+    /// Seeds the engine with canned fixtures and flips it into UI-mock mode:
+    /// imports/tosses retire items and log without touching HealthKit or the
+    /// dedup/ledger stores, fetches replay a canned pipeline, connect and
+    /// disconnect just flip state. No HealthKit prompt can ever appear.
+    func applyUIMock(
+        staged: [StagedSession],
+        stagedMetrics: [StagedMetricBatch],
+        status: SyncStatus,
+        isConnected: Bool
+    ) {
+        isUIMock = true
+        mockStagedSeed = staged
+        mockMetricsSeed = stagedMetrics
+        self.staged = staged
+        self.stagedMetrics = stagedMetrics
+        self.status = status
+        self.isConnected = isConnected
+    }
+
+    /// Canned fetch: walks every data type waiting → fetching → comparing →
+    /// done (~0.4 s each), then restores the seeded queue.
+    fileprivate func mockSyncPass(now: Date) async {
+        status = .syncing(phase: "Fetching sleep…")
+        pipeline = [PipelineItem(id: "sleep", name: "Sleep")]
+            + MetricKind.allCases.map { PipelineItem(id: $0.rawValue, name: $0.displayName) }
+        for item in pipeline {
+            status = .syncing(phase: "Fetching \(item.name)…")
+            setPipelineStep(item.id, .fetching(page: 1))
+            try? await Task.sleep(for: .milliseconds(200))
+            status = .syncing(phase: "Comparing \(item.name) with Apple Health…")
+            setPipelineStep(item.id, .comparing)
+            try? await Task.sleep(for: .milliseconds(200))
+            let held = item.id == "sleep"
+                ? mockStagedSeed.count
+                : mockMetricsSeed.filter { $0.kind.rawValue == item.id }.count
+            setPipelineStep(item.id, .done(imported: 0, held: held))
+        }
+        staged = mockStagedSeed
+        stagedMetrics = mockMetricsSeed
+        status = .fetched(sessions: staged.count, metricBatches: stagedMetrics.count, date: now)
+        log.record(
+            .fetched,
+            title: "Fetch finished",
+            detail: "\(staged.count) night(s) and \(stagedMetrics.count) metric day(s) are ready for review."
+        )
+    }
+}
+#endif

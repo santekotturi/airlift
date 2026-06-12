@@ -3,7 +3,7 @@ import HealthKit
 
 /// A sleep-analysis sample read back from HealthKit — typically Apple Watch data
 /// used as the trusted reference when validating Google sessions.
-struct AppleSleepSegment: Equatable, Identifiable {
+struct AppleSleepSegment: Equatable, Hashable, Identifiable {
     let id: UUID
     let value: HKCategoryValueSleepAnalysis
     let start: Date
@@ -22,7 +22,7 @@ struct AppleSleepSegment: Equatable, Identifiable {
 }
 
 /// One heart-rate reading.
-struct HRSample: Equatable, Identifiable {
+struct HRSample: Equatable, Hashable, Identifiable {
     let id: UUID
     let date: Date
     let bpm: Double
@@ -30,7 +30,7 @@ struct HRSample: Equatable, Identifiable {
 
 /// A generic quantity reading from HealthKit (Apple-side comparison data),
 /// already converted to the metric's HealthKit unit.
-struct QuantitySample: Equatable, Identifiable {
+struct QuantitySample: Equatable, Hashable, Identifiable {
     let id: UUID
     let start: Date
     let end: Date

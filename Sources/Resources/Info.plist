@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>AirKit</string>
+	<string>Airlift</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -51,7 +51,7 @@
 			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
 			<true/>
 			<key>NSUbiquitousContainerName</key>
-			<string>AirKit</string>
+			<string>Airlift</string>
 			<key>NSUbiquitousContainerSupportedFolderLevels</key>
 			<string>Any</string>
 		</dict>
@@ -59,9 +59,9 @@
 
 	<!-- HealthKit usage strings (required for HKHealthStore authorization prompts) -->
 	<key>NSHealthShareUsageDescription</key>
-	<string>AirKit reads your existing sleep samples so it can avoid writing duplicates.</string>
+	<string>Airlift reads your existing sleep samples so it can avoid writing duplicates.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>AirKit writes your Fitbit Air data into Apple Health: sleep stages, heart rate, resting heart rate, HRV, SpO2, respiratory rate, and steps.</string>
+	<string>Airlift writes your Fitbit Air data into Apple Health: sleep stages, heart rate, resting heart rate, HRV, SpO2, respiratory rate, and steps.</string>
 
 	<!-- Background execution: daily sleep sync via BGAppRefreshTask -->
 	<key>UIBackgroundModes</key>

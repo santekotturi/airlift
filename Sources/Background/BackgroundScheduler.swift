@@ -57,9 +57,14 @@ final class BackgroundScheduler {
         let completion = TaskCompletionGuard(task)
 
         let work = Task { @MainActor in
-            // Review-first mode: refresh the staged queue so new nights are
-            // waiting when the app is opened. No writes happen in background.
-            await syncEngine?.fetchForReview(days: 2)
+            // Gated by the configured sync mode: review-everything only stages,
+            // automatic imports what the sanity checks trust. The sweep then
+            // clears clean items left over from review-everything sessions —
+            // same pairing as the on-launch path.
+            await syncEngine?.syncNow()
+            if syncEngine?.syncMode == .automatic {
+                await syncEngine?.autoImportClean()
+            }
             let success: Bool
             if case .failed = syncEngine?.status { success = false } else { success = true }
             completion.complete(success: success)

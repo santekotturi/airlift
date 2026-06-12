@@ -2,7 +2,7 @@ import Foundation
 
 /// One normalized quantity reading from Google Health, in the metric's
 /// HealthKit unit. Instant readings have `end == start`.
-struct MetricSample: Equatable, Identifiable {
+struct MetricSample: Equatable, Hashable, Identifiable {
     /// Google dataPoint ID — the dedup key, same contract as sleep sessions.
     let id: String
     let start: Date
