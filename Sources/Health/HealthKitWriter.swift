@@ -143,6 +143,39 @@ final class HealthKitWriter: @unchecked Sendable {
         )
     }
 
+    /// Deletes every Airlift-authored sample of `kind` (nil = sleep) whose
+    /// civil day matches `interval` — quantities by start, sleep by wake
+    /// (end). Returns the Google dataPoint IDs that were attached, so the
+    /// caller can retire them and the data never re-stages. Queries first,
+    /// then deletes the exact objects: a blanket predicate delete would also
+    /// hit a session that merely *overlaps* the day from the night after.
+    func deleteOwnSamples(kind: MetricKind?, in interval: DateInterval) async throws -> [String] {
+        let type: HKSampleType = kind.map { HKQuantityType($0.hkIdentifier) } ?? sleepType
+        let widened = kind == nil
+            ? DateInterval(start: interval.start.addingTimeInterval(-86_400), end: interval.end)
+            : interval
+        let mine = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            HKQuery.predicateForObjects(from: HKSource.default()),
+            HKQuery.predicateForSamples(withStart: widened.start, end: widened.end, options: []),
+        ])
+        let samples: [HKSample] = try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: mine, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: samples ?? [])
+                }
+            }
+            store.execute(query)
+        }
+        let anchored = samples.filter {
+            kind == nil ? interval.contains($0.endDate) : interval.contains($0.startDate)
+        }
+        guard !anchored.isEmpty else { return [] }
+        try await store.delete(anchored)
+        return anchored.compactMap { $0.metadata?[Self.dataPointIDKey] as? String }
+    }
+
     /// Deletes any Airlift-authored samples tagged with this dataPoint ID.
     /// Scoped to samples from *this* app via `HKQuery.predicateForObjects(from:)`
     /// so we never touch Apple Watch or other sources.

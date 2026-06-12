@@ -176,6 +176,68 @@ final class HealthKitReader: @unchecked Sendable {
         }
     }
 
+    /// One Airlift-authored sample read back from Health — the calendar's
+    /// day view lists these, and the attached Google dataPoint ID (written as
+    /// metadata) lets a deletion also retire the ID so the data never
+    /// re-stages.
+    struct OwnSample: Equatable, Identifiable {
+        let id: UUID
+        let start: Date
+        let end: Date
+        /// Quantity value in the kind's `hkUnit`; sleep stage raw value for
+        /// sleep samples.
+        let value: Double
+        let dataPointID: String?
+    }
+
+    /// Airlift-authored quantity samples whose *start* falls inside
+    /// `interval` — matches how batches are grouped into civil days.
+    func ownQuantitySamples(_ kind: MetricKind, in interval: DateInterval) async throws -> [OwnSample] {
+        let samples = try await querySamples(
+            type: HKQuantityType(kind.hkIdentifier),
+            interval: interval
+        )
+        let ownBundleID = Bundle.main.bundleIdentifier
+        return samples.compactMap { sample -> OwnSample? in
+            guard
+                let quantity = sample as? HKQuantitySample,
+                quantity.sourceRevision.source.bundleIdentifier == ownBundleID,
+                interval.contains(quantity.startDate)
+            else { return nil }
+            return OwnSample(
+                id: quantity.uuid,
+                start: quantity.startDate,
+                end: quantity.endDate,
+                value: quantity.quantity.doubleValue(for: kind.hkUnit),
+                dataPointID: quantity.metadata?[HealthKitWriter.dataPointIDKey] as? String
+            )
+        }
+    }
+
+    /// Airlift-authored sleep samples whose *end* (wake) falls inside
+    /// `interval` — "Tuesday's sleep" is the night that ended Tuesday morning.
+    func ownSleepSamples(endingIn interval: DateInterval) async throws -> [OwnSample] {
+        // Query a widened window so a long session still overlaps, then trim
+        // to wake-day precisely.
+        let widened = DateInterval(start: interval.start.addingTimeInterval(-86_400), end: interval.end)
+        let samples = try await querySamples(type: HKCategoryType(.sleepAnalysis), interval: widened)
+        let ownBundleID = Bundle.main.bundleIdentifier
+        return samples.compactMap { sample -> OwnSample? in
+            guard
+                let category = sample as? HKCategorySample,
+                category.sourceRevision.source.bundleIdentifier == ownBundleID,
+                interval.contains(category.endDate)
+            else { return nil }
+            return OwnSample(
+                id: category.uuid,
+                start: category.startDate,
+                end: category.endDate,
+                value: Double(category.value),
+                dataPointID: category.metadata?[HealthKitWriter.dataPointIDKey] as? String
+            )
+        }
+    }
+
     /// Heart-rate readings within `interval`, ascending by time.
     func heartRate(in interval: DateInterval) async throws -> [HRSample] {
         let samples = try await querySamples(
