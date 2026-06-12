@@ -14,6 +14,15 @@ struct HomeView: View {
     @State private var pushedBatch: StagedMetricBatch?
     @State private var showHistory = false
     @State private var showPager = false
+    @State private var browseTarget: BrowseTarget?
+
+    /// Home → metric history pager entry (newest day, swipe back from there).
+    struct BrowseTarget: Hashable, Identifiable {
+        let kindRaw: String?
+        let startDay: Date
+        var id: String { kindRaw ?? "sleep" }
+        var kind: MetricKind? { kindRaw.flatMap(MetricKind.init) }
+    }
 
     var body: some View {
         List {
@@ -25,6 +34,7 @@ struct HomeView: View {
             }
             bridgeCard
                 .homeRow(bottom: 26)
+            metricsSection
             recentSection
             HeadsUpCard.forMode(engine.syncMode)
                 .homeRow(bottom: 24)
@@ -39,6 +49,9 @@ struct HomeView: View {
         .navigationDestination(item: $pushedBatch) { MetricCompareView(batch: $0) }
         .navigationDestination(isPresented: $showHistory) { HistoryView() }
         .navigationDestination(isPresented: $showPager) { ReviewPagerView() }
+        .navigationDestination(item: $browseTarget) {
+            MetricHistoryPagerView(kind: $0.kind, startDay: $0.startDay)
+        }
     }
 
     // MARK: - Greeting
@@ -443,6 +456,80 @@ struct HomeView: View {
             if engine.syncMode == .automatic {
                 await engine.autoImportClean()
             }
+        }
+    }
+
+    // MARK: - Your metrics
+
+    /// One row per data kind that has ever landed in Apple Health — tapping
+    /// opens the day-swipeable history on its newest day.
+    private struct MetricRowInfo: Identifiable {
+        let kindRaw: String?
+        let name: String
+        let symbol: String
+        let dayCount: Int
+        let newestDay: Date
+        var id: String { kindRaw ?? "sleep" }
+    }
+
+    private var metricRows: [MetricRowInfo] {
+        var rows: [MetricRowInfo] = []
+        let sleepDays = engine.daysWithData(kind: nil)
+        if let newest = sleepDays.last {
+            rows.append(MetricRowInfo(kindRaw: nil, name: "Sleep", symbol: "moon.zzz.fill", dayCount: sleepDays.count, newestDay: newest))
+        }
+        for kind in MetricKind.allCases {
+            let days = engine.daysWithData(kind: kind)
+            guard let newest = days.last else { continue }
+            rows.append(MetricRowInfo(kindRaw: kind.rawValue, name: kind.displayName, symbol: kind.systemImage, dayCount: days.count, newestDay: newest))
+        }
+        return rows
+    }
+
+    @ViewBuilder
+    private var metricsSection: some View {
+        let rows = metricRows
+        if !rows.isEmpty {
+            Text("Your metrics")
+                .daybreakSectionLabel()
+                .homeRow(bottom: 10)
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(rows) { row in
+                    Button {
+                        browseTarget = BrowseTarget(kindRaw: row.kindRaw, startDay: row.newestDay)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Circle()
+                                .fill(Daybreak.newChipBackground)
+                                .frame(width: 34, height: 34)
+                                .overlay {
+                                    Image(systemName: row.symbol)
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(Daybreak.plum)
+                                }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(row.name)
+                                    .font(.system(size: 14.5, weight: .bold, design: .rounded))
+                                    .foregroundStyle(Daybreak.ink)
+                                Text("\(row.dayCount) day\(row.dayCount == 1 ? "" : "s") in Apple Health · newest \(row.newestDay.formatted(date: .abbreviated, time: .omitted))")
+                                    .font(.system(size: 12.5, design: .rounded))
+                                    .foregroundStyle(Daybreak.mid)
+                            }
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(Daybreak.faint)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if row.id != rows.last?.id {
+                        Divider().overlay(Daybreak.line)
+                    }
+                }
+            }
+            .daybreakCard(padding: 16)
+            .homeRow(bottom: 26)
         }
     }
 
