@@ -321,10 +321,11 @@ struct HomeView: View {
             Text("Start the airlift")
                 .font(Daybreak.numberFont(size: 30))
                 .foregroundStyle(Daybreak.ink)
-            Text("Connect Google Health to start the airlift — each night is carried over to Apple Health, every one checked first.")
+            Text("All your Fitbit Air data is fetched locally and merged into Apple Health. You're in control — review everything yourself, or let Airlift auto-merge what passes its checks. Undo anytime.")
                 .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)
+            TrustList()
             Button("Connect Google Health") {
                 Task { await engine.connect() }
             }

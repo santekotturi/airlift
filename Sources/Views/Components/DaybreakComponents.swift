@@ -504,3 +504,73 @@ struct DayBadge: View {
             }
     }
 }
+
+// MARK: - Trust list
+
+/// Pre-OAuth trust affordance: the three promises that matter before a user
+/// hands over a Google sign-in — no servers, public code, read-only access.
+/// Sits inside the connect card, above the Connect button.
+struct TrustList: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            TrustRow(
+                symbol: "lock.fill",
+                tint: Daybreak.ok,
+                background: Daybreak.okChipBackground,
+                title: "Zero servers",
+                detail: "Everything happens on this iPhone. Your data and Google sign-in never leave it."
+            )
+            TrustRow(
+                symbol: "chevron.left.forwardslash.chevron.right",
+                tint: Daybreak.plum,
+                background: Daybreak.newChipBackground,
+                title: "Open source",
+                detail: "Every line of code is public on GitHub and community-reviewed."
+            )
+            TrustRow(
+                symbol: "key.fill",
+                tint: Daybreak.warn,
+                background: Daybreak.warnChipBackground,
+                title: "Read-only at Google",
+                detail: "Airlift can only read your Fitbit data — it can never change or delete anything there."
+            )
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Color(daybreakHex: 0xF7F5FC),
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
+    }
+}
+
+private struct TrustRow: View {
+    let symbol: String
+    let tint: Color
+    let background: Color
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Circle()
+                .fill(background)
+                .frame(width: 30, height: 30)
+                .overlay {
+                    Image(systemName: symbol)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(tint)
+                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                    .foregroundStyle(Daybreak.ink)
+                Text(detail)
+                    .font(.system(size: 12, design: .rounded))
+                    .foregroundStyle(Daybreak.mid)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
