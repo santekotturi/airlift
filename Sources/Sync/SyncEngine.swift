@@ -642,6 +642,19 @@ final class SyncEngine {
         )
     }
 
+    /// Civil days where the ledger says this kind landed in Health —
+    /// oldest first. Drives the metric-history day pager.
+    func daysWithData(kind: MetricKind?) -> [Date] {
+        let ledgerKind = kind?.rawValue ?? sleepLedgerKind
+        return ledger.all
+            .filter { $0.kind == ledgerKind }
+            .compactMap { entry -> Date? in
+                guard case .synced = entry.status else { return nil }
+                return CivilDay.date(from: entry.day)
+            }
+            .sorted()
+    }
+
     /// Inverse of the import mapping: HealthKit sleep stage → wire stage.
     private static func sleepStage(from value: HKCategoryValueSleepAnalysis) -> SleepStage? {
         switch value {

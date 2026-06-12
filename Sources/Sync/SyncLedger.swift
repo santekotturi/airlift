@@ -71,6 +71,11 @@ enum CivilDay {
         formatter.string(from: date)
     }
 
+    /// Inverse of `string(from:)` — start of the civil day, current timezone.
+    static func date(from string: String) -> Date? {
+        formatter.date(from: string).map { Calendar.current.startOfDay(for: $0) }
+    }
+
     /// Every civil day from `since` through `through`, inclusive, oldest first.
     static func days(
         from since: Date,

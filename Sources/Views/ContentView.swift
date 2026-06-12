@@ -160,7 +160,7 @@ struct ContentView: View {
             path.append(PagerRoute())
         case "priority":
             path.append(SourcePriorityRoute())
-        case "calendar", "day":
+        case "calendar", "day", "history-pager":
             tab = .calendar
         default:
             break
