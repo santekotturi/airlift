@@ -10,6 +10,9 @@ struct MetricCompareView: View {
 
     let batch: StagedMetricBatch
     var mode: CompareMode = .review
+    /// Pager hook: called after import/skip instead of popping, so the
+    /// review-all flow can advance to the next held item.
+    var onDecision: (() -> Void)?
 
     @State private var isImporting = false
     @State private var confirmingRemoval = false
@@ -433,7 +436,7 @@ struct MetricCompareView: View {
                 isImporting = true
                 Task {
                     await model.syncEngine.importMetricBatch(batch.id)
-                    dismiss()
+                    if let onDecision { onDecision() } else { dismiss() }
                 }
             }
             .buttonStyle(.daybreakPrimary)
@@ -441,7 +444,7 @@ struct MetricCompareView: View {
 
             Button("Skip this day") {
                 model.syncEngine.tossMetricBatch(batch.id)
-                dismiss()
+                if let onDecision { onDecision() } else { dismiss() }
             }
             .buttonStyle(.daybreakGhost)
             .disabled(isImporting)

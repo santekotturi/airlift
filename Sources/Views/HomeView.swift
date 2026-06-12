@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var pushedSession: StagedSession?
     @State private var pushedBatch: StagedMetricBatch?
     @State private var showHistory = false
+    @State private var showPager = false
 
     var body: some View {
         List {
@@ -37,6 +38,7 @@ struct HomeView: View {
         .navigationDestination(item: $pushedSession) { SessionCompareView(staged: $0) }
         .navigationDestination(item: $pushedBatch) { MetricCompareView(batch: $0) }
         .navigationDestination(isPresented: $showHistory) { HistoryView() }
+        .navigationDestination(isPresented: $showPager) { ReviewPagerView() }
     }
 
     // MARK: - Greeting
@@ -185,7 +187,12 @@ struct HomeView: View {
                 .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)
-            if let night = engine.staged.first {
+            if waitingCount > 1 {
+                Button("Review all \(waitingCount) →") {
+                    showPager = true
+                }
+                .buttonStyle(.daybreakPrimary)
+            } else if let night = engine.staged.first {
                 Button("Review \(Self.nightPhrase(for: night.session.end)) →") {
                     pushedSession = night
                 }

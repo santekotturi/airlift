@@ -9,6 +9,9 @@ struct SettingsRoute: Hashable {}
 /// Navigation token for the source-priority tutorial.
 struct SourcePriorityRoute: Hashable {}
 
+/// Navigation token for the review-all pager.
+struct PagerRoute: Hashable {}
+
 /// Daybreak shell: two tabs — Home (the bridge) and Calendar (history) — each
 /// a `NavigationStack` with typed destinations, on the system tab bar (Liquid
 /// Glass on modern iOS, exactly like Health's Summary/Sharing bar). Every
@@ -66,6 +69,7 @@ struct ContentView: View {
                 .navigationDestination(for: HistoryRoute.self) { _ in HistoryView() }
                 .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
                 .navigationDestination(for: SourcePriorityRoute.self) { _ in SourcePriorityView() }
+                .navigationDestination(for: PagerRoute.self) { _ in ReviewPagerView() }
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -152,6 +156,8 @@ struct ContentView: View {
             path.append(SettingsRoute())
         case "priming":
             model.syncEngine.primeNotificationsForUIMock()
+        case "pager":
+            path.append(PagerRoute())
         case "priority":
             path.append(SourcePriorityRoute())
         case "calendar", "day":
