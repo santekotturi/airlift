@@ -1,5 +1,5 @@
 import XCTest
-@testable import AirKit
+@testable import Airlift
 
 final class DedupStoreTests: XCTestCase {
     private var defaults: UserDefaults!
@@ -8,7 +8,7 @@ final class DedupStoreTests: XCTestCase {
     override func setUp() {
         super.setUp()
         // Isolated suite so tests don't touch real app state.
-        let suite = "airkit.tests.\(UUID().uuidString)"
+        let suite = "airlift.tests.\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suite)
         store = UserDefaultsDedupStore(defaults: defaults, key: "synced")
     }

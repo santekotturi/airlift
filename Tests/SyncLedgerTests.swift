@@ -1,5 +1,5 @@
 import XCTest
-@testable import AirKit
+@testable import Airlift
 
 final class SyncLedgerTests: XCTestCase {
     private var url: URL!

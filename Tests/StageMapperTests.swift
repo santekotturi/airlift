@@ -1,6 +1,6 @@
 import XCTest
 import HealthKit
-@testable import AirKit
+@testable import Airlift
 
 final class StageMapperTests: XCTestCase {
     func testStageMappings() {

@@ -2,7 +2,7 @@
 
 **Your sleep, airlifted to Apple Health every morning. Bridges Fitbit Air (and other Google-account Fitbit devices) sleep data into Apple Health — on-device, open source, no server.**
 
-> Formerly *AirKit*. The Xcode project, scheme, and bundle ID keep the `AirKit` name; everything user-facing says **Airlift**.
+> Formerly *Airlift*. The Xcode project, scheme, and bundle ID keep the `Airlift` name; everything user-facing says **Airlift**.
 
 The Fitbit Air is a screenless, sleep-focused tracker whose data lives in Google's
 health ecosystem and does **not** export to Apple Health natively. Airlift is a small
@@ -63,7 +63,7 @@ it as a bridge until (and if) native sync makes it redundant.
 2. Configure the **OAuth consent screen** as **External / Testing** and add your personal
    Google account (the one your Fitbit is on) under **Test users**. See
    [OAuth & consent](#oauth--consent-read-this-before-you-start) below for why.
-3. Create an **iOS OAuth client ID** with the bundle ID `com.santekotturi.airkit` (or change
+3. Create an **iOS OAuth client ID** with the bundle ID `com.santekotturi.airlift` (or change
    the bundle ID in `project.yml` to your own and use that). iOS clients are public clients —
    **no client secret**; Airlift uses PKCE.
 4. On the consent screen's **Scopes** step, add all five read-only Google Health scopes
@@ -74,8 +74,8 @@ it as a bridge until (and if) native sync makes it redundant.
 ### 2. Configure the build
 
 ```bash
-git clone <your-fork-url> AirKit
-cd AirKit
+git clone <your-fork-url> Airlift
+cd Airlift
 cp Config.example.xcconfig Config.xcconfig
 ```
 
@@ -94,7 +94,7 @@ Edit `Config.xcconfig` and fill in:
 
 ```bash
 xcodegen generate
-open AirKit.xcodeproj
+open Airlift.xcodeproj
 ```
 
 Build & run on your device, tap **Connect Google Health**, grant the consent screen and the

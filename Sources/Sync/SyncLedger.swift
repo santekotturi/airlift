@@ -100,7 +100,7 @@ final class FileSyncLedger: SyncLedgerStoring, @unchecked Sendable {
     init(url: URL? = nil) {
         let resolved = url ?? FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("AirKit", isDirectory: true)
+            .appendingPathComponent("Airlift", isDirectory: true)
             .appendingPathComponent("ledger.json")
         self.url = resolved
         if let data = try? Data(contentsOf: resolved),

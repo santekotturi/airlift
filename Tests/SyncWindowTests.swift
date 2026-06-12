@@ -1,5 +1,5 @@
 import XCTest
-@testable import AirKit
+@testable import Airlift
 
 final class SyncWindowTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_750_000_000) // fixed reference

@@ -29,7 +29,7 @@ struct KeychainTokenStore: TokenStoring {
     private let service: String
     private let account: String
 
-    init(service: String = "com.santekotturi.airkit.tokens", account: String = "google-health") {
+    init(service: String = "com.santekotturi.airlift.tokens", account: String = "google-health") {
         self.service = service
         self.account = account
     }

@@ -1,14 +1,14 @@
-# AirKit "Daybreak Bridge" — iOS implementation spec
+# Airlift "Daybreak Bridge" — iOS implementation spec
 
-The approved direction is `design-explorations/c-daybreak.html` (screenshot: `design-explorations/preview-c.png` — **Read this image before designing any screen**). This spec adapts it to SwiftUI for the existing AirKit app and adds two user-selectable sync modes.
+The approved direction is `design-explorations/c-daybreak.html` (screenshot: `design-explorations/preview-c.png` — **Read this image before designing any screen**). This spec adapts it to SwiftUI for the existing Airlift app and adds two user-selectable sync modes.
 
 ## Hard constraints
 
 - Swift 6, `SWIFT_STRICT_CONCURRENCY: complete`, iOS 17 deployment target, SwiftUI + Swift Charts. The project is generated with XcodeGen — **after adding/removing files run `xcodegen generate`** (all files under `Sources/` are auto-included).
-- Build: `xcodebuild -project AirKit.xcodeproj -scheme AirKit -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -derivedDataPath /tmp/airkit-dd build`
+- Build: `xcodebuild -project Airlift.xcodeproj -scheme Airlift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -derivedDataPath /tmp/airlift-dd build`
 - Tests: same command with `test` (runs the existing unit tests; keep them green).
-- Simulator UDID for iPhone 17 Pro: `F4FDCBC1-32C5-4087-97FE-30119A1773F3`. App bundle id: `com.santekotturi.airkit`. Built app: `/tmp/airkit-dd/Build/Products/Debug-iphonesimulator/AirKit.app`.
-- Launch with mock data: `xcrun simctl launch booted com.santekotturi.airkit -AirKitUIMock 1 -AirKitUIMockScreen home` (screen ∈ `home | session | metric | history | settings`). Screenshot: `xcrun simctl io booted screenshot <path>.png`.
+- Simulator UDID for iPhone 17 Pro: `F4FDCBC1-32C5-4087-97FE-30119A1773F3`. App bundle id: `com.santekotturi.airlift`. Built app: `/tmp/airlift-dd/Build/Products/Debug-iphonesimulator/Airlift.app`.
+- Launch with mock data: `xcrun simctl launch booted com.santekotturi.airlift -AirliftUIMock 1 -AirliftUIMockScreen home` (screen ∈ `home | session | metric | history | settings`). Screenshot: `xcrun simctl io booted screenshot <path>.png`.
 - Do not break the existing engine contract: review-first staging, dedup, toss persistence. Do not touch `Sources/Auth`, `Sources/GoogleHealth`, `Sources/Background` except where this spec says.
 
 ## Style tokens (define once in `Sources/Views/Theme/Daybreak.swift`)
@@ -47,12 +47,12 @@ enum Daybreak {
 - `AgreementMeter(percent: Double)` — capsule track `#F3F0FB`, green gradient fill, caption like "92% — the two trackers tell the same story" (ok color, bold).
 - `CheckCard(result: CheckResult)` — friendly row: circular icon (✓ green tint / ! amber / ✕ red tint), bold plain-language title, secondary detail.
 - `MiniStat(emojiOrIcon, value, caption)` — small white card for 2×2 grids.
-- `HeadsUpCard` — the pre-GA note: warm gradient card (`#FFF8EC → #FDEEDE`), glowing sun circle (radial gradient `#FFD29A → sunDeep`), 12.5pt text in `#7C5A33` with `#B3622A` bold lead. Copy: "**Heads up:** Google's Health API is still pre-release. Until it's final (Sept 2026), fields can change — that's exactly why AirKit shows you every night before it lands in Apple Health." (In Automatic mode the last clause reads "— anything unusual is held for your review.")
+- `HeadsUpCard` — the pre-GA note: warm gradient card (`#FFF8EC → #FDEEDE`), glowing sun circle (radial gradient `#FFD29A → sunDeep`), 12.5pt text in `#7C5A33` with `#B3622A` bold lead. Copy: "**Heads up:** Google's Health API is still pre-release. Until it's final (Sept 2026), fields can change — that's exactly why Airlift shows you every night before it lands in Apple Health." (In Automatic mode the last clause reads "— anything unusual is held for your review.")
 - `DayBadge(date: Date)` — 46×46 rounded square, lavender gradient, big day number + tiny weekday.
 
 ## New behavior: sync modes (user preference)
 
-`enum SyncMode: String, CaseIterable { case automatic, reviewEverything }`, stored via `@AppStorage("airkit.syncMode")` (raw string), **default `.automatic`**.
+`enum SyncMode: String, CaseIterable { case automatic, reviewEverything }`, stored via `@AppStorage("airlift.syncMode")` (raw string), **default `.automatic`**.
 
 - **Automatic (default)**: after `fetchForReview` stages data, the engine auto-imports every staged session/metric batch whose checks contain **no `.warn` and no `.fail`** (pass/info only). Items with warnings or failures stay in the review queue, labeled "held back by checks". Implement as `func autoImportClean() async` on `SyncEngine`, called from the app-launch task and after manual fetches **only when mode == .automatic** (the engine can read the mode from UserDefaults via a small injected closure or a stored property set by the app — keep the engine testable).
 - **Review everything**: today's behavior, nothing imported without a tap.
@@ -62,21 +62,21 @@ enum Daybreak {
 ## New feature: sync history ("What crossed over")
 
 - `Sources/Sync/SyncLog.swift`: `struct SyncLogEntry: Codable, Identifiable, Equatable { let id: UUID; let date: Date; let kind: Kind; let title: String; let detail: String }` with `enum Kind: String, Codable { case fetched, imported, autoImported, tossed, held, nothingNew, connected, error }`.
-- `@MainActor @Observable final class SyncLogStore`: `private(set) var entries: [SyncLogEntry]` persisted as JSON in UserDefaults (key `airkit.syncLog`), newest first, capped at 200. `func record(_ kind:, title:, detail:)`.
+- `@MainActor @Observable final class SyncLogStore`: `private(set) var entries: [SyncLogEntry]` persisted as JSON in UserDefaults (key `airlift.syncLog`), newest first, capped at 200. `func record(_ kind:, title:, detail:)`.
 - `SyncEngine` takes a `SyncLogStore` (new init param, wired in `AppModel`) and records: fetch completed (counts + window), nothing new, imported (per item, with plain-language summary), auto-imported, tossed, held-by-checks, reconnect needed/connected, errors.
 - `HistoryView` renders: 2×2 `MiniStat` grid (nights bridged, held back by checks, duplicates blocked — derivable from dedup/tossed store counts or log, bytes off-device "0"), then a vertical timeline (dot + line, dots colored by kind: imported=sunDeep/ok, fetch=plum, tossed=warn) with plain-sentence entries grouped newest-first ("Today · 6:45 AM — Last night landed in Apple Health — 7 h 24 m, 15 stage samples…").
 
 ## Mock mode (DEBUG only)
 
-- Trigger: launch argument `-AirKitUIMock 1` (read `UserDefaults.standard.bool(forKey: "AirKitUIMock")`).
+- Trigger: launch argument `-AirliftUIMock 1` (read `UserDefaults.standard.bool(forKey: "AirliftUIMock")`).
 - `Sources/Debugging/UIMock.swift` builds fixtures **relative to `Date()`** so "last night" is always last night:
   - Session A (last night): 23:38 → 07:02, ~15 stage segments matching a realistic hypnogram (deep early, REM late, two brief wakes); Apple segments overlapping but offset a few minutes with slightly different stage splits; HR samples every 5 min, 47–112 bpm, dipping overnight. Checks: produce by calling the real `SanityChecks.run(google:appleSleep:heartRate:)`.
   - Session B (3 nights ago): 21:55 → 09:07 (11.2 h) so the real checks yield a duration **warn** → demonstrates "held back by checks".
   - Metric batches for last night/yesterday: heartRate (~100 downsampled pts, avg 58), hrv (8 pts ~42 ms), oxygenSaturation (7 pts ~96.4 %, min 93), respiratoryRate (1 pt 14.2), steps (hourly, total ~8 400 with Apple total ~8 100 and hourly apple series) — call real `SanityChecks.runMetric` for checks where signatures allow, else construct sensible `CheckResult`s.
   - ~10 `SyncLogEntry`s over the past 5 days telling the story from the mock (fetches, imports incl. auto, one toss "Google reported 11.2 h…", one nothing-new, one reconnect).
 - `SyncEngine` gets a DEBUG-only method (declared **inside SyncEngine.swift** — `private(set)` setters are file-scoped) `func applyUIMock(staged:stagedMetrics:status:isConnected:)`, plus an `isUIMock` flag. When `isUIMock`: `importStaged`/`importMetricBatch` skip `writer`/HealthKit and dedup writes and just retire the item + log; `fetchForReview` plays a canned pipeline animation (~0.4 s per data type via `Task.sleep`, walking waiting→fetching→comparing→done) then restores the seeded staged items; `connect`/`disconnect` just flip state. No HealthKit authorization prompt may ever appear in mock mode.
-- `AppModel`/`AirKitApp`: when mock is active, force `isConfigured` semantics to true (bypass the setup-hint path), seed engine + log store, and **skip** the real on-launch `fetchForReview`.
-- Screen selector: `-AirKitUIMockScreen <name>` → `UserDefaults.standard.string(forKey: "AirKitUIMockScreen")`. `ContentView` (mock only) pre-populates its `NavigationStack` path on first appear: `session` → SessionCompareView for the **held** session B (shows warn states; it's the richer screen), `metric` → MetricCompareView for the heart-rate batch, `history` → HistoryView, `settings` → SettingsView, `home`/absent → root.
+- `AppModel`/`AirliftApp`: when mock is active, force `isConfigured` semantics to true (bypass the setup-hint path), seed engine + log store, and **skip** the real on-launch `fetchForReview`.
+- Screen selector: `-AirliftUIMockScreen <name>` → `UserDefaults.standard.string(forKey: "AirliftUIMockScreen")`. `ContentView` (mock only) pre-populates its `NavigationStack` path on first appear: `session` → SessionCompareView for the **held** session B (shows warn states; it's the richer screen), `metric` → MetricCompareView for the heart-rate batch, `history` → HistoryView, `settings` → SettingsView, `home`/absent → root.
 
 ## Screen specs (match preview-c.png composition; adapt, don't transliterate)
 
@@ -100,7 +100,7 @@ Header "Settings". Card "How syncing works": the two mode option cards (tap to s
 
 ## Product name
 
-The product is named **Airlift** (renamed from AirKit on 2026-06-12 — it "airlifts" Fitbit owners out of missing HealthKit support). ALL user-facing copy says Airlift, never AirKit. Internal names stay as-is: the Xcode project/scheme/target remain `AirKit`, bundle id remains `com.santekotturi.airkit`, and Swift type names don't need renaming.
+The product is named **Airlift** (renamed from Airlift on 2026-06-12 — it "airlifts" Fitbit owners out of missing HealthKit support). ALL user-facing copy says Airlift, never Airlift. Internal names stay as-is: the Xcode project/scheme/target remain `Airlift`, bundle id remains `com.santekotturi.airlift`, and Swift type names don't need renaming.
 
 ## Quality bar (what "done" means)
 

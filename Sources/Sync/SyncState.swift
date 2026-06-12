@@ -10,7 +10,7 @@ final class UserDefaultsSyncState: SyncStateStoring, @unchecked Sendable {
     private let key: String
     private let lock = NSLock()
 
-    init(defaults: UserDefaults = .standard, key: String = "airkit.lastSyncedDate") {
+    init(defaults: UserDefaults = .standard, key: String = "airlift.lastSyncedDate") {
         self.defaults = defaults
         self.key = key
     }

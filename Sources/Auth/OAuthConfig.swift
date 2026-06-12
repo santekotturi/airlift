@@ -23,7 +23,7 @@ enum OAuthConfig {
     static let authorizationEndpoint = URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!
     static let tokenEndpoint = URL(string: "https://oauth2.googleapis.com/token")!
 
-    /// All read-only Google Health scopes. AirKit only *writes* to HealthKit —
+    /// All read-only Google Health scopes. Airlift only *writes* to HealthKit —
     /// it never writes back to Google, so no `.writeonly` scope is ever requested.
     /// Sleep is what v1 syncs; the rest are granted up front so future data types
     /// need no re-consent.

@@ -46,7 +46,7 @@ final class HealthKitReader: @unchecked Sendable {
         self.store = store
     }
 
-    /// Sleep samples overlapping `interval`, from sources *other than AirKit* —
+    /// Sleep samples overlapping `interval`, from sources *other than Airlift* —
     /// previously imported sessions must never validate themselves.
     func sleepSegments(overlapping interval: DateInterval) async throws -> [AppleSleepSegment] {
         let samples = try await querySamples(
@@ -71,7 +71,7 @@ final class HealthKitReader: @unchecked Sendable {
     }
 
     /// Quantity samples of one bridged metric within `interval`, from sources
-    /// other than AirKit, in the metric's HealthKit unit.
+    /// other than Airlift, in the metric's HealthKit unit.
     func quantitySamples(_ kind: MetricKind, in interval: DateInterval) async throws -> [QuantitySample] {
         let samples = try await querySamples(
             type: HKQuantityType(kind.hkIdentifier),
@@ -93,7 +93,7 @@ final class HealthKitReader: @unchecked Sendable {
     }
 
     /// Sum of one cumulative metric over `interval` from sources other than
-    /// AirKit, via a statistics query — HealthKit deduplicates overlapping
+    /// Airlift, via a statistics query — HealthKit deduplicates overlapping
     /// iPhone + Watch samples the same way the Health app's totals do, which
     /// naively summing samples does not.
     func cumulativeTotal(_ kind: MetricKind, in interval: DateInterval) async throws -> Double {

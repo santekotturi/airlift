@@ -46,7 +46,7 @@
 	     change the bundle ID, update this key to iCloud.<your-bundle-id>. -->
 	<key>NSUbiquitousContainers</key>
 	<dict>
-		<key>iCloud.com.santekotturi.airkit</key>
+		<key>iCloud.com.santekotturi.airlift</key>
 		<dict>
 			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
 			<true/>
@@ -71,7 +71,7 @@
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.santekotturi.airkit.sync</string>
+		<string>com.santekotturi.airlift.sync</string>
 	</array>
 
 	<!-- OAuth client values, injected from Config.xcconfig at build time. -->
@@ -88,7 +88,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.santekotturi.airkit.oauth</string>
+			<string>com.santekotturi.airlift.oauth</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>$(GH_REVERSED_CLIENT_ID)</string>

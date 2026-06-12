@@ -16,7 +16,7 @@ final class AppModel {
     /// hint. Forced true under the UI mock so no setup path can appear.
     let isConfigured: Bool
 
-    /// True when launched with `-AirKitUIMock 1` (DEBUG only) — the launch
+    /// True when launched with `-AirliftUIMock 1` (DEBUG only) — the launch
     /// fetch and background scheduling are skipped and the engine runs on
     /// seeded fixtures.
     let isUIMock: Bool
@@ -33,7 +33,7 @@ final class AppModel {
         let healthStore = HKHealthStore()
         let tokens = KeychainTokenStore()
         let dedup = UserDefaultsDedupStore()
-        let tossed = UserDefaultsDedupStore(key: "airkit.tossedDataPointIDs")
+        let tossed = UserDefaultsDedupStore(key: "airlift.tossedDataPointIDs")
         let state = UserDefaultsSyncState()
         let oauth = OAuthClient()
         let api = GoogleHealthClient()

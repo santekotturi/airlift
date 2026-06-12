@@ -24,7 +24,7 @@ enum HealthKitError: Error, LocalizedError {
 final class HealthKitWriter: @unchecked Sendable {
     /// Custom metadata key carrying the Google dataPoint ID, for traceability and
     /// delete-by-id re-sync.
-    static let dataPointIDKey = "com.santekotturi.airkit.dataPointId"
+    static let dataPointIDKey = "com.santekotturi.airlift.dataPointId"
 
     private let store: HKHealthStore
     private let sleepType = HKCategoryType(.sleepAnalysis)
@@ -75,7 +75,7 @@ final class HealthKitWriter: @unchecked Sendable {
                 device: device,
                 metadata: [
                     Self.dataPointIDKey: sample.id,
-                    HKMetadataKeySyncIdentifier: "airkit-\(kind.rawValue)-\(sample.id)",
+                    HKMetadataKeySyncIdentifier: "airlift-\(kind.rawValue)-\(sample.id)",
                     HKMetadataKeySyncVersion: 1,
                 ]
             )
@@ -95,7 +95,7 @@ final class HealthKitWriter: @unchecked Sendable {
                 start: segment.start,
                 end: segment.end,
                 dataPointID: session.id,
-                syncIdentifier: "airkit-sleep-\(session.id)#\(index)"
+                syncIdentifier: "airlift-sleep-\(session.id)#\(index)"
             )
         }
 
@@ -106,7 +106,7 @@ final class HealthKitWriter: @unchecked Sendable {
                 start: session.start,
                 end: session.end,
                 dataPointID: session.id,
-                syncIdentifier: "airkit-sleep-\(session.id)#inBed"
+                syncIdentifier: "airlift-sleep-\(session.id)#inBed"
             )
         )
 
@@ -137,7 +137,7 @@ final class HealthKitWriter: @unchecked Sendable {
         )
     }
 
-    /// Deletes any AirKit-authored samples tagged with this dataPoint ID.
+    /// Deletes any Airlift-authored samples tagged with this dataPoint ID.
     /// Scoped to samples from *this* app via `HKQuery.predicateForObjects(from:)`
     /// so we never touch Apple Watch or other sources.
     private func deleteSamples(forDataPointID id: String) async throws {

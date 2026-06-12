@@ -11,7 +11,7 @@ final class BackgroundScheduler {
     static let shared = BackgroundScheduler()
 
     /// Must match `BGTaskSchedulerPermittedIdentifiers` in Info.plist.
-    static let taskIdentifier = "com.santekotturi.airkit.sync"
+    static let taskIdentifier = "com.santekotturi.airlift.sync"
 
     private weak var syncEngine: SyncEngine?
     private var didRegister = false

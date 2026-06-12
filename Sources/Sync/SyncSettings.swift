@@ -63,8 +63,8 @@ protocol SyncSettingsStoring: Sendable {
 final class UserDefaultsSyncSettings: SyncSettingsStoring, @unchecked Sendable {
     private let defaults: UserDefaults
     private let lock = NSLock()
-    private let modeKey = "airkit.syncMode"
-    private let kindsKey = "airkit.enabledKinds"
+    private let modeKey = "airlift.syncMode"
+    private let kindsKey = "airlift.enabledKinds"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults

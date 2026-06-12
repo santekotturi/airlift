@@ -1,5 +1,5 @@
 import XCTest
-@testable import AirKit
+@testable import Airlift
 
 /// Decode tests for the sleep wire model, using a fixture trimmed from a real
 /// Google Health API response (2026-06).

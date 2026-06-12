@@ -1,5 +1,5 @@
 import XCTest
-@testable import AirKit
+@testable import Airlift
 
 @MainActor
 final class SyncLogTests: XCTestCase {
@@ -46,7 +46,7 @@ final class SyncLogTests: XCTestCase {
 
         let store = SyncLogStore(defaults: nil)
         store.record(.fetched, title: "ephemeral", detail: "")
-        XCTAssertNil(defaults.data(forKey: "airkit.syncLog"))
+        XCTAssertNil(defaults.data(forKey: "airlift.syncLog"))
     }
 
     #if DEBUG

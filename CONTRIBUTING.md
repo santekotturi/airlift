@@ -1,6 +1,6 @@
-# Contributing to AirKit
+# Contributing to Airlift
 
-Thanks for your interest! AirKit is a small, single-purpose open-source utility. The bar is:
+Thanks for your interest! Airlift is a small, single-purpose open-source utility. The bar is:
 keep it simple, keep it on-device, keep the pure logic tested.
 
 ## Getting set up
@@ -8,7 +8,7 @@ keep it simple, keep it on-device, keep the pure logic tested.
 1. Install [XcodeGen](https://github.com/yonsm/XcodeGen): `brew install xcodegen`.
 2. `cp Config.example.xcconfig Config.xcconfig` and fill in your own Google OAuth client
    (see the [README](README.md#setup)). Never commit `Config.xcconfig`.
-3. `xcodegen generate && open AirKit.xcodeproj`.
+3. `xcodegen generate && open Airlift.xcodeproj`.
 
 ## Project layout
 
@@ -26,12 +26,12 @@ keep it simple, keep it on-device, keep the pure logic tested.
   with `Cmd-U` or:
   ```bash
   xcodegen generate
-  xcodebuild test -scheme AirKit -destination 'platform=iOS Simulator,name=iPhone 16'
+  xcodebuild test -scheme Airlift -destination 'platform=iOS Simulator,name=iPhone 16'
   ```
 - **Isolate schema changes.** The Google Health wire models live in one file
   (`Sources/GoogleHealth/SleepModels.swift`). When the pre-GA schema shifts, change it there
   and nowhere else — the rest of the app speaks the normalized domain model.
-- **No backend, no telemetry.** AirKit is on-device by design. Don't add network calls beyond
+- **No backend, no telemetry.** Airlift is on-device by design. Don't add network calls beyond
   Google OAuth + the Health API.
 - **Match the surrounding style.** Doc-comment public types, keep functions small, prefer
   pure functions where the logic allows.

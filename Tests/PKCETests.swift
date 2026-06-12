@@ -1,5 +1,5 @@
 import XCTest
-@testable import AirKit
+@testable import Airlift
 
 final class PKCETests: XCTestCase {
     /// Canonical test vector from RFC 7636 §B.
