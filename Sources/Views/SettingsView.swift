@@ -15,6 +15,10 @@ struct SettingsView: View {
         DaybreakAppearance(rawValue: appearanceRaw) ?? .system
     }
 
+    #if DEBUG
+    @State private var pushedJSONKey: String?
+    #endif
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
@@ -28,6 +32,9 @@ struct SettingsView: View {
                 deviceCard
                 priorityCard
                 aboutCard
+                #if DEBUG
+                debugCard
+                #endif
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 28)
@@ -36,6 +43,12 @@ struct SettingsView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: engine.syncMode)
+        #if DEBUG
+        .navigationDestination(item: $pushedJSONKey) { key in
+            RawJSONView(json: engine.lastRawJSON[key] ?? "")
+                .navigationTitle(key)
+        }
+        #endif
     }
 
     // MARK: - Sync mode
@@ -174,7 +187,7 @@ struct SettingsView: View {
                 Button("Disconnect") {
                     engine.disconnect()
                 }
-                .buttonStyle(DestructiveGhostButtonStyle())
+                .buttonStyle(.daybreakDestructiveGhost)
             } else {
                 Button("Connect Google Health") {
                     Task { await engine.connect() }
@@ -307,21 +320,44 @@ struct SettingsView: View {
         .daybreakCard()
     }
 
+    // MARK: - Debug
+
+    #if DEBUG
+    @ViewBuilder
+    private var debugCard: some View {
+        if !engine.lastRawJSON.isEmpty {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Debug — raw payloads")
+                    .daybreakSectionLabel()
+                let keys = engine.lastRawJSON.keys.sorted()
+                ForEach(keys, id: \.self) { key in
+                    Button {
+                        pushedJSONKey = key
+                    } label: {
+                        HStack {
+                            Text(key)
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(Daybreak.ink)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Daybreak.faint)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    if key != keys.last {
+                        Divider().overlay(Daybreak.line)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .daybreakCard()
+        }
+    }
+    #endif
+
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
     }
 }
 
-/// Ghost button in the failure tint — destructive but quiet (Disconnect).
-private struct DestructiveGhostButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 15, weight: .semibold, design: .rounded))
-            .foregroundStyle(Daybreak.fail)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 13)
-            .background(Daybreak.fail.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .opacity(configuration.isPressed ? 0.8 : 1)
-    }
-}

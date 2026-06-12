@@ -84,10 +84,12 @@ struct SessionCompareView: View {
     @Environment(\.dismiss) private var dismiss
 
     let staged: StagedSession
+    var mode: CompareMode = .review
 
     private var deviceName: String { model.syncEngine.sourceDeviceName }
 
     @State private var isImporting = false
+    @State private var confirmingRemoval = false
 
     private var session: SleepSession { staged.session }
     private var hasApple: Bool { !staged.appleSleep.isEmpty }
@@ -104,9 +106,12 @@ struct SessionCompareView: View {
                 }
                 Text("The night in numbers").daybreakSectionLabel()
                 statsGrid
-                Text("Before it lands").daybreakSectionLabel()
+                Text(mode == .review ? "Before it lands" : "How it holds up").daybreakSectionLabel()
                 checksCard
-                footer
+                switch mode {
+                case .review: footer
+                case .history(let day): historyFooter(day: day)
+                }
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 24)
@@ -493,6 +498,34 @@ struct SessionCompareView: View {
                 .frame(maxWidth: .infinity)
         }
         .padding(.top, 6)
+    }
+
+    /// Calendar mode: the night is already in Apple Health — the only
+    /// decision is whether it stays.
+    private func historyFooter(day: Date) -> some View {
+        VStack(spacing: 10) {
+            Button("Remove from Apple Health") {
+                confirmingRemoval = true
+            }
+            .buttonStyle(.daybreakDestructiveGhost)
+            Text("This night is already in Apple Health. Removing takes out Airlift's \(session.stages.count + 1) samples — other sources stay untouched, and it won't come back.")
+                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                .foregroundStyle(Daybreak.faint)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(.top, 6)
+        .confirmationDialog("Remove this night from Apple Health?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
+            Button("Remove from Apple Health", role: .destructive) {
+                Task {
+                    await model.syncEngine.removeOwnData(kind: nil, day: day)
+                    dismiss()
+                }
+            }
+            Button("Keep it", role: .cancel) {}
+        } message: {
+            Text("Only Airlift's samples are removed. It won't be re-imported.")
+        }
     }
 
     // MARK: - Formatting

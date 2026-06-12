@@ -581,6 +581,80 @@ final class SyncEngine {
         return snapshots
     }
 
+    /// Rebuilds a review-shaped sleep model from what Airlift wrote to
+    /// Health for the night ending on `day` — the same compare screen renders
+    /// history, with checks re-run against today's other-source data.
+    func historicalSession(day: Date) async -> StagedSession? {
+        #if DEBUG
+        if isUIMock { return UIMock.historicalSession() }
+        #endif
+        let interval = DateInterval(start: day, duration: 86_400)
+        guard let own = try? await reader.ownSleepSamples(endingIn: interval), !own.isEmpty else { return nil }
+        let stages = own.compactMap { sample -> SleepStageSegment? in
+            guard
+                let value = HKCategoryValueSleepAnalysis(rawValue: Int(sample.value)),
+                let stage = Self.sleepStage(from: value)
+            else { return nil }
+            return SleepStageSegment(stage: stage, start: sample.start, end: sample.end)
+        }
+        guard let start = stages.map(\.start).min(), let end = stages.map(\.end).max() else { return nil }
+        let session = SleepSession(
+            id: own.compactMap(\.dataPointID).first ?? "history|sleep|\(CivilDay.string(from: day))",
+            start: start,
+            end: end,
+            stages: stages.sorted { $0.start < $1.start }
+        )
+        let window = DateInterval(
+            start: start.addingTimeInterval(-6 * 3600),
+            end: end.addingTimeInterval(6 * 3600)
+        )
+        let appleSleep = (try? await reader.sleepSegments(overlapping: window)) ?? []
+        let heartRate = (try? await reader.heartRate(in: DateInterval(start: start, end: end))) ?? []
+        return StagedSession(
+            session: session,
+            appleSleep: appleSleep,
+            heartRate: heartRate,
+            checks: SanityChecks.run(google: session, appleSleep: appleSleep, heartRate: heartRate)
+        )
+    }
+
+    /// Review-shaped batch of one kind's Airlift-written data for `day`.
+    func historicalBatch(kind: MetricKind, day: Date) async -> StagedMetricBatch? {
+        #if DEBUG
+        if isUIMock { return UIMock.historicalBatch(kind: kind) }
+        #endif
+        let interval = DateInterval(start: day, duration: 86_400)
+        guard let own = try? await reader.ownQuantitySamples(kind, in: interval), !own.isEmpty else { return nil }
+        let samples = own
+            .map { MetricSample(id: $0.dataPointID ?? $0.id.uuidString, start: $0.start, end: $0.end, value: $0.value) }
+            .sorted { $0.start < $1.start }
+        let apple = (try? await reader.quantitySamples(kind, in: interval)) ?? []
+        let appleTotal = kind.isCumulative ? try? await reader.cumulativeTotal(kind, in: interval) : nil
+        let appleHourly = kind.isCumulative ? (try? await reader.hourlyTotals(kind, in: interval)) ?? [] : []
+        return StagedMetricBatch(
+            kind: kind,
+            day: day,
+            samples: samples,
+            appleSamples: apple,
+            checks: SanityChecks.runMetric(kind: kind, samples: samples, apple: apple, appleTotal: appleTotal),
+            appleTotal: appleTotal,
+            appleHourly: appleHourly
+        )
+    }
+
+    /// Inverse of the import mapping: HealthKit sleep stage → wire stage.
+    private static func sleepStage(from value: HKCategoryValueSleepAnalysis) -> SleepStage? {
+        switch value {
+        case .awake: return .wake
+        case .asleepCore: return .light
+        case .asleepDeep: return .deep
+        case .asleepREM: return .rem
+        case .asleepUnspecified: return .asleep
+        case .inBed: return nil
+        @unknown default: return nil
+        }
+    }
+
     /// Removes Airlift's data of one kind for one day from Apple Health.
     /// The attached dataPoint IDs are persisted as tossed so the same data
     /// never re-imports, and the ledger cell flips to `.tossed`.

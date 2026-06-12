@@ -9,8 +9,10 @@ struct MetricCompareView: View {
     @Environment(\.dismiss) private var dismiss
 
     let batch: StagedMetricBatch
+    var mode: CompareMode = .review
 
     @State private var isImporting = false
+    @State private var confirmingRemoval = false
 
     private var googleSeries: String { model.syncEngine.sourceDeviceName }
     private static let appleSeries = "Apple Health"
@@ -25,10 +27,13 @@ struct MetricCompareView: View {
                     numbersCard
                 }
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Before it lands").daybreakSectionLabel()
+                    Text(mode == .review ? "Before it lands" : "How it holds up").daybreakSectionLabel()
                     checksCard
                 }
-                decisionFooter
+                switch mode {
+                case .review: decisionFooter
+                case .history(let day): historyFooter(day: day)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 4)
@@ -449,6 +454,34 @@ struct MetricCompareView: View {
                 .padding(.top, 2)
         }
         .padding(.top, 4)
+    }
+
+    /// Calendar mode: the data is already in Apple Health — the only
+    /// decision is whether it stays.
+    private func historyFooter(day: Date) -> some View {
+        VStack(spacing: 10) {
+            Button("Remove from Apple Health") {
+                confirmingRemoval = true
+            }
+            .buttonStyle(.daybreakDestructiveGhost)
+            Text("Already in Apple Health. Removing takes out Airlift's \(batch.samples.count) \(sampleNoun(count: batch.samples.count)) — other sources stay untouched, and they won't come back.")
+                .font(Daybreak.captionFont)
+                .foregroundStyle(Daybreak.mid)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(.top, 4)
+        .confirmationDialog("Remove \(batch.kind.displayName.lowercased()) for this day from Apple Health?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
+            Button("Remove from Apple Health", role: .destructive) {
+                Task {
+                    await model.syncEngine.removeOwnData(kind: batch.kind, day: day)
+                    dismiss()
+                }
+            }
+            Button("Keep it", role: .cancel) {}
+        } message: {
+            Text("Only Airlift's samples are removed. They won't be re-imported.")
+        }
     }
 
     private var microcopy: String {

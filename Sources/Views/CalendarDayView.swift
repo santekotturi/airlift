@@ -9,9 +9,10 @@ struct CalendarDayView: View {
     let day: Date
 
     @State private var snapshots: [SyncEngine.DayKindSnapshot]?
-    @State private var pendingRemoval: SyncEngine.DayKindSnapshot?
     @State private var pushedSession: StagedSession?
     @State private var pushedBatch: StagedMetricBatch?
+    @State private var historySession: StagedSession?
+    @State private var historyBatch: StagedMetricBatch?
 
     private var engine: SyncEngine { model.syncEngine }
 
@@ -42,26 +43,12 @@ struct CalendarDayView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $pushedSession) { SessionCompareView(staged: $0) }
         .navigationDestination(item: $pushedBatch) { MetricCompareView(batch: $0) }
-        .task { snapshots = await engine.calendarSnapshot(for: day) }
-        .confirmationDialog(
-            "Remove \(pendingRemoval?.displayName.lowercased() ?? "this") for \(day.formatted(date: .abbreviated, time: .omitted))?",
-            isPresented: Binding(
-                get: { pendingRemoval != nil },
-                set: { if !$0 { pendingRemoval = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Remove from Apple Health", role: .destructive) {
-                guard let snapshot = pendingRemoval else { return }
-                pendingRemoval = nil
-                Task {
-                    await engine.removeOwnData(kind: snapshot.kind, day: day)
-                    snapshots = await engine.calendarSnapshot(for: day)
-                }
-            }
-            Button("Keep it", role: .cancel) { pendingRemoval = nil }
-        } message: {
-            Text("Only Airlift's samples are removed — other sources stay untouched. It won't be re-imported.")
+        .navigationDestination(item: $historySession) { SessionCompareView(staged: $0, mode: .history(day: day)) }
+        .navigationDestination(item: $historyBatch) { MetricCompareView(batch: $0, mode: .history(day: day)) }
+        // Re-reads on every appearance so a removal done one level deeper is
+        // reflected the moment the user pops back.
+        .onAppear {
+            Task { snapshots = await engine.calendarSnapshot(for: day) }
         }
     }
 
@@ -85,51 +72,62 @@ struct CalendarDayView: View {
             Text("In Apple Health from Airlift")
                 .daybreakSectionLabel()
             ForEach(snapshots) { snapshot in
-                HStack(alignment: .top, spacing: 12) {
-                    Circle()
-                        .fill(Daybreak.okChipBackground)
-                        .frame(width: 34, height: 34)
-                        .overlay {
-                            Image(systemName: snapshot.systemImage)
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(Daybreak.ok)
+                Button {
+                    open(snapshot)
+                } label: {
+                    HStack(alignment: .top, spacing: 12) {
+                        Circle()
+                            .fill(Daybreak.okChipBackground)
+                            .frame(width: 34, height: 34)
+                            .overlay {
+                                Image(systemName: snapshot.systemImage)
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundStyle(Daybreak.ok)
+                            }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(snapshot.displayName)
+                                .font(.system(size: 14.5, weight: .bold, design: .rounded))
+                                .foregroundStyle(Daybreak.ink)
+                            Text("\(snapshot.ownCount.formatted()) reading\(snapshot.ownCount == 1 ? "" : "s") · \(snapshot.ownSummary)")
+                                .font(.system(size: 12.5, design: .rounded))
+                                .foregroundStyle(Daybreak.mid)
+                            if let other = snapshot.otherSummary {
+                                Text(other)
+                                    .font(.system(size: 12, design: .rounded))
+                                    .foregroundStyle(Daybreak.plum)
+                            }
                         }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(snapshot.displayName)
-                            .font(.system(size: 14.5, weight: .bold, design: .rounded))
-                            .foregroundStyle(Daybreak.ink)
-                        Text("\(snapshot.ownCount.formatted()) reading\(snapshot.ownCount == 1 ? "" : "s") · \(snapshot.ownSummary)")
-                            .font(.system(size: 12.5, design: .rounded))
-                            .foregroundStyle(Daybreak.mid)
-                        if let other = snapshot.otherSummary {
-                            Text(other)
-                                .font(.system(size: 12, design: .rounded))
-                                .foregroundStyle(Daybreak.plum)
-                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Daybreak.faint)
+                            .padding(.top, 10)
                     }
-                    Spacer(minLength: 0)
-                    Button {
-                        pendingRemoval = snapshot
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Daybreak.fail)
-                            .frame(width: 32, height: 32)
-                            .background(Daybreak.failChipBackground.opacity(0.6), in: Circle())
-                    }
-                    .buttonStyle(.plain)
                 }
+                .buttonStyle(.plain)
                 if snapshot.id != snapshots.last?.id {
                     Divider().overlay(Daybreak.line)
                 }
             }
-            Text("Removing takes Airlift's samples out of Apple Health for this day; other sources are never touched.")
+            Text("Tap a metric for the full side-by-side charts — removal lives there too.")
                 .font(.system(size: 11.5, design: .rounded))
                 .foregroundStyle(Daybreak.faint)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .daybreakCard()
+    }
+
+    /// Loads the full history model for the tapped kind, then pushes the
+    /// same compare screen the review flow uses.
+    private func open(_ snapshot: SyncEngine.DayKindSnapshot) {
+        Task {
+            if let kind = snapshot.kind {
+                historyBatch = await engine.historicalBatch(kind: kind, day: day)
+            } else {
+                historySession = await engine.historicalSession(day: day)
+            }
+        }
     }
 
     // MARK: - Waiting for review

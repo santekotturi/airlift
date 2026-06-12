@@ -576,3 +576,33 @@ private struct TrustRow: View {
         }
     }
 }
+
+// MARK: - Compare mode
+
+/// What the compare screens are looking at: a staged item awaiting the
+/// import/skip decision, or data already in Apple Health (opened from the
+/// calendar) where the only action is removal.
+enum CompareMode: Equatable, Hashable {
+    case review
+    case history(day: Date)
+}
+
+// MARK: - Destructive ghost button
+
+/// Ghost button in the failure tint — destructive but quiet.
+struct DaybreakDestructiveGhostButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 15, weight: .semibold, design: .rounded))
+            .foregroundStyle(Daybreak.fail)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+            .background(Daybreak.fail.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .opacity(configuration.isPressed ? 0.8 : 1)
+    }
+}
+
+extension ButtonStyle where Self == DaybreakDestructiveGhostButtonStyle {
+    static var daybreakDestructiveGhost: DaybreakDestructiveGhostButtonStyle { .init() }
+}

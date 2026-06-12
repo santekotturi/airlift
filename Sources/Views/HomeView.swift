@@ -13,9 +13,6 @@ struct HomeView: View {
     @State private var pushedSession: StagedSession?
     @State private var pushedBatch: StagedMetricBatch?
     @State private var showHistory = false
-    #if DEBUG
-    @State private var pushedJSONKey: String?
-    #endif
 
     var body: some View {
         List {
@@ -27,13 +24,9 @@ struct HomeView: View {
             }
             bridgeCard
                 .homeRow(bottom: 26)
-            reviewSection
             recentSection
             HeadsUpCard.forMode(engine.syncMode)
                 .homeRow(bottom: 24)
-            #if DEBUG
-            debugRows
-            #endif
         }
         .listStyle(.plain)
         .environment(\.defaultMinListRowHeight, 10)
@@ -44,12 +37,6 @@ struct HomeView: View {
         .navigationDestination(item: $pushedSession) { SessionCompareView(staged: $0) }
         .navigationDestination(item: $pushedBatch) { MetricCompareView(batch: $0) }
         .navigationDestination(isPresented: $showHistory) { HistoryView() }
-        #if DEBUG
-        .navigationDestination(item: $pushedJSONKey) { key in
-            RawJSONView(json: engine.lastRawJSON[key] ?? "")
-                .navigationTitle(key)
-        }
-        #endif
     }
 
     // MARK: - Greeting
@@ -145,7 +132,7 @@ struct HomeView: View {
         case (let days, 1):
             parts.append("\(days) days of \(batches[0].kind.inlineName)")
         case (let days, _):
-            parts.append("\(days) metric days")
+            parts.append("\(days) metrics")
         }
         let joined = parts.joined(separator: " + ")
         // "a day of distance" can lead the banner — give it a capital.
@@ -452,123 +439,6 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Ready for review
-
-    @ViewBuilder
-    private var reviewSection: some View {
-        if waitingCount > 0 {
-            Text("Ready for review")
-                .daybreakSectionLabel()
-                .homeRow(bottom: 10)
-            ForEach(engine.staged) { item in
-                sessionRow(item)
-                    .homeRow(bottom: 14)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            engine.toss(item.id)
-                        } label: {
-                            Label("Toss", systemImage: "trash")
-                        }
-                    }
-            }
-            ForEach(engine.stagedMetrics) { batch in
-                metricRow(batch)
-                    .homeRow(bottom: 14)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            engine.tossMetricBatch(batch.id)
-                        } label: {
-                            Label("Toss", systemImage: "trash")
-                        }
-                    }
-            }
-        }
-    }
-
-    private func sessionRow(_ item: StagedSession) -> some View {
-        pushRow(value: item) {
-            HStack(alignment: .top, spacing: 12) {
-                DayBadge(date: item.session.end)
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
-                        Text("\(Self.durationText(item.session)) sleep")
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .foregroundStyle(Daybreak.ink)
-                        Spacer(minLength: 0)
-                        DaybreakChip(
-                            item.worstSeverity == .pass ? "✓ checks pass" : "! held for review",
-                            status: item.worstSeverity == .pass ? .ok : .warn
-                        )
-                    }
-                    Text(sessionCaption(item))
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(Daybreak.mid)
-                    if let domain = StageStrip.sharedDomain(google: item.session.stages, apple: item.appleSleep) {
-                        StageStrip(google: item.session.stages, domain: domain, height: 10)
-                            .padding(.top, 2)
-                    }
-                }
-            }
-        }
-    }
-
-    private func sessionCaption(_ item: StagedSession) -> String {
-        let range = "\(item.session.start.formatted(date: .omitted, time: .shortened)) – \(item.session.end.formatted(date: .omitted, time: .shortened))"
-        if let percent = SleepAgreement.percent(google: item.session.stages, apple: item.appleSleep) {
-            return "\(range) · agrees with Apple \(Int(percent.rounded()))%"
-        }
-        return "\(range) · no Apple data for this night"
-    }
-
-    private static func durationText(_ session: SleepSession) -> String {
-        let minutes = Int(session.end.timeIntervalSince(session.start) / 60)
-        return "\(minutes / 60) h \(minutes % 60) m"
-    }
-
-    private func metricRow(_ batch: StagedMetricBatch) -> some View {
-        pushRow(value: batch) {
-            HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Daybreak.newChipBackground)
-                    .frame(width: 46, height: 46)
-                    .overlay {
-                        Image(systemName: batch.kind.systemImage)
-                            .font(.system(size: 18))
-                            .foregroundStyle(Daybreak.plum)
-                    }
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text(batch.kind.displayName)
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .foregroundStyle(Daybreak.ink)
-                        Spacer(minLength: 0)
-                        DaybreakChip(
-                            batch.worstSeverity == .pass ? "new to Apple" : "! held for review",
-                            status: batch.worstSeverity == .pass ? .new : .warn
-                        )
-                    }
-                    Text(metricCaption(batch))
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(Daybreak.mid)
-                }
-            }
-        }
-    }
-
-    private func metricCaption(_ batch: StagedMetricBatch) -> String {
-        let count = batch.samples.count
-        return "\(count) reading\(count == 1 ? "" : "s") · \(batch.aggregateDescription) · \(batch.day.formatted(date: .abbreviated, time: .omitted))"
-    }
-
-    /// A card row that pushes `value` on tap without the List chevron.
-    private func pushRow(value: some Hashable, @ViewBuilder content: () -> some View) -> some View {
-        ZStack {
-            NavigationLink(value: value) { EmptyView() }.opacity(0)
-            content()
-                .daybreakCard(padding: 14)
-        }
-    }
-
     // MARK: - Recent crossings
 
     @ViewBuilder
@@ -674,42 +544,6 @@ struct HomeView: View {
         .daybreakCard(padding: 16)
     }
 
-    // MARK: - Debug
-
-    #if DEBUG
-    @ViewBuilder
-    private var debugRows: some View {
-        if !engine.lastRawJSON.isEmpty {
-            Text("Debug · raw payloads")
-                .daybreakSectionLabel()
-                .homeRow(bottom: 10)
-            VStack(alignment: .leading, spacing: 0) {
-                let keys = engine.lastRawJSON.keys.sorted()
-                ForEach(keys, id: \.self) { key in
-                    Button {
-                        pushedJSONKey = key
-                    } label: {
-                        HStack {
-                            Text(key)
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundStyle(Daybreak.ink)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Daybreak.faint)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    if key != keys.last {
-                        Divider().overlay(Daybreak.line).padding(.vertical, 10)
-                    }
-                }
-            }
-            .daybreakCard(padding: 16)
-            .homeRow(bottom: 24)
-        }
-    }
-    #endif
 }
 
 // MARK: - Stage agreement

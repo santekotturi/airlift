@@ -116,6 +116,26 @@ enum UIMock {
         ledger.set(.synced(samples: 44, at: Date()), kind: "oxygen_saturation", day: today)
     }
 
+    // MARK: - Historical (calendar) fixtures
+
+    /// History views render the same fixture night the review flow uses.
+    static func historicalSession() -> StagedSession? {
+        var item = stagedSessions().first
+        if withoutAppleData, let session = item?.session {
+            item = StagedSession(
+                session: session,
+                appleSleep: [],
+                heartRate: [],
+                checks: SanityChecks.run(google: session, appleSleep: [], heartRate: [])
+            )
+        }
+        return item
+    }
+
+    static func historicalBatch(kind: MetricKind) -> StagedMetricBatch? {
+        stagedMetricBatches().first { $0.kind == kind }
+    }
+
     // MARK: - Sessions
 
     /// Two staged nights: last night (clean — every check passes) and an
