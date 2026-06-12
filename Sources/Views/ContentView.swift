@@ -29,13 +29,19 @@ struct ContentView: View {
     @State private var appliedMockRoute = false
 
     var body: some View {
-        TabView(selection: $tab) {
+        // Both stacks stay in the hierarchy so each tab keeps its navigation
+        // state; the bar is a custom bottom-leading glass pill (Health-style)
+        // rather than the system's centered one.
+        ZStack(alignment: .bottomLeading) {
             homeStack
-                .tabItem { Label("Home", systemImage: "sun.horizon.fill") }
-                .tag(Tab.home)
+                .contentMargins(.bottom, 64, for: .scrollContent)
+                .opacity(tab == .home ? 1 : 0)
+                .allowsHitTesting(tab == .home)
             calendarStack
-                .tabItem { Label("Calendar", systemImage: "calendar") }
-                .tag(Tab.calendar)
+                .contentMargins(.bottom, 64, for: .scrollContent)
+                .opacity(tab == .calendar ? 1 : 0)
+                .allowsHitTesting(tab == .calendar)
+            glassTabPill
         }
         .tint(Daybreak.sunDeep)
         .preferredColorScheme(
@@ -82,6 +88,45 @@ struct ContentView: View {
                 .navigationDestination(for: StagedMetricBatch.self) { MetricCompareView(batch: $0) }
         }
         .daybreakBackground()
+    }
+
+    // MARK: - Glass tab pill
+
+    /// Bottom-leading floating tab switcher — Liquid Glass on iOS 26, frosted
+    /// material before that — mirroring the Health app's mini toolbar.
+    private var glassTabPill: some View {
+        HStack(spacing: 2) {
+            pillItem(.home, icon: "sun.horizon.fill", label: "Home")
+            pillItem(.calendar, icon: "calendar", label: "Calendar")
+        }
+        .padding(4)
+        .modifier(GlassPillBackground())
+        .padding(.leading, 18)
+        .padding(.bottom, 4)
+    }
+
+    private func pillItem(_ target: Tab, icon: String, label: String) -> some View {
+        Button {
+            withAnimation(.snappy(duration: 0.2)) { tab = target }
+        } label: {
+            VStack(spacing: 2) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                Text(label)
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+            }
+            .foregroundStyle(tab == target ? Daybreak.sunDeep : Daybreak.mid)
+            .frame(width: 62, height: 48)
+            .background {
+                if tab == target {
+                    Capsule().fill(Daybreak.sunDeep.opacity(0.14))
+                }
+            }
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(tab == target ? [.isSelected] : [])
     }
 
     /// `-AirliftUIMockScreen <name>` pre-populates the path on first appear:
@@ -144,4 +189,19 @@ struct RawJSONView: View {
 #Preview {
     ContentView()
         .environment(AppModel())
+}
+
+
+/// Liquid Glass where available, frosted material as the fallback.
+private struct GlassPillBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: Capsule())
+        } else {
+            content
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().stroke(Color.white.opacity(0.35), lineWidth: 0.5))
+                .shadow(color: Color.black.opacity(0.12), radius: 14, y: 6)
+        }
+    }
 }
