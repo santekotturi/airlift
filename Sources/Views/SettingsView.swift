@@ -26,6 +26,7 @@ struct SettingsView: View {
                 appearanceCard
                 connectionCard
                 deviceCard
+                priorityCard
                 aboutCard
             }
             .padding(.horizontal, 18)
@@ -202,6 +203,32 @@ struct SettingsView: View {
             return "Sign-in expired — reconnect to keep the bridge open"
         }
         return "Not connected"
+    }
+
+    // MARK: - Source priority
+
+    /// Entry point for the "who wins in Apple Health" tutorial — the lever
+    /// users actually have over overlapping data lives in the Health app.
+    private var priorityCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Your data in Apple Health")
+                .daybreakSectionLabel()
+            Text("When the \(engine.sourceDeviceName) and your iPhone both record the same thing, Apple Health lets you choose which source wins.")
+                .font(Daybreak.bodyFont)
+                .foregroundStyle(Daybreak.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            NavigationLink(value: SourcePriorityRoute()) {
+                HStack(spacing: 5) {
+                    Text("Learn how to set source priority")
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(Daybreak.plum)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .daybreakCard()
     }
 
     // MARK: - About
