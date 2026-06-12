@@ -6,6 +6,9 @@ struct HistoryRoute: Hashable {}
 /// Navigation token for the Settings screen.
 struct SettingsRoute: Hashable {}
 
+/// Navigation token for the source-priority tutorial.
+struct SourcePriorityRoute: Hashable {}
+
 /// Daybreak shell: the sky gradient behind a `NavigationStack` over Home,
 /// with typed destinations so any screen can push by value. Every token has a
 /// Daybreak (light) and Nightfall (dark) face; the user can follow the system
@@ -26,6 +29,7 @@ struct ContentView: View {
                 .navigationDestination(for: StagedMetricBatch.self) { MetricCompareView(batch: $0) }
                 .navigationDestination(for: HistoryRoute.self) { _ in HistoryView() }
                 .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
+                .navigationDestination(for: SourcePriorityRoute.self) { _ in SourcePriorityView() }
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -76,6 +80,8 @@ struct ContentView: View {
             path.append(SettingsRoute())
         case "priming":
             model.syncEngine.primeNotificationsForUIMock()
+        case "priority":
+            path.append(SourcePriorityRoute())
         default:
             break
         }
