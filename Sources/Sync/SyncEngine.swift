@@ -138,6 +138,9 @@ final class SyncEngine {
     /// Plain-language history ("What crossed over").
     let log: SyncLogStore
 
+    /// Posts/clears the "reconnect needed" local notification.
+    private let notifier: ReconnectNotifying
+
     /// Persists raw pages + staged items to Documents/Dumps (DEBUG only).
     private let dump = DumpStore()
 
@@ -173,7 +176,8 @@ final class SyncEngine {
         state: SyncStateStoring,
         settings: SyncSettingsStoring,
         ledger: SyncLedgerStoring,
-        log: SyncLogStore
+        log: SyncLogStore,
+        notifier: ReconnectNotifying
     ) {
         self.oauth = oauth
         self.api = api
@@ -186,6 +190,7 @@ final class SyncEngine {
         self.settings = settings
         self.ledger = ledger
         self.log = log
+        self.notifier = notifier
         self.syncMode = settings.syncMode
         self.enabledKinds = settings.enabledKinds
         self.isConnected = tokens.load() != nil
@@ -210,6 +215,10 @@ final class SyncEngine {
             status = .idle
             Log.sync.info("Connected to Google Health")
             log.record(.connected, title: "Connected to Google Health", detail: "The bridge is open — fetches can begin.")
+            await notifier.clearReconnectNeeded()
+            // Ask now, not at first launch — the user just connected, so
+            // "tell me when this sign-in expires" is an easy yes.
+            await notifier.requestAuthorization()
         } catch OAuthError.userCancelled {
             // Leave state untouched on cancel.
         } catch {
@@ -445,10 +454,12 @@ final class SyncEngine {
         } catch OAuthError.noRefreshToken {
             disconnect()
             log.record(.error, title: "Reconnect needed", detail: "Your weekly Google sign-in expired — reconnect to keep the bridge open.")
+            await notifier.postReconnectNeeded()
         } catch let error as OAuthError {
             status = .needsConnection
             log.record(.error, title: "Reconnect needed", detail: "Google turned down the sign-in — reconnect to keep the bridge open.")
             Log.sync.error("Auth error during fetch: \(error.localizedDescription)")
+            await notifier.postReconnectNeeded()
         } catch {
             status = .failed(error.localizedDescription)
             log.record(.error, title: "Fetch didn't finish", detail: error.localizedDescription)

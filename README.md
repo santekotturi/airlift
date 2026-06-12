@@ -122,8 +122,9 @@ personal utility.)
   health data anyway). So: consent screen = **External**, publishing status = **Testing**, and
   add your own Google account under **Test users**.
 - In Testing mode the **refresh token expires every ~7 days**, so you'll re-tap **Connect**
-  about once a week. Airlift detects the expired/revoked state and shows a "Reconnect needed"
-  status rather than crashing.
+  about once a week. Airlift detects the expired/revoked state, shows a "Reconnect needed"
+  status, and posts a local notification — background syncs can't stop silently. (Notification
+  permission is requested right after your first successful Connect.)
 
 > ⚠️ Confirm two things first (M0): that the **Google Health API is actually enabled and
 > accessible** to your project (it's pre-GA and may be allowlisted), and that your **personal
