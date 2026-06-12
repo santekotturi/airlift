@@ -74,9 +74,9 @@ final class SyncLedgerTests: XCTestCase {
 }
 
 final class SyncGateTests: XCTestCase {
-    func testReviewAllHoldsEverything() {
+    func testReviewEverythingHoldsEverything() {
         for severity in [CheckResult.Severity.pass, .info, .warn, .fail] {
-            XCTAssertEqual(SyncGate.action(for: severity, mode: .reviewAll), .review)
+            XCTAssertEqual(SyncGate.action(for: severity, mode: .reviewEverything), .review)
         }
     }
 
@@ -85,13 +85,6 @@ final class SyncGateTests: XCTestCase {
         XCTAssertEqual(SyncGate.action(for: .info, mode: .automatic), .autoImport)
         XCTAssertEqual(SyncGate.action(for: .warn, mode: .automatic), .review)
         XCTAssertEqual(SyncGate.action(for: .fail, mode: .automatic), .review)
-    }
-
-    func testFullyAutomaticOnlyHoldsFailures() {
-        XCTAssertEqual(SyncGate.action(for: .pass, mode: .fullyAutomatic), .autoImport)
-        XCTAssertEqual(SyncGate.action(for: .info, mode: .fullyAutomatic), .autoImport)
-        XCTAssertEqual(SyncGate.action(for: .warn, mode: .fullyAutomatic), .autoImport)
-        XCTAssertEqual(SyncGate.action(for: .fail, mode: .fullyAutomatic), .review)
     }
 
     func testHeldStatusSeparatesQuarantineFromPending() {

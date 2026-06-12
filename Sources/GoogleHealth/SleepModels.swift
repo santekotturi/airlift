@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Domain model (what the rest of the app consumes)
 
 /// One finalized sleep session, normalized to absolute `Date`s.
-struct SleepSession: Equatable, Identifiable {
+struct SleepSession: Equatable, Hashable, Identifiable {
     /// Stable Google dataPoint ID — the dedup key (PRD §8).
     let id: String
     let start: Date
@@ -15,7 +15,7 @@ struct SleepSession: Equatable, Identifiable {
 }
 
 /// A single contiguous stage interval within a session.
-struct SleepStageSegment: Equatable {
+struct SleepStageSegment: Equatable, Hashable {
     let stage: SleepStage
     let start: Date
     let end: Date
