@@ -14,6 +14,7 @@ struct ContentView: View {
                 statusSection
                 pipelineSection
                 actionsSection
+                syncModeSection
                 reviewSection
                 metricReviewSection
                 #if DEBUG
@@ -94,7 +95,13 @@ struct ContentView: View {
         case .waiting: return "queued"
         case .fetching(let page): return page > 1 ? "fetching · page \(page)" : "fetching…"
         case .comparing: return "comparing vs Apple…"
-        case .done(let staged): return staged == 0 ? "nothing new" : "\(staged) staged ✓"
+        case .done(let imported, let held):
+            switch (imported, held) {
+            case (0, 0): return "nothing new"
+            case (_, 0): return "\(imported) imported ✓"
+            case (0, _): return "\(held) to review"
+            default: return "\(imported) imported · \(held) to review"
+            }
         case .failed: return "failed — see Debug"
         }
     }
@@ -131,6 +138,21 @@ struct ContentView: View {
         } footer: {
             if engine.isConnected {
                 Text("Fetching stages sessions for review — nothing is written to Apple Health until you import it.")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var syncModeSection: some View {
+        if engine.isConnected {
+            Section {
+                Picker("Sync mode", selection: Bindable(engine).syncMode) {
+                    ForEach(SyncMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+            } footer: {
+                Text(engine.syncMode.footnote)
             }
         }
     }
@@ -298,7 +320,9 @@ struct ContentView: View {
             ProgressView()
         case .fetched:
             Image(systemName: "tray.full.fill").foregroundStyle(.blue).font(.title2)
-        case .success:
+        case .autoSynced(_, let held, _) where held > 0:
+            Image(systemName: "tray.full.fill").foregroundStyle(.orange).font(.title2)
+        case .success, .autoSynced:
             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.title2)
         case .failed:
             Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.red).font(.title2)
@@ -315,6 +339,10 @@ struct ContentView: View {
         case .syncing(let phase): return phase
         case .fetched(let sessions, let metrics, _):
             return (sessions + metrics) == 0 ? "Nothing new" : "\(sessions) night(s) + \(metrics) metric batch(es) to review"
+        case .autoSynced(let written, let held, _):
+            if written == 0 && held == 0 { return "Nothing new" }
+            if held == 0 { return "Synced" }
+            return "\(held) item(s) need review"
         case .success: return "Imported"
         case .failed: return "Fetch failed"
         case .needsConnection: return "Reconnect needed"
@@ -325,6 +353,8 @@ struct ContentView: View {
         switch engine.status {
         case .fetched(_, _, let date):
             return "Fetched \(date.formatted(date: .abbreviated, time: .shortened))"
+        case .autoSynced(let written, _, let date):
+            return "Imported \(written) item(s) · \(date.formatted(date: .abbreviated, time: .shortened))"
         case .success(let date, let written):
             return "Wrote \(written) item(s) · \(date.formatted(date: .abbreviated, time: .shortened))"
         case .failed(let message):

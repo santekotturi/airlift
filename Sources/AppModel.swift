@@ -31,7 +31,9 @@ final class AppModel {
             tokens: tokens,
             dedup: dedup,
             tossed: tossed,
-            state: state
+            state: state,
+            settings: UserDefaultsSyncSettings(),
+            ledger: FileSyncLedger()
         )
     }
 }

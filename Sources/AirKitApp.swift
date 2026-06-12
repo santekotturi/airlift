@@ -19,10 +19,12 @@ struct AirKitApp: App {
                 .environment(model)
                 .task {
                     BackgroundScheduler.shared.scheduleNextRefresh()
-                    // Review-first mode: fetch and stage on launch, write nothing.
-                    // Automated write-on-sync returns once the data is trusted.
+                    // On-launch sync is the real freshness guarantee —
+                    // BGAppRefreshTask is best-effort. The engine gates writes
+                    // by the configured sync mode (review-everything stages
+                    // and writes nothing, matching the old launch behavior).
                     if model.isConfigured, model.syncEngine.isConnected {
-                        await model.syncEngine.fetchForReview()
+                        await model.syncEngine.syncNow()
                     }
                 }
         }
