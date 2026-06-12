@@ -85,6 +85,9 @@ struct SessionCompareView: View {
 
     let staged: StagedSession
     var mode: CompareMode = .review
+    /// Pager hook: called after import/skip instead of popping, so the
+    /// review-all flow can advance to the next held item.
+    var onDecision: (() -> Void)?
 
     private var deviceName: String { model.syncEngine.sourceDeviceName }
 
@@ -476,7 +479,7 @@ struct SessionCompareView: View {
                 isImporting = true
                 Task {
                     await model.syncEngine.importStaged(staged.id)
-                    dismiss()
+                    if let onDecision { onDecision() } else { dismiss() }
                 }
             } label: {
                 Text(isImporting ? "Adding to Apple Health…" : "Looks right — add to Apple Health")
@@ -486,7 +489,7 @@ struct SessionCompareView: View {
 
             Button("Skip this night") {
                 model.syncEngine.toss(staged.id)
-                dismiss()
+                if let onDecision { onDecision() } else { dismiss() }
             }
             .buttonStyle(.daybreakGhost)
             .disabled(isImporting)
