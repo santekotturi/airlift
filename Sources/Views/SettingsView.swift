@@ -265,7 +265,7 @@ struct SettingsView: View {
             .foregroundStyle(Daybreak.ink)
             .textFieldStyle(.plain)
             .padding(12)
-            .background(Color(daybreakHex: 0xF7F5FC), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(Daybreak.track, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             Text(deviceCardFootnote)
                 .font(.system(size: 12, design: .rounded))
                 .foregroundStyle(Daybreak.mid)

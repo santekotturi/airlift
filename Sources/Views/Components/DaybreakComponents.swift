@@ -540,7 +540,7 @@ struct TrustList: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            Color(daybreakHex: 0xF7F5FC),
+            Daybreak.track,
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
     }
