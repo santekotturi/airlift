@@ -25,6 +25,7 @@ struct SettingsView: View {
                 modeCard
                 appearanceCard
                 connectionCard
+                deviceCard
                 aboutCard
             }
             .padding(.horizontal, 18)
@@ -204,6 +205,42 @@ struct SettingsView: View {
     }
 
     // MARK: - About
+
+    // MARK: - Device
+
+    /// Detected from the API when Google sends device info; editable because
+    /// pre-GA payloads rarely name the hardware.
+    private var deviceCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Your device")
+                .daybreakSectionLabel()
+            TextField(
+                engine.detectedDeviceLabel ?? DeviceLabel.fallback,
+                text: Binding(
+                    get: { engine.deviceNameOverride ?? "" },
+                    set: { engine.deviceNameOverride = $0.isEmpty ? nil : $0 }
+                )
+            )
+            .font(Daybreak.bodyFont)
+            .foregroundStyle(Daybreak.ink)
+            .textFieldStyle(.plain)
+            .padding(12)
+            .background(Color(daybreakHex: 0xF7F5FC), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            Text(deviceCardFootnote)
+                .font(.system(size: 12, design: .rounded))
+                .foregroundStyle(Daybreak.mid)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .daybreakCard()
+    }
+
+    private var deviceCardFootnote: String {
+        if let detected = engine.detectedDeviceLabel {
+            return "Detected \u{201c}\(detected)\u{201d} from Google. Set a name here to override how it appears in Airlift and on new Apple Health samples."
+        }
+        return "Google isn't naming your device yet (pre-release API). Set a name — like \u{201c}Fitbit Air\u{201d} — and Airlift will use it everywhere, including new Apple Health samples."
+    }
 
     private var aboutCard: some View {
         VStack(alignment: .leading, spacing: 14) {

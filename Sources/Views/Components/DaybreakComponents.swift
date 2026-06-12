@@ -139,11 +139,13 @@ extension StageStrip {
 /// arc, with a tiny care package — the app icon's heart-in-a-box under a
 /// parachute — drifting across on delivery.
 struct BridgeView: View {
+    var deviceName: String = DeviceLabel.fallback
+
     private static let loopDuration: Double = 3.4
 
     var body: some View {
         HStack(alignment: .top, spacing: 4) {
-            endpoint(caption: "Fitbit Air") { googleBadge }
+            endpoint(caption: deviceName) { googleBadge }
             arc
                 .frame(height: 54)
                 .frame(maxWidth: .infinity)

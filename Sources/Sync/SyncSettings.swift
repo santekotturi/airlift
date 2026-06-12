@@ -58,6 +58,10 @@ protocol SyncSettingsStoring: Sendable {
     /// app's reason to exist). Lets Apple Watch owners turn off steps and
     /// distance, which double-count against iPhone/Watch sources.
     var enabledKinds: Set<MetricKind> { get set }
+    /// Best device label detected from wire `dataSource.device` blocks.
+    var detectedDeviceLabel: String? { get set }
+    /// User-chosen device name; wins over detection everywhere.
+    var deviceNameOverride: String? { get set }
 }
 
 final class UserDefaultsSyncSettings: SyncSettingsStoring, @unchecked Sendable {
@@ -65,6 +69,8 @@ final class UserDefaultsSyncSettings: SyncSettingsStoring, @unchecked Sendable {
     private let lock = NSLock()
     private let modeKey = "airlift.syncMode"
     private let kindsKey = "airlift.enabledKinds"
+    private let detectedDeviceKey = "airlift.detectedDeviceLabel"
+    private let deviceOverrideKey = "airlift.deviceNameOverride"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -93,5 +99,15 @@ final class UserDefaultsSyncSettings: SyncSettingsStoring, @unchecked Sendable {
         set {
             lock.withLock { defaults.set(newValue.map(\.rawValue).sorted(), forKey: kindsKey) }
         }
+    }
+
+    var detectedDeviceLabel: String? {
+        get { lock.withLock { defaults.string(forKey: detectedDeviceKey) } }
+        set { lock.withLock { defaults.set(newValue, forKey: detectedDeviceKey) } }
+    }
+
+    var deviceNameOverride: String? {
+        get { lock.withLock { defaults.string(forKey: deviceOverrideKey) } }
+        set { lock.withLock { defaults.set(newValue, forKey: deviceOverrideKey) } }
     }
 }

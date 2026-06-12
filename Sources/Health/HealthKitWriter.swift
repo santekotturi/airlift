@@ -29,17 +29,23 @@ final class HealthKitWriter: @unchecked Sendable {
     private let store: HKHealthStore
     private let sleepType = HKCategoryType(.sleepAnalysis)
 
-    /// Stable device stamp so Health attributes the data to the Fitbit Air.
-    private let device = HKDevice(
-        name: "Fitbit Air",
-        manufacturer: "Google",
-        model: "Air",
-        hardwareVersion: nil,
-        firmwareVersion: nil,
-        softwareVersion: nil,
-        localIdentifier: nil,
-        udiDeviceIdentifier: nil
-    )
+    /// Stable device stamp so Health attributes the data to the user's
+    /// Fitbit device. The name follows the engine's detected/override label;
+    /// changing it only affects future writes (existing samples keep theirs).
+    var deviceName = DeviceLabel.fallback
+
+    private var device: HKDevice {
+        HKDevice(
+            name: deviceName,
+            manufacturer: "Google",
+            model: nil,
+            hardwareVersion: nil,
+            firmwareVersion: nil,
+            softwareVersion: nil,
+            localIdentifier: nil,
+            udiDeviceIdentifier: nil
+        )
+    }
 
     init(store: HKHealthStore = HKHealthStore()) {
         self.store = store
