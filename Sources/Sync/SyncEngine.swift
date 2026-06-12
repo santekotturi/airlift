@@ -24,7 +24,9 @@ enum SyncStatus: Equatable {
 struct PipelineItem: Identifiable, Equatable {
     enum Step: Equatable {
         case waiting
-        case fetching(page: Int)
+        /// Cumulative readings (data points) received so far — the API sends
+        /// no total, so honest progress is a running count, not a percent.
+        case fetching(readings: Int)
         /// Staging: decoding done, comparing against Apple Health + checks.
         case comparing
         case done(imported: Int, held: Int)
@@ -310,6 +312,7 @@ final class SyncEngine {
 
         status = .syncing(phase: "Starting…")
         rawPageCounts = [:]
+        rawPointCounts = [:]
         // A re-fetch re-stages anything still unresolved; only newly held
         // items deserve a history line.
         let previouslyHeld = Set(staged.map(\.id)).union(stagedMetrics.map(\.id))
@@ -329,7 +332,7 @@ final class SyncEngine {
 
             // Sleep sessions.
             status = .syncing(phase: "Fetching sleep…")
-            setPipelineStep("sleep", .fetching(page: 1))
+            setPipelineStep("sleep", .fetching(readings: 0))
             let sessions = try await withFreshToken { token in
                 try await self.api.fetchSleepSessions(since: since, accessToken: token, onRawPage: self.captureRaw(key: "sleep"))
             }
@@ -384,7 +387,7 @@ final class SyncEngine {
             var failedKinds: Set<MetricKind> = []
             for kind in kinds {
                 status = .syncing(phase: "Fetching \(kind.displayName)…")
-                setPipelineStep(kind.rawValue, .fetching(page: 1))
+                setPipelineStep(kind.rawValue, .fetching(readings: 0))
                 do {
                     let samples = try await withFreshToken { token in
                         try await self.api.fetchMetricSamples(kind, since: since, accessToken: token, onRawPage: self.captureRaw(key: kind.rawValue, fetchingName: kind.displayName))
@@ -867,6 +870,9 @@ final class SyncEngine {
     /// Pages received per data type this fetch — drives the live phase label.
     private var rawPageCounts: [String: Int] = [:]
 
+    /// Cumulative data points received per data type this fetch.
+    private var rawPointCounts: [String: Int] = [:]
+
     /// `@Sendable` sink for raw page JSON: written to the dump folder verbatim,
     /// stored per data type for the debug schema viewer, and (when
     /// `fetchingName` is set) surfaced as paging progress in the status.
@@ -874,9 +880,10 @@ final class SyncEngine {
         { [weak self, dump] data in
             dump.writeRawPage(data, dataType: key)
             let pretty = Self.prettyPrint(data)
+            let scan = try? JSONDecoder().decode(DeviceScan.self, from: data)
             Task { @MainActor in
-                self?.noteDeviceInfo(in: data)
-                self?.noteRawPage(key: key, fetchingName: fetchingName, pretty: pretty)
+                self?.noteDeviceInfo(scan)
+                self?.noteRawPage(key: key, fetchingName: fetchingName, pretty: pretty, newPoints: scan?.dataPoints?.count ?? 0)
             }
         }
     }
@@ -887,8 +894,8 @@ final class SyncEngine {
         let dataPoints: [Point]?
     }
 
-    private func noteDeviceInfo(in data: Data) {
-        guard let scan = try? JSONDecoder().decode(DeviceScan.self, from: data) else { return }
+    private func noteDeviceInfo(_ scan: DeviceScan?) {
+        guard let scan else { return }
         let candidate = (scan.dataPoints ?? [])
             .compactMap { $0.dataSource?.fitbitDeviceLabel }
             .first { !DeviceLabel.isGeneric($0) }
@@ -902,16 +909,18 @@ final class SyncEngine {
         }
     }
 
-    private func noteRawPage(key: String, fetchingName: String?, pretty: String) {
+    private func noteRawPage(key: String, fetchingName: String?, pretty: String, newPoints: Int) {
         lastRawJSON[key] = pretty
         rawPageCounts[key, default: 0] += 1
+        rawPointCounts[key, default: 0] += newPoints
         // Only narrate while still syncing — pages can land after a failure.
-        guard case .syncing = status, let pages = rawPageCounts[key] else { return }
+        guard case .syncing = status, let readings = rawPointCounts[key] else { return }
         if case .fetching = pipeline.first(where: { $0.id == key })?.step {
-            setPipelineStep(key, .fetching(page: pages))
+            setPipelineStep(key, .fetching(readings: readings))
         }
-        if let fetchingName, pages > 1 {
-            status = .syncing(phase: "Fetching \(fetchingName) — page \(pages)…")
+        // "Pages" mean nothing to users; a growing count of readings does.
+        if let fetchingName, rawPageCounts[key, default: 0] > 1, readings > 0 {
+            status = .syncing(phase: "Fetching \(fetchingName) — \(readings.formatted()) readings so far…")
         }
     }
 
@@ -984,7 +993,7 @@ extension SyncEngine {
             + MetricKind.allCases.map { PipelineItem(id: $0.rawValue, name: $0.displayName) }
         for item in pipeline {
             status = .syncing(phase: "Fetching \(item.name)…")
-            setPipelineStep(item.id, .fetching(page: 1))
+            setPipelineStep(item.id, .fetching(readings: 0))
             try? await Task.sleep(for: .milliseconds(200))
             status = .syncing(phase: "Comparing \(item.name) with Apple Health…")
             setPipelineStep(item.id, .comparing)

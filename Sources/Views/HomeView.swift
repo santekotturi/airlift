@@ -280,7 +280,7 @@ struct HomeView: View {
                         .font(.system(size: 13.5, weight: .medium, design: .rounded))
                         .foregroundStyle(Daybreak.ink)
                     Spacer()
-                    Text(pipelineLabel(item.step))
+                    Text(pipelineLabel(item))
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Daybreak.mid)
                         .contentTransition(.opacity)
@@ -315,10 +315,12 @@ struct HomeView: View {
         }
     }
 
-    private func pipelineLabel(_ step: PipelineItem.Step) -> String {
-        switch step {
+    private func pipelineLabel(_ item: PipelineItem) -> String {
+        switch item.step {
         case .waiting: return "waiting"
-        case .fetching(let page): return page > 1 ? "fetching · page \(page)" : "fetching…"
+        case .fetching(let readings):
+            let noun = item.id == "sleep" ? "nights" : "readings"
+            return readings > 0 ? "\(readings.formatted()) \(noun)…" : "fetching…"
         case .comparing: return "comparing vs Apple…"
         case .done(let imported, let held):
             switch (imported, held) {
