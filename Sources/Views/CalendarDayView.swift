@@ -103,6 +103,7 @@ struct CalendarDayView: View {
                             .foregroundStyle(Daybreak.faint)
                             .padding(.top, 10)
                     }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 if snapshot.id != snapshots.last?.id {
@@ -199,6 +200,7 @@ struct CalendarDayView: View {
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(Daybreak.faint)
         }
+        .contentShape(Rectangle())
     }
 
     private var emptyCard: some View {

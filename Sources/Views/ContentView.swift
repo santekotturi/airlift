@@ -37,11 +37,11 @@ struct ContentView: View {
         // rather than the system's centered one.
         ZStack(alignment: .bottomLeading) {
             homeStack
-                .contentMargins(.bottom, 64, for: .scrollContent)
+                .contentMargins(.bottom, 80, for: .scrollContent)
                 .opacity(tab == .home ? 1 : 0)
                 .allowsHitTesting(tab == .home)
             calendarStack
-                .contentMargins(.bottom, 64, for: .scrollContent)
+                .contentMargins(.bottom, 80, for: .scrollContent)
                 .opacity(tab == .calendar ? 1 : 0)
                 .allowsHitTesting(tab == .calendar)
             glassTabPill
@@ -103,24 +103,24 @@ struct ContentView: View {
             pillItem(.home, icon: "sun.horizon.fill", label: "Home")
             pillItem(.calendar, icon: "calendar", label: "Calendar")
         }
-        .padding(4)
+        .padding(5)
         .modifier(GlassPillBackground())
         .padding(.leading, 18)
-        .padding(.bottom, 4)
+        .padding(.bottom, 6)
     }
 
     private func pillItem(_ target: Tab, icon: String, label: String) -> some View {
         Button {
             withAnimation(.snappy(duration: 0.2)) { tab = target }
         } label: {
-            VStack(spacing: 2) {
+            VStack(spacing: 3) {
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 20, weight: .semibold))
                 Text(label)
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
             }
             .foregroundStyle(tab == target ? Daybreak.sunDeep : Daybreak.mid)
-            .frame(width: 62, height: 48)
+            .frame(width: 78, height: 60)
             .background {
                 if tab == target {
                     Capsule().fill(Daybreak.sunDeep.opacity(0.14))
