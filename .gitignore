@@ -15,3 +15,6 @@ xcuserdata/
 # macOS
 .DS_Store
 design-explorations/sim/
+
+# Claude Code session worktrees & local config
+.claude/
