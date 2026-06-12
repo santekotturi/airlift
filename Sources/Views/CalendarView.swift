@@ -59,7 +59,7 @@ struct CalendarView: View {
         .onAppear {
             // `-AirliftUIMockScreen day` deep-links straight into today's
             // detail for screenshot runs.
-            if engine.isUIMock, UIMock.screen == "day", pushedDay == nil {
+            if engine.isUIMock, UIMock.screen == "day" || UIMock.screen == "history-pager", pushedDay == nil {
                 pushedDay = Calendar.current.startOfDay(for: Date())
             }
         }

@@ -9,10 +9,16 @@ struct CalendarDayView: View {
     let day: Date
 
     @State private var snapshots: [SyncEngine.DayKindSnapshot]?
+    /// Pager entry: which kind to open the day-swipeable history on.
+    struct HistoryTarget: Hashable, Identifiable {
+        let kindRaw: String?
+        var id: String { kindRaw ?? "sleep" }
+        var kind: MetricKind? { kindRaw.flatMap(MetricKind.init) }
+    }
+
     @State private var pushedSession: StagedSession?
     @State private var pushedBatch: StagedMetricBatch?
-    @State private var historySession: StagedSession?
-    @State private var historyBatch: StagedMetricBatch?
+    @State private var historyTarget: HistoryTarget?
 
     private var engine: SyncEngine { model.syncEngine }
 
@@ -43,12 +49,20 @@ struct CalendarDayView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $pushedSession) { SessionCompareView(staged: $0) }
         .navigationDestination(item: $pushedBatch) { MetricCompareView(batch: $0) }
-        .navigationDestination(item: $historySession) { SessionCompareView(staged: $0, mode: .history(day: day)) }
-        .navigationDestination(item: $historyBatch) { MetricCompareView(batch: $0, mode: .history(day: day)) }
+        .navigationDestination(item: $historyTarget) {
+            MetricHistoryPagerView(kind: $0.kind, startDay: day)
+        }
         // Re-reads on every appearance so a removal done one level deeper is
         // reflected the moment the user pops back.
         .onAppear {
             Task { snapshots = await engine.calendarSnapshot(for: day) }
+            #if DEBUG
+            // `-AirliftUIMockScreen history-pager` deep-links into the
+            // day-swipeable heart-rate history for screenshot runs.
+            if engine.isUIMock, UIMock.screen == "history-pager", historyTarget == nil {
+                historyTarget = HistoryTarget(kindRaw: MetricKind.heartRate.rawValue)
+            }
+            #endif
         }
     }
 
@@ -119,16 +133,9 @@ struct CalendarDayView: View {
         .daybreakCard()
     }
 
-    /// Loads the full history model for the tapped kind, then pushes the
-    /// same compare screen the review flow uses.
+    /// Opens the day-swipeable history pager on the tapped kind.
     private func open(_ snapshot: SyncEngine.DayKindSnapshot) {
-        Task {
-            if let kind = snapshot.kind {
-                historyBatch = await engine.historicalBatch(kind: kind, day: day)
-            } else {
-                historySession = await engine.historicalSession(day: day)
-            }
-        }
+        historyTarget = HistoryTarget(kindRaw: snapshot.kind?.rawValue)
     }
 
     // MARK: - Waiting for review
