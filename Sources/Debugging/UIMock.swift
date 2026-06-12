@@ -13,9 +13,16 @@ enum UIMock {
         UserDefaults.standard.bool(forKey: "AirliftUIMock")
     }
 
-    /// `-AirliftUIMockScreen <home|session|metric|history|settings>`.
+    /// `-AirliftUIMockScreen <home|session|metric|history|settings|priming>`.
     static var screen: String? {
         UserDefaults.standard.string(forKey: "AirliftUIMockScreen")
+    }
+
+    /// `-AirliftUIMockNoApple 1` strips every Apple-side fixture — the
+    /// Fitbit + iPhone-only experience (no Apple Watch writing to HealthKit),
+    /// with checks re-run so each screen shows its real no-comparison state.
+    static var withoutAppleData: Bool {
+        UserDefaults.standard.bool(forKey: "AirliftUIMockNoApple")
     }
 
     /// Seeds the engine and log with the fixture set, shaped to the user's
@@ -25,6 +32,27 @@ enum UIMock {
     static func apply(engine: SyncEngine, log: SyncLogStore) {
         var sessions = stagedSessions()
         var metrics = stagedMetricBatches()
+        if withoutAppleData {
+            sessions = sessions.map { item in
+                StagedSession(
+                    session: item.session,
+                    appleSleep: [],
+                    heartRate: [],
+                    checks: SanityChecks.run(google: item.session, appleSleep: [], heartRate: [])
+                )
+            }
+            metrics = metrics.map { batch in
+                StagedMetricBatch(
+                    kind: batch.kind,
+                    day: batch.day,
+                    samples: batch.samples,
+                    appleSamples: [],
+                    checks: SanityChecks.runMetric(kind: batch.kind, samples: batch.samples, apple: []),
+                    appleTotal: nil,
+                    appleHourly: []
+                )
+            }
+        }
         let automatic = engine.syncMode == .automatic && screen != "metric"
         if automatic {
             let total = sessions.count + metrics.count

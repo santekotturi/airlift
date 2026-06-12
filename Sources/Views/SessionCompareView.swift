@@ -131,7 +131,9 @@ struct SessionCompareView: View {
             Text(title)
                 .font(Daybreak.titleFont)
                 .foregroundStyle(Daybreak.ink)
-            Text("\(deviceName)'s reading vs. what's already in Apple Health.")
+            Text(hasApple
+                 ? "\(deviceName)'s reading vs. what's already in Apple Health."
+                 : "\(deviceName)'s reading — Apple Health has nothing for this night yet.")
                 .font(Daybreak.bodyFont)
                 .foregroundStyle(Daybreak.mid)
         }
