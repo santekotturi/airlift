@@ -237,7 +237,7 @@ enum UIMock {
              "Google had no new sleep data. Airlift will look again on next launch."),
             (-3, 9, 30, .tossed, "You skipped \(tossWeekday) night",
              "Google reported 11.2 h, outside your normal range. Nothing was written."),
-            (-4, 7, 55, .imported, "427 heart-rate points added",
+            (-4, 7, 55, .imported, "427 heart-rate readings added",
              "Overnight heart rate, downsampled to one point per minute — as approved by you."),
             (-4, 7, 50, .fetched, "Fetch finished",
              "2 nights and 6 metric days staged from the last 7 days."),

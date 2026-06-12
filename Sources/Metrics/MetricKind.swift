@@ -88,6 +88,20 @@ enum MetricKind: String, CaseIterable, Identifiable {
         }
     }
 
+    /// `displayName` for mid-sentence use ("a day of distance held for
+    /// review") — lowercased except for acronyms.
+    var inlineName: String {
+        switch self {
+        case .heartRate: return "heart rate"
+        case .restingHeartRate: return "resting heart rate"
+        case .heartRateVariability: return "HRV"
+        case .oxygenSaturation: return "SpO2"
+        case .respiratoryRate: return "breathing rate"
+        case .steps: return "steps"
+        case .distance: return "distance"
+        }
+    }
+
     var systemImage: String {
         switch self {
         case .heartRate: return "heart.fill"
