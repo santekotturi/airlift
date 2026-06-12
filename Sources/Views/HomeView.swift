@@ -512,7 +512,7 @@ struct HomeView: View {
 
     private func sessionCaption(_ item: StagedSession) -> String {
         let range = "\(item.session.start.formatted(date: .omitted, time: .shortened)) – \(item.session.end.formatted(date: .omitted, time: .shortened))"
-        if let percent = StageAgreement.percent(google: item.session.stages, apple: item.appleSleep) {
+        if let percent = SleepAgreement.percent(google: item.session.stages, apple: item.appleSleep) {
             return "\(range) · agrees with Apple \(Int(percent.rounded()))%"
         }
         return "\(range) · no Apple data for this night"
@@ -712,40 +712,6 @@ struct HomeView: View {
 
 // MARK: - Stage agreement
 
-/// Minute-sampled agreement between the Google and Apple lanes: the share of
-/// co-covered minutes whose normalized stages match. Nil when either lane is
-/// empty or the lanes never overlap.
-private enum StageAgreement {
-    static func percent(google: [SleepStageSegment], apple: [AppleSleepSegment]) -> Double? {
-        let appleSpans = apple.compactMap { segment in
-            LaneStage(apple: segment.value).map { (stage: $0, start: segment.start, end: segment.end) }
-        }
-        guard let first = google.map(\.start).min(), let last = google.map(\.end).max(),
-              !appleSpans.isEmpty else { return nil }
-
-        var matched = 0
-        var compared = 0
-        var t = first.addingTimeInterval(30) // sample minute midpoints
-        while t < last {
-            defer { t.addTimeInterval(60) }
-            guard
-                let g = google.first(where: { $0.start <= t && t < $0.end }).map({ LaneStage(google: $0.stage) }),
-                let a = appleSpans.first(where: { $0.start <= t && t < $0.end })?.stage
-            else { continue }
-            compared += 1
-            if matches(g, a) { matched += 1 }
-        }
-        guard compared > 0 else { return nil }
-        return Double(matched) / Double(compared) * 100
-    }
-
-    /// `.asleep` is "asleep, stage unspecified" — it matches any sleep stage.
-    private static func matches(_ g: LaneStage, _ a: LaneStage) -> Bool {
-        if g == a { return true }
-        let sleep: Set<LaneStage> = [.rem, .core, .deep, .asleep]
-        return sleep.contains(g) && sleep.contains(a) && (g == .asleep || a == .asleep)
-    }
-}
 
 // MARK: - Row plumbing
 

@@ -56,7 +56,9 @@ struct MetricCompareView: View {
                     status: batch.worstSeverity == .pass ? .new : .warn
                 )
             }
-            Text("\(googleSeries)'s reading vs. what's already in Apple Health.")
+            Text(batch.appleSamples.isEmpty
+                 ? "\(googleSeries)'s reading — Apple Health has nothing for this day yet."
+                 : "\(googleSeries)'s reading vs. what's already in Apple Health.")
                 .font(Daybreak.bodyFont)
                 .foregroundStyle(Daybreak.mid)
         }
