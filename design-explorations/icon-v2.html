@@ -106,12 +106,52 @@
 </svg>
 
 <script>
-  if (new URLSearchParams(location.search).get('mode') === 'dark') {
+  const mode = new URLSearchParams(location.search).get('mode');
+  if (mode === 'dark') {
+    // Full-bleed night scene — marketing/reference only (iOS dark variants
+    // should be transparent so the system supplies the backdrop).
     document.getElementById('sky').setAttribute('fill', 'url(#skyDark)');
     document.getElementById('night').style.display = '';
     document.getElementById('day').style.display = 'none';
     document.getElementById('lines').setAttribute('stroke', '#CDC4E8');
     document.querySelectorAll('#crate rect')[1].setAttribute('stroke', '#3B3458');
+  }
+  if (mode === 'dark-glyph' || mode === 'tinted') {
+    // Glyph-only variants per Apple HIG: dark = transparent background
+    // (system adds the dark backdrop; also enables clear-dark derivation),
+    // tinted = opaque grayscale glyph, no background.
+    document.getElementById('sky').style.display = 'none';
+    document.getElementById('day').style.display = 'none';
+    document.getElementById('night').style.display = 'none';
+  }
+  if (mode === 'dark-glyph') {
+    // Lighter shroud lines + border for contrast on the system's dark bg.
+    document.getElementById('lines').setAttribute('stroke', '#CDC4E8');
+    document.querySelectorAll('#crate rect')[1].setAttribute('stroke', '#D9CFC0');
+  }
+  if (mode && mode.startsWith('layer-')) {
+    // Individual layers on transparency — drag into Apple's Icon Composer to
+    // build the layered Liquid Glass .icon (six-mode) version.
+    const show = { 'layer-bg': ['sky', 'day'], 'layer-chute': ['chute'], 'layer-crate': ['crate'] }[mode] || [];
+    for (const id of ['sky', 'day', 'night', 'chute', 'crate']) {
+      document.getElementById(id).style.display = show.includes(id) ? '' : 'none';
+    }
+  }
+  if (mode === 'tinted') {
+    const gray = {
+      goreWhite: '#F5F5F5', gore: '#A6A6A6', lines: '#9B9B9B',
+      box: '#EDEDED', boxStroke: '#C2C2C2', heart: '#8F8F8F',
+    };
+    const chutePaths = document.querySelectorAll('#chute path, #chute circle');
+    chutePaths[0].setAttribute('fill', gray.goreWhite);   // dome
+    chutePaths[1].setAttribute('fill', gray.gore);        // gore L
+    chutePaths[2].setAttribute('fill', gray.gore);        // gore R
+    chutePaths[3].setAttribute('fill', gray.gore);        // apex cap
+    document.getElementById('lines').setAttribute('stroke', gray.lines);
+    const crateRects = document.querySelectorAll('#crate rect');
+    crateRects[0].setAttribute('fill', gray.box);
+    crateRects[1].setAttribute('stroke', gray.boxStroke);
+    document.querySelector('#crate path').setAttribute('fill', gray.heart);
   }
 </script>
 </body>
