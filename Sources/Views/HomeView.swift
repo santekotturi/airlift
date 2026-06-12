@@ -79,7 +79,7 @@ struct HomeView: View {
            Calendar.current.isDateInToday(landed.date) {
             return "Last night came over the bridge at \(landed.date.formatted(date: .omitted, time: .shortened))."
         }
-        if !engine.isConnected { return "Connect Google Health to open the bridge." }
+        if !engine.isConnected { return "Connect Google Health to start the airlift." }
         if waitingCount > 0 { return "New data is waiting for your OK below." }
         if let last = engine.lastSyncedDate {
             return "Last checked \(last.formatted(date: .abbreviated, time: .shortened))."
@@ -318,10 +318,10 @@ struct HomeView: View {
 
     private var connectBody: some View {
         VStack(spacing: 14) {
-            Text("Open the bridge")
+            Text("Start the airlift")
                 .font(Daybreak.numberFont(size: 30))
                 .foregroundStyle(Daybreak.ink)
-            Text("Connect your Google account and Airlift carries each night over to Apple Health — every one checked first.")
+            Text("Connect Google Health to start the airlift — each night is carried over to Apple Health, every one checked first.")
                 .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)
@@ -330,6 +330,10 @@ struct HomeView: View {
             }
             .buttonStyle(.daybreakPrimary)
             .disabled(!model.isConfigured)
+            Text("One Google limitation while their Health API is pre-release: sign-ins last about 7 days, so you'll reconnect weekly. Airlift sends a reminder when it's time.")
+                .font(.system(size: 11.5, design: .rounded))
+                .foregroundStyle(Daybreak.faint)
+                .multilineTextAlignment(.center)
         }
     }
 
