@@ -77,6 +77,43 @@ enum UIMock {
             )
         }
         log.replaceAll(logEntries(automatic: automatic))
+        seedLedger(engine.ledger)
+    }
+
+    /// Three weeks of plausible coverage so the calendar reads like a real
+    /// install: most days fully landed, a skipped night, a couple of quiet
+    /// no-data days, and the still-held items mirroring the staged queue.
+    private static func seedLedger(_ ledger: SyncLedgerStoring) {
+        let kinds: [(String, Int)] = [
+            ("sleep", 1), ("heart_rate", 1_440), ("heart_rate_variability", 96),
+            ("oxygen_saturation", 420), ("respiratory_rate", 1),
+        ]
+        for offset in stride(from: -21, through: -1, by: 1) {
+            let day = CivilDay.string(from: at(dayOffset: offset, hour: 12, minute: 0))
+            switch offset {
+            case -9, -15:
+                // Band wasn't worn — a sync ran and found nothing.
+                for (kind, _) in kinds { ledger.set(.noData, kind: kind, day: day) }
+            case -4:
+                // The skipped 11.2 h night from the history fixtures.
+                ledger.set(.tossed, kind: "sleep", day: day)
+                for (kind, samples) in kinds.dropFirst() {
+                    ledger.set(.synced(samples: samples, at: Date()), kind: kind, day: day)
+                }
+            default:
+                for (kind, samples) in kinds {
+                    ledger.set(.synced(samples: samples, at: Date()), kind: kind, day: day)
+                }
+                if offset.isMultiple(of: 2) {
+                    ledger.set(.synced(samples: 14, at: Date()), kind: "steps", day: day)
+                }
+            }
+        }
+        // Today: last night still held for review, vitals landed.
+        let today = CivilDay.string(from: at(dayOffset: 0, hour: 12, minute: 0))
+        ledger.set(.quarantined, kind: "sleep", day: today)
+        ledger.set(.synced(samples: 648, at: Date()), kind: "heart_rate", day: today)
+        ledger.set(.synced(samples: 44, at: Date()), kind: "oxygen_saturation", day: today)
     }
 
     // MARK: - Sessions

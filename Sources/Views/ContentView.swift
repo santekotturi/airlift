@@ -9,20 +9,50 @@ struct SettingsRoute: Hashable {}
 /// Navigation token for the source-priority tutorial.
 struct SourcePriorityRoute: Hashable {}
 
-/// Daybreak shell: the sky gradient behind a `NavigationStack` over Home,
-/// with typed destinations so any screen can push by value. Every token has a
-/// Daybreak (light) and Nightfall (dark) face; the user can follow the system
-/// or pin either via Settings.
+/// Daybreak shell: two tabs — Home (the bridge) and Calendar (history) — each
+/// a `NavigationStack` with typed destinations, on the system tab bar (Liquid
+/// Glass on modern iOS, exactly like Health's Summary/Sharing bar). Every
+/// token has a Daybreak (light) and Nightfall (dark) face; the user can
+/// follow the system or pin either via Settings.
 struct ContentView: View {
+    enum Tab: Hashable {
+        case home, calendar
+    }
+
     @Environment(AppModel.self) private var model
 
     @AppStorage(DaybreakAppearance.storageKey)
     private var appearanceRaw = DaybreakAppearance.system.rawValue
 
+    @State private var tab = Tab.home
     @State private var path = NavigationPath()
     @State private var appliedMockRoute = false
 
     var body: some View {
+        TabView(selection: $tab) {
+            homeStack
+                .tabItem { Label("Home", systemImage: "sun.horizon.fill") }
+                .tag(Tab.home)
+            calendarStack
+                .tabItem { Label("Calendar", systemImage: "calendar") }
+                .tag(Tab.calendar)
+        }
+        .tint(Daybreak.sunDeep)
+        .preferredColorScheme(
+            (DaybreakAppearance(rawValue: appearanceRaw) ?? .system).colorScheme
+        )
+        .sheet(isPresented: Binding(
+            get: { model.syncEngine.needsNotificationPriming },
+            set: { if !$0 { model.syncEngine.declineNotifications() } } // swipe-down = "Not now"
+        )) {
+            NotificationPrimerSheet()
+                .presentationDetents([.fraction(0.75), .large])
+                .presentationCornerRadius(32)
+        }
+        .onAppear(perform: applyMockRouteIfNeeded)
+    }
+
+    private var homeStack: some View {
         NavigationStack(path: $path) {
             HomeView()
                 .navigationDestination(for: StagedSession.self) { SessionCompareView(staged: $0) }
@@ -43,18 +73,15 @@ struct ContentView: View {
                 .toolbarBackground(.hidden, for: .navigationBar)
         }
         .daybreakBackground()
-        .preferredColorScheme(
-            (DaybreakAppearance(rawValue: appearanceRaw) ?? .system).colorScheme
-        )
-        .sheet(isPresented: Binding(
-            get: { model.syncEngine.needsNotificationPriming },
-            set: { if !$0 { model.syncEngine.declineNotifications() } } // swipe-down = "Not now"
-        )) {
-            NotificationPrimerSheet()
-                .presentationDetents([.fraction(0.75), .large])
-                .presentationCornerRadius(32)
+    }
+
+    private var calendarStack: some View {
+        NavigationStack {
+            CalendarView()
+                .navigationDestination(for: StagedSession.self) { SessionCompareView(staged: $0) }
+                .navigationDestination(for: StagedMetricBatch.self) { MetricCompareView(batch: $0) }
         }
-        .onAppear(perform: applyMockRouteIfNeeded)
+        .daybreakBackground()
     }
 
     /// `-AirliftUIMockScreen <name>` pre-populates the path on first appear:
@@ -82,6 +109,8 @@ struct ContentView: View {
             model.syncEngine.primeNotificationsForUIMock()
         case "priority":
             path.append(SourcePriorityRoute())
+        case "calendar", "day":
+            tab = .calendar
         default:
             break
         }

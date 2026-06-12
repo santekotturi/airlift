@@ -140,3 +140,23 @@ final class FileSyncLedger: SyncLedgerStoring, @unchecked Sendable {
         }
     }
 }
+
+/// Non-persisting ledger — UI-mock runs and tests.
+final class InMemorySyncLedger: SyncLedgerStoring, @unchecked Sendable {
+    private let lock = NSLock()
+    private var entries: [String: LedgerEntry] = [:]
+
+    init() {}
+
+    var all: [LedgerEntry] {
+        lock.withLock { Array(entries.values) }
+    }
+
+    func status(kind: String, day: String) -> DayStatus? {
+        lock.withLock { entries["\(kind)|\(day)"]?.status }
+    }
+
+    func set(_ status: DayStatus, kind: String, day: String) {
+        lock.withLock { entries["\(kind)|\(day)"] = LedgerEntry(kind: kind, day: day, status: status) }
+    }
+}

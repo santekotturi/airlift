@@ -1,4 +1,5 @@
 import Foundation
+import HealthKit
 import Observation
 
 /// High-level sync state surfaced to the UI.
@@ -502,6 +503,138 @@ final class SyncEngine {
             Log.sync.error("Fetch failed: \(error.localizedDescription)")
         }
     }
+
+    // MARK: - Calendar (history) support
+
+    /// One kind's presence in Apple Health for a given civil day.
+    struct DayKindSnapshot: Identifiable, Equatable {
+        /// Nil for sleep.
+        let kind: MetricKind?
+        /// Airlift-authored samples in Health that day.
+        let ownCount: Int
+        /// Headline for the Airlift data ("avg 62 bpm", "7 h 24 m").
+        let ownSummary: String
+        /// What other HealthKit sources say for the same day, when any.
+        let otherSummary: String?
+
+        var id: String { kind?.rawValue ?? sleepLedgerKind }
+        var displayName: String { kind?.displayName ?? "Sleep" }
+        var systemImage: String { kind?.systemImage ?? "moon.zzz.fill" }
+    }
+
+    /// Reads back what Airlift actually wrote to Health on `day`, with an
+    /// other-sources comparison where one exists. Kinds with no Airlift data
+    /// that day are omitted.
+    func calendarSnapshot(for day: Date) async -> [DayKindSnapshot] {
+        let interval = DateInterval(start: day, duration: 86_400)
+        var snapshots: [DayKindSnapshot] = []
+
+        #if DEBUG
+        if isUIMock { return Self.mockCalendarSnapshot(for: day, ledger: ledger) }
+        #endif
+
+        // Sleep — the night that ended this day.
+        if let own = try? await reader.ownSleepSamples(endingIn: interval), !own.isEmpty {
+            let asleep = own
+                .filter { HKCategoryValueSleepAnalysis(rawValue: Int($0.value)) != .inBed }
+                .reduce(0.0) { $0 + $1.end.timeIntervalSince($1.start) }
+            let others = (try? await reader.sleepSegments(
+                overlapping: DateInterval(start: day.addingTimeInterval(-43_200), duration: 129_600)
+            )) ?? []
+            let otherAsleep = others.filter(\.isAsleep).reduce(0.0) { $0 + $1.duration }
+            snapshots.append(DayKindSnapshot(
+                kind: nil,
+                ownCount: own.count,
+                ownSummary: Self.hoursMinutes(asleep) + " asleep",
+                otherSummary: otherAsleep > 0
+                    ? "\(others.first?.sourceName ?? "Other sources"): \(Self.hoursMinutes(otherAsleep)) asleep"
+                    : nil
+            ))
+        }
+
+        for kind in MetricKind.allCases {
+            guard let own = try? await reader.ownQuantitySamples(kind, in: interval), !own.isEmpty else { continue }
+            let values = own.map(\.value)
+            let ownSummary = kind.isCumulative
+                ? "total \(kind.format(values.reduce(0, +)))"
+                : "avg \(kind.format(values.reduce(0, +) / Double(values.count)))"
+            var otherSummary: String?
+            if kind.isCumulative {
+                if let total = try? await reader.cumulativeTotal(kind, in: interval), total > 0 {
+                    otherSummary = "Other sources: \(kind.format(total))"
+                }
+            } else if let others = try? await reader.quantitySamples(kind, in: interval), !others.isEmpty {
+                let avg = others.map(\.value).reduce(0, +) / Double(others.count)
+                otherSummary = "Other sources: avg \(kind.format(avg))"
+            }
+            snapshots.append(DayKindSnapshot(
+                kind: kind,
+                ownCount: own.count,
+                ownSummary: ownSummary,
+                otherSummary: otherSummary
+            ))
+        }
+        return snapshots
+    }
+
+    /// Removes Airlift's data of one kind for one day from Apple Health.
+    /// The attached dataPoint IDs are persisted as tossed so the same data
+    /// never re-imports, and the ledger cell flips to `.tossed`.
+    func removeOwnData(kind: MetricKind?, day: Date) async {
+        let dayString = CivilDay.string(from: day)
+        let ledgerKind = kind?.rawValue ?? sleepLedgerKind
+        let name = kind?.displayName.lowercased() ?? "sleep"
+        #if DEBUG
+        if isUIMock {
+            ledger.set(.tossed, kind: ledgerKind, day: dayString)
+            log.record(.tossed, title: "You removed \(name) for \(Self.dayText(day))", detail: "Taken out of Apple Health — it won't come back.")
+            return
+        }
+        #endif
+        do {
+            let interval = DateInterval(start: day, duration: 86_400)
+            let removedIDs = try await writer.deleteOwnSamples(kind: kind, in: interval)
+            tossed.insertAll(removedIDs)
+            ledger.set(.tossed, kind: ledgerKind, day: dayString)
+            log.record(
+                .tossed,
+                title: "You removed \(name) for \(Self.dayText(day))",
+                detail: "\(removedIDs.count) sample(s) taken out of Apple Health — they won't come back."
+            )
+            status = .success(date: Date(), written: 0)
+            Log.sync.info("Removed \(removedIDs.count) own sample(s) of \(ledgerKind) for \(dayString)")
+        } catch {
+            status = .failed(error.localizedDescription)
+            Log.sync.error("Removal failed for \(ledgerKind) \(dayString): \(error.localizedDescription)")
+        }
+    }
+
+    private static func hoursMinutes(_ seconds: TimeInterval) -> String {
+        let minutes = Int(seconds / 60)
+        return "\(minutes / 60) h \(minutes % 60) m"
+    }
+
+    #if DEBUG
+    /// Fixture day detail derived from the seeded ledger — the simulator's
+    /// HealthKit is empty under the UI mock.
+    private static func mockCalendarSnapshot(for day: Date, ledger: SyncLedgerStoring) -> [DayKindSnapshot] {
+        let dayString = CivilDay.string(from: day)
+        return ledger.all.filter { $0.day == dayString }.compactMap { entry in
+            guard case .synced(let samples, _) = entry.status else { return nil }
+            if entry.kind == sleepLedgerKind {
+                return DayKindSnapshot(kind: nil, ownCount: samples, ownSummary: "7 h 24 m asleep", otherSummary: "Apple Watch: 7 h 13 m asleep")
+            }
+            guard let kind = MetricKind(rawValue: entry.kind) else { return nil }
+            return DayKindSnapshot(
+                kind: kind,
+                ownCount: samples,
+                ownSummary: kind.isCumulative ? "total \(kind.format(8_412))" : "avg \(kind.format(kind == .oxygenSaturation ? 0.96 : 58))",
+                otherSummary: kind == .heartRate ? "Other sources: avg 60 bpm" : nil
+            )
+        }
+        .sorted { $0.displayName < $1.displayName }
+    }
+    #endif
 
     // MARK: - Notification priming
 

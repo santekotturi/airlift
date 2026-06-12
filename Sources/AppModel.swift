@@ -54,7 +54,9 @@ final class AppModel {
             tossed: tossed,
             state: state,
             settings: UserDefaultsSyncSettings(),
-            ledger: FileSyncLedger(),
+            // In-memory ledger under the mock — fixture days must not
+            // persist into the real coverage history.
+            ledger: isUIMock ? InMemorySyncLedger() : FileSyncLedger(),
             log: log,
             notifier: ReconnectNotifier()
         )
