@@ -437,7 +437,7 @@ final class SyncEngine {
                 .filter { !previouslyHeld.contains($0) }
                 .count
             if written == 0 && newlyHeld == 0 {
-                log.record(.nothingNew, title: "Checked — nothing new", detail: "Google had no new data. AirKit will look again on next launch.")
+                log.record(.nothingNew, title: "Checked — nothing new", detail: "Google had no new data. Airlift will look again on next launch.")
             } else if mode == .reviewEverything {
                 log.record(.fetched, title: "Fetch finished", detail: "\(staged.count) night(s) and \(stagedMetrics.count) metric day(s) are ready for review.")
             }

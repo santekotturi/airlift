@@ -81,7 +81,7 @@ enum Daybreak {
 ## Screen specs (match preview-c.png composition; adapt, don't transliterate)
 
 ### Shell — `ContentView.swift`
-NavigationStack over `HomeView`, gradient background applied at the shell so pushed screens share it, typed `navigationDestination`s for `StagedSession`, `StagedMetricBatch`, `HistoryRoute`, `SettingsRoute`. Toolbar: top-right gear (Settings), top-left small "AirKit" wordmark or nothing. System nav bar background hidden; pushed screens get a plain back chevron.
+NavigationStack over `HomeView`, gradient background applied at the shell so pushed screens share it, typed `navigationDestination`s for `StagedSession`, `StagedMetricBatch`, `HistoryRoute`, `SettingsRoute`. Toolbar: top-right gear (Settings), top-left small "Airlift" wordmark or nothing. System nav bar background hidden; pushed screens get a plain back chevron.
 
 ### Home — `HomeView.swift`
 Top→bottom: greeting header ("Good morning ☀️" / afternoon / evening by hour + subline "Last night came over the bridge at 6:42 AM" from the log); bridge card (BridgeView, big-number banner like "**1 night** + 427 points" with sunDeep emphasis, subline per mode, primary CTA "Review last night →" or, when queue is empty in automatic mode, "Fetch now"; ghost "Fetch again · last 7 days" with the existing 7/14/30-day menu); "Ready for review" section listing staged sessions (DayBadge, "7 h 24 m sleep", chip ✓ checks pass / ! held back, time range + agreement %, StageStrip) and metric batches ("Overnight vitals" grouped row or per-kind rows with chip "new to Apple"); "Recent crossings" section — last 3 log entries as rows with a "See all" → History; HeadsUpCard at the bottom. While syncing: replace bridge banner with the live pipeline (reuse `engine.pipeline`, friendly icons, animated). Also handle: not connected (bridge card becomes "Connect Google Health" CTA + explainer), reconnect needed (warm amber card "Your weekly Google sign-in expired — reconnect to keep the bridge open"), not configured (setup hint card, keep existing copy), fetch failed (apologetic card with detail + retry).
@@ -97,6 +97,10 @@ Header "What crossed over" + "A plain-language record of every sync." MiniStat 2
 
 ### Settings — `SettingsView.swift` (new)
 Header "Settings". Card "How syncing works": the two mode option cards (tap to select, checkmark circle on active; Automatic first and default). Card "Connection": status row (connected as you@gmail / not connected), Disconnect (destructive ghost) or Connect button; note about the weekly Testing-mode re-sign-in. Card "About": version 0.1.0, "On-device only — your data never touches a server", link-styled row to README/repo, HeadsUpCard. 
+
+## Product name
+
+The product is named **Airlift** (renamed from AirKit on 2026-06-12 — it "airlifts" Fitbit owners out of missing HealthKit support). ALL user-facing copy says Airlift, never AirKit. Internal names stay as-is: the Xcode project/scheme/target remain `AirKit`, bundle id remains `com.santekotturi.airkit`, and Swift type names don't need renaming.
 
 ## Quality bar (what "done" means)
 

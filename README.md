@@ -1,9 +1,11 @@
-# AirKit
+# Airlift
 
-**Bridge your Fitbit Air (and other Google-account Fitbit devices) sleep data into Apple Health — on-device, open source, no server.**
+**Your sleep, airlifted to Apple Health every morning. Bridges Fitbit Air (and other Google-account Fitbit devices) sleep data into Apple Health — on-device, open source, no server.**
+
+> Formerly *AirKit*. The Xcode project, scheme, and bundle ID keep the `AirKit` name; everything user-facing says **Airlift**.
 
 The Fitbit Air is a screenless, sleep-focused tracker whose data lives in Google's
-health ecosystem and does **not** export to Apple Health natively. AirKit is a small
+health ecosystem and does **not** export to Apple Health natively. Airlift is a small
 iOS app that pulls last night's sleep session from the **Google Health API** and writes
 it into HealthKit as `sleepAnalysis` samples with full stage detail (wake / light / deep
 / REM).
@@ -37,7 +39,7 @@ there is no backend, unlike most of the commercial Fitbit↔Health sync apps.
 
 Google has said native Google Health → Apple Health write-back is "coming later in 2026,"
 but it isn't shipped, has no date, and aggregated sleep-stage fidelity has historically
-been hit-or-miss. AirKit gives you faithful stages **now**, with full local control. Treat
+been hit-or-miss. Airlift gives you faithful stages **now**, with full local control. Treat
 it as a bridge until (and if) native sync makes it redundant.
 
 ---
@@ -63,11 +65,11 @@ it as a bridge until (and if) native sync makes it redundant.
    [OAuth & consent](#oauth--consent-read-this-before-you-start) below for why.
 3. Create an **iOS OAuth client ID** with the bundle ID `com.santekotturi.airkit` (or change
    the bundle ID in `project.yml` to your own and use that). iOS clients are public clients —
-   **no client secret**; AirKit uses PKCE.
+   **no client secret**; Airlift uses PKCE.
 4. On the consent screen's **Scopes** step, add all five read-only Google Health scopes
    (`googlehealth.sleep.readonly`, `…health_metrics_and_measurements.readonly`,
    `…activity_and_fitness.readonly`, `…location.readonly`, `…nutrition.readonly`).
-   Do **not** add any `.writeonly` scope — AirKit never writes back to Google.
+   Do **not** add any `.writeonly` scope — Airlift never writes back to Google.
 
 ### 2. Configure the build
 
@@ -102,7 +104,7 @@ HealthKit prompt, then **Sync now**. Open Apple Health → Browse → Sleep to v
 
 ## OAuth & consent (read this before you start)
 
-AirKit uses a **bring-your-own-client** model: there is **no shared OAuth client** baked into
+Airlift uses a **bring-your-own-client** model: there is **no shared OAuth client** baked into
 the app. Each user registers their own OAuth client in their own Google Cloud project and
 drops the client ID into `Config.xcconfig`. This is deliberate — it keeps the repo
 credential-free, avoids anyone depending on a single client the maintainer has to keep alive,
@@ -120,7 +122,7 @@ personal utility.)
   health data anyway). So: consent screen = **External**, publishing status = **Testing**, and
   add your own Google account under **Test users**.
 - In Testing mode the **refresh token expires every ~7 days**, so you'll re-tap **Connect**
-  about once a week. AirKit detects the expired/revoked state and shows a "Reconnect needed"
+  about once a week. Airlift detects the expired/revoked state and shows a "Reconnect needed"
   status rather than crashing.
 
 > ⚠️ Confirm two things first (M0): that the **Google Health API is actually enabled and
