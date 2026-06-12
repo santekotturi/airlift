@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AirKit — Variation B · The Manifest</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Libre+Franklin:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f2efe6;
+    --paper-2: #faf8f1;
+    --ink: #1c1b16;
+    --mid: #6e6a5c;
+    --faint: #a39e8c;
+    --rule: #d9d4c3;
+    --stamp-green: #2e7d4f;
+    --stamp-red: #c2452d;
+    --stamp-amber: #b07c10;
+    --accent: #2547d0;
+    --awake: #e08433;
+    --rem: #8657c8;
+    --core: #2f9aa8;
+    --deep: #3b4ec2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #e6e2d4;
+    background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(28,27,22,.025) 27px 28px);
+    font-family: 'Libre Franklin', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 56px 48px 80px;
+  }
+  .masthead { max-width: 1480px; margin: 0 auto 44px; display: flex; align-items: baseline; gap: 24px; }
+  .masthead h1 { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 36px; letter-spacing: -.02em; text-transform: uppercase; }
+  .masthead .tag { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--mid); }
+  .stage { max-width: 1480px; margin: 0 auto; display: flex; gap: 56px; justify-content: center; align-items: flex-start; }
+  .slot { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+  .slot-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--mid); }
+
+  .phone {
+    width: 393px; height: 852px; border-radius: 54px; position: relative; overflow: hidden;
+    background: var(--paper);
+    box-shadow: 0 0 0 10px #14130f, 0 0 0 11.5px #3a382e, 0 30px 60px -18px rgba(28,27,22,.45);
+  }
+  .island { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 118px; height: 34px; background: #14130f; border-radius: 20px; z-index: 50; }
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 58px; display: flex; justify-content: space-between; align-items: center; padding: 14px 32px 0; font-size: 14px; font-weight: 600; z-index: 40; font-family: 'IBM Plex Mono', monospace; }
+  .screen { position: absolute; inset: 0; overflow-y: auto; padding: 72px 20px 36px; scrollbar-width: none; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .doc-title { font-family: 'IBM Plex Mono', monospace; font-size: 24px; font-weight: 600; text-transform: uppercase; letter-spacing: -.01em; margin: 4px 2px 0; }
+  .doc-sub { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--mid); margin: 6px 2px 16px; letter-spacing: .06em; text-transform: uppercase; }
+
+  .sheet { background: var(--paper-2); border: 1.5px solid var(--ink); border-radius: 4px; padding: 16px; margin-bottom: 16px; position: relative; box-shadow: 3px 3px 0 rgba(28,27,22,.12); }
+  .sheet-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid var(--ink); padding-bottom: 8px; margin-bottom: 10px; }
+  .sheet-head h3 { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+  .sheet-head .no { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--mid); }
+
+  .kv { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--rule); }
+  .kv:last-child { border-bottom: 0; }
+  .kv .k { color: var(--mid); }
+  .kv .v { font-family: 'IBM Plex Mono', monospace; font-weight: 500; text-align: right; }
+
+  .stamp {
+    font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    border: 2px solid currentColor; border-radius: 3px; padding: 3px 8px; display: inline-block; transform: rotate(-2deg);
+  }
+  .stamp.green { color: var(--stamp-green); }
+  .stamp.red { color: var(--stamp-red); }
+  .stamp.amber { color: var(--stamp-amber); }
+  .stamp.blue { color: var(--accent); }
+
+  .bigbtn {
+    width: 100%; border: 2px solid var(--ink); border-radius: 6px; padding: 15px; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    background: var(--ink); color: var(--paper); box-shadow: 4px 4px 0 rgba(28,27,22,.25);
+  }
+  .ghostbtn {
+    width: 100%; border: 2px solid var(--stamp-red); border-radius: 6px; padding: 13px; cursor: pointer; margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    background: transparent; color: var(--stamp-red);
+  }
+
+  .entry { padding: 12px 2px; border-bottom: 1px solid var(--rule); display: flex; gap: 12px; }
+  .entry:last-child { border-bottom: 0; }
+  .entry .when { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--mid); width: 64px; flex-shrink: 0; line-height: 1.6; text-transform: uppercase; }
+  .entry .what { flex: 1; }
+  .entry .what b { font-size: 13.5px; font-weight: 700; display: block; }
+  .entry .what p { font-size: 12px; color: var(--mid); margin-top: 2px; line-height: 1.5; }
+  .entry .what .mono-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--faint); margin-top: 5px; letter-spacing: .03em; }
+
+  .barstrip { display: flex; height: 12px; border: 1px solid var(--ink); margin-top: 8px; }
+  .barstrip div { height: 100%; }
+
+  .notice {
+    border: 2px solid var(--stamp-amber); background: rgba(176,124,16,.07); border-radius: 4px; padding: 13px 14px; margin-top: 4px;
+    position: relative;
+  }
+  .notice .stamp { position: absolute; top: -11px; right: 10px; background: var(--paper); }
+  .notice p { font-size: 12px; line-height: 1.6; color: #5c4a1d; }
+  .notice p b { font-weight: 700; }
+
+  .checktable { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .checktable td { padding: 8px 4px; border-bottom: 1px dashed var(--rule); vertical-align: top; }
+  .checktable tr:last-child td { border-bottom: 0; }
+  .checktable .res { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 11px; white-space: nowrap; text-align: right; }
+  .checktable small { color: var(--mid); display: block; margin-top: 1px; font-size: 11.5px; }
+
+  .tape { font-family:'IBM Plex Mono',monospace; font-size: 10px; letter-spacing: .08em; color: var(--faint); text-align: center; margin: 14px 0 4px; text-transform: uppercase; }
+
+  .lane-label { font-family:'IBM Plex Mono',monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--mid); margin: 10px 0 4px; display: flex; justify-content: space-between; }
+  .legend { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .legend span { font-family:'IBM Plex Mono',monospace; font-size: 10px; color: var(--mid); display: flex; align-items: center; gap: 5px; text-transform: uppercase; }
+  .legend i { width: 10px; height: 10px; display: inline-block; border: 1px solid var(--ink); }
+
+  .totals td { font-family:'IBM Plex Mono',monospace; font-size: 12px; padding: 5px 4px; }
+  .totals .sum { border-top: 2px solid var(--ink); font-weight: 700; }
+
+  .perf { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed var(--rule); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const GOOGLE_SEGS = [
+  ["awake",0,8],["core",8,40],["deep",40,95],["core",95,120],["rem",120,155],
+  ["core",155,210],["deep",210,250],["core",250,265],["awake",265,274],
+  ["core",274,310],["rem",310,360],["core",360,400],["rem",400,430],["core",430,436],["awake",436,444]
+];
+const APPLE_SEGS = [
+  ["awake",4,14],["core",14,52],["deep",52,90],["core",90,126],["rem",126,150],
+  ["core",150,214],["deep",214,246],["core",246,268],["awake",268,280],
+  ["core",280,316],["rem",316,352],["core",352,398],["rem",398,426],["core",426,440]
+];
+const C = { awake:"var(--awake)", rem:"var(--rem)", core:"var(--core)", deep:"var(--deep)" };
+const TOTAL = 444;
+
+function BarStrip({segs}) {
+  return <div className="barstrip">
+    {segs.map(([st,a,b],i)=><div key={i} style={{width:`${(b-a)/TOTAL*100}%`,background:C[st]}}/>)}
+  </div>;
+}
+
+function Phone({children}) {
+  return <div className="phone">
+    <div className="island"/>
+    <div className="statusbar"><span>09:41</span><span>LTE ▮▮▮</span></div>
+    <div className="screen">{children}</div>
+  </div>;
+}
+
+/* ---------- Screen 1: Manifest / home ---------- */
+function Home() {
+  return <Phone>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+      <div>
+        <div className="doc-title">AirKit</div>
+        <div className="doc-sub">Sync manifest · Fitbit Air → Apple Health</div>
+      </div>
+      <span className="stamp green" style={{marginTop:6}}>Up to date</span>
+    </div>
+
+    <div className="sheet">
+      <div className="sheet-head"><h3>Last fetch</h3><span className="no">№ 0142</span></div>
+      <div className="kv"><span className="k">Completed</span><span className="v">Thu Jun 12 · 06:42:11</span></div>
+      <div className="kv"><span className="k">Window pulled</span><span className="v">Jun 10 → Jun 12</span></div>
+      <div className="kv"><span className="k">Sleep sessions found</span><span className="v">1 new · 1 duplicate skipped</span></div>
+      <div className="kv"><span className="k">Metric points found</span><span className="v">427 across 3 types</span></div>
+      <div className="kv"><span className="k">Written to Apple Health</span><span className="v" style={{color:"var(--stamp-red)"}}>0 — awaiting review</span></div>
+    </div>
+
+    <div className="sheet" style={{borderWidth:2}}>
+      <div className="sheet-head">
+        <h3>Holding for review</h3>
+        <span className="stamp blue" style={{transform:"rotate(2deg)"}}>4 items</span>
+      </div>
+      <div className="entry">
+        <div className="when">Night<br/>Jun 11–12</div>
+        <div className="what">
+          <b>Sleep session · 7 h 24 m</b>
+          <p>23:38 → 07:02 · 15 stage segments · Apple Watch data exists for this night</p>
+          <BarStrip segs={GOOGLE_SEGS}/>
+          <div className="mono-meta">src: googlehealth/sleep · id 9f2…c41 · all 4 checks pass</div>
+        </div>
+      </div>
+      {[["Heart rate","412 pts · avg 58 · range 47–112 bpm","heart-rate"],
+        ["HRV","8 pts · 42 ms SDNN","heart-rate-variability"],
+        ["SpO₂","7 pts · avg 96.4% · min 93%","oxygen-saturation"]].map(([t,m,src])=>
+        <div className="entry" key={t}>
+          <div className="when">Jun 12</div>
+          <div className="what">
+            <b>{t}</b>
+            <p>{m}</p>
+            <div className="mono-meta">src: googlehealth/{src}</div>
+          </div>
+        </div>)}
+      <div style={{marginTop:14}}>
+        <button className="bigbtn">Review all four →</button>
+      </div>
+    </div>
+
+    <div className="notice">
+      <span className="stamp amber">Pre-GA API</span>
+      <p><b>Google Health is pre-GA</b> and may change shape before Sept 2026. AirKit validates every payload against its known schema; anything unfamiliar is held here — <b>never written silently</b>.</p>
+    </div>
+    <div className="tape">— nothing reaches Apple Health without your signature —</div>
+  </Phone>;
+}
+
+/* ---------- Screen 2: review one night ---------- */
+function Review() {
+  return <Phone>
+    <div className="doc-sub" style={{marginBottom:2}}>‹ Manifest</div>
+    <div className="doc-title" style={{fontSize:20}}>Night of Jun 11–12</div>
+    <div className="doc-sub">Exhibit A — Google session vs. Apple record</div>
+
+    <div className="sheet">
+      <div className="sheet-head"><h3>Stage record</h3><span className="no">23:38 → 07:02</span></div>
+      <div className="lane-label"><span>Google · Fitbit Air</span><span>15 segments</span></div>
+      <BarStrip segs={GOOGLE_SEGS}/>
+      <div className="lane-label"><span>Apple Watch (already in Health)</span><span>14 segments</span></div>
+      <BarStrip segs={APPLE_SEGS}/>
+      <div className="legend">
+        <span><i style={{background:C.awake}}/>Awake</span>
+        <span><i style={{background:C.rem}}/>REM</span>
+        <span><i style={{background:C.core}}/>Light</span>
+        <span><i style={{background:C.deep}}/>Deep</span>
+      </div>
+      <table className="totals" style={{width:"100%",marginTop:12,borderCollapse:"collapse"}}>
+        <thead><tr style={{color:"var(--mid)",fontSize:10,textTransform:"uppercase",letterSpacing:".1em"}}>
+          <td></td><td style={{textAlign:"right"}}>Google</td><td style={{textAlign:"right"}}>Apple</td><td style={{textAlign:"right"}}>Δ</td></tr></thead>
+        <tbody>
+          {[["Deep","1:32","1:24","+08"],["REM","1:55","1:33","+22"],["Light","3:26","3:38","−12"],["Awake","0:31","0:38","−07"]].map(([k,g,a,d])=>
+            <tr key={k}><td>{k}</td><td style={{textAlign:"right"}}>{g}</td><td style={{textAlign:"right"}}>{a}</td><td style={{textAlign:"right",color:d.startsWith("+")?"var(--stamp-green)":"var(--stamp-red)"}}>{d}</td></tr>)}
+          <tr className="sum"><td>Total</td><td style={{textAlign:"right"}}>7:24</td><td style={{textAlign:"right"}}>7:13</td><td style={{textAlign:"right"}}>+11</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div className="sheet">
+      <div className="sheet-head"><h3>Inspection</h3><span className="no">4 checks</span></div>
+      <table className="checktable">
+        <tbody>
+          <tr><td>Duration plausible<small>Within your 30-day envelope (5.8–8.6 h)</small></td><td className="res" style={{color:"var(--stamp-green)"}}>PASS</td></tr>
+          <tr><td>Segments tile cleanly<small>No gaps &gt; 5 min, no overlaps</small></td><td className="res" style={{color:"var(--stamp-green)"}}>PASS</td></tr>
+          <tr><td>Timing matches Apple<small>Onset Δ 4 min · wake Δ 2 min</small></td><td className="res" style={{color:"var(--stamp-green)"}}>PASS</td></tr>
+          <tr><td>REM drift vs Apple<small>+22 min — sensor disagreement, review chart</small></td><td className="res" style={{color:"var(--stamp-amber)"}}>NOTE</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div className="sheet">
+      <div className="sheet-head"><h3>If imported</h3><span className="no">writes</span></div>
+      <div className="kv"><span className="k">Stage samples</span><span className="v">15 × sleepAnalysis</span></div>
+      <div className="kv"><span className="k">In-bed span</span><span className="v">1 × .inBed</span></div>
+      <div className="kv"><span className="k">Dedup key</span><span className="v">9f2a41…c41 (re-runs skip)</span></div>
+      <div className="kv"><span className="k">Reversible</span><span className="v">Yes — delete in Apple Health</span></div>
+    </div>
+
+    <button className="bigbtn">✓ &nbsp;Sign & import to Apple Health</button>
+    <button className="ghostbtn">✕ &nbsp;Toss this night</button>
+  </Phone>;
+}
+
+/* ---------- Screen 3: audit log ---------- */
+function Audit() {
+  const entries = [
+    ["06:45","Imported night of Jun 11–12","15 stages + in-bed + 427 metric pts → Apple Health","green","WRITTEN"],
+    ["06:42","Fetch № 0142 completed","1 new session, 427 pts · 1 duplicate skipped by dedup store",null,null],
+    ["Jun 11","Imported night of Jun 10–11","13 stages + in-bed + 389 metric pts → Apple Health","green","WRITTEN"],
+    ["Jun 10","Fetch № 0140 — nothing new","Upstream had no new sessions; window not advanced",null,null],
+    ["Jun 9","You tossed night of Jun 8–9","Google reported 11.2 h — failed duration check. Nothing written.","red","TOSSED"],
+    ["Jun 9","Schema drift caught","Field `stageType` arrived as `stage_type`; payload held, not written","amber","HELD"],
+    ["Jun 8","Reconnected Google","Testing-mode token expires weekly; refreshed via PKCE",null,null],
+  ];
+  return <Phone>
+    <div className="doc-title" style={{fontSize:20}}>Audit log</div>
+    <div className="doc-sub">Every action, in order · nothing is ever silent</div>
+
+    <div className="sheet" style={{padding:"6px 14px 10px"}}>
+      {entries.map(([when,title,desc,stamp,stampText],i)=>
+        <div className="entry" key={i}>
+          <div className="when">{when}</div>
+          <div className="what">
+            <b style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>{title}
+              {stamp&&<span className={"stamp "+stamp} style={{fontSize:9,padding:"1px 6px",transform:"rotate(-1deg)"}}>{stampText}</span>}</b>
+            <p>{desc}</p>
+          </div>
+        </div>)}
+    </div>
+
+    <div className="sheet">
+      <div className="sheet-head"><h3>Running totals</h3><span className="no">since May 14</span></div>
+      <div className="kv"><span className="k">Nights imported</span><span className="v">26</span></div>
+      <div className="kv"><span className="k">Nights tossed by you</span><span className="v">2</span></div>
+      <div className="kv"><span className="k">Payloads held (schema drift)</span><span className="v">1</span></div>
+      <div className="kv"><span className="k">Duplicates prevented</span><span className="v">84</span></div>
+      <div className="kv"><span className="k">Data sent to third parties</span><span className="v" style={{color:"var(--stamp-green)"}}>0 — on-device only</span></div>
+    </div>
+
+    <div className="notice">
+      <span className="stamp amber">Pre-GA API</span>
+      <p>Numbers shown for past nights are <b>what was true at import time</b>. If Google revises a night upstream, the next fetch stages it as an edit for your review — your Health data is never rewritten behind your back.</p>
+    </div>
+  </Phone>;
+}
+
+function App() {
+  return <>
+    <div className="masthead">
+      <h1>AirKit — The Manifest</h1>
+      <span className="tag">Variation B · paper logbook · audit-grade</span>
+    </div>
+    <div className="stage">
+      <div className="slot"><Home/><div className="slot-label">Manifest</div></div>
+      <div className="slot"><Review/><div className="slot-label">Inspect & sign</div></div>
+      <div className="slot"><Audit/><div className="slot-label">Audit log</div></div>
+    </div>
+  </>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

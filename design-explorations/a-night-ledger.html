@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AirKit — Variation A · Night Ledger</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0d1c;
+    --panel: #12162b;
+    --panel-2: #181d38;
+    --hairline: rgba(167,178,230,.14);
+    --text: #e8eaf6;
+    --dim: #8b93b8;
+    --faint: #5b628a;
+    --moon: #cdd4ff;
+    --glow: #8e9bff;
+    --awake: #f5a05c;
+    --rem: #b18cf2;
+    --core: #5cc8d7;
+    --deep: #5b6cf0;
+    --ok: #7edba1;
+    --warn: #f2c66b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: radial-gradient(1200px 800px at 70% -10%, #1b2147 0%, #0a0d1c 55%) , var(--ink);
+    font-family: 'Hanken Grotesk', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 56px 48px 80px;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .5;
+    background-image: radial-gradient(1.2px 1.2px at 12% 18%, rgba(255,255,255,.5) 0, transparent 100%),
+      radial-gradient(1px 1px at 34% 8%, rgba(255,255,255,.35) 0, transparent 100%),
+      radial-gradient(1.4px 1.4px at 58% 22%, rgba(255,255,255,.4) 0, transparent 100%),
+      radial-gradient(1px 1px at 81% 12%, rgba(255,255,255,.45) 0, transparent 100%),
+      radial-gradient(1.1px 1.1px at 92% 30%, rgba(255,255,255,.3) 0, transparent 100%);
+  }
+  .masthead { max-width: 1480px; margin: 0 auto 44px; display: flex; align-items: baseline; gap: 24px; }
+  .masthead h1 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 42px; letter-spacing: -.01em; }
+  .masthead h1 em { font-style: italic; color: var(--moon); }
+  .masthead .tag { font-size: 13px; letter-spacing: .22em; text-transform: uppercase; color: var(--faint); }
+  .stage { max-width: 1480px; margin: 0 auto; display: flex; gap: 56px; justify-content: center; align-items: flex-start; }
+  .slot { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+  .slot-label { font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--faint); }
+
+  /* ---------- phone chrome ---------- */
+  .phone {
+    width: 393px; height: 852px; border-radius: 54px; position: relative; overflow: hidden;
+    background: var(--ink);
+    border: 1px solid rgba(167,178,230,.22);
+    box-shadow: 0 0 0 10px #060812, 0 0 0 11px rgba(167,178,230,.18), 0 40px 80px -20px rgba(0,0,0,.8), 0 0 120px -30px rgba(110,125,255,.25);
+  }
+  .island { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 118px; height: 34px; background: #000; border-radius: 20px; z-index: 50; }
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 58px; display: flex; justify-content: space-between; align-items: center; padding: 14px 32px 0; font-size: 14.5px; font-weight: 600; z-index: 40; }
+  .screen { position: absolute; inset: 0; overflow-y: auto; padding: 70px 22px 40px; scrollbar-width: none; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* ---------- shared bits ---------- */
+  .nav-title { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 450; margin: 6px 2px 2px; }
+  .nav-sub { font-size: 13.5px; color: var(--dim); margin: 2px 2px 18px; }
+  .card { background: linear-gradient(180deg, var(--panel-2), var(--panel)); border: 1px solid var(--hairline); border-radius: 20px; padding: 18px; margin-bottom: 14px; }
+  .section-label { font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--faint); margin: 20px 4px 10px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .pill { font-size: 11px; font-weight: 600; letter-spacing: .04em; padding: 3px 9px; border-radius: 99px; }
+  .pill.ok { background: rgba(126,219,161,.14); color: var(--ok); }
+  .pill.warn { background: rgba(242,198,107,.15); color: var(--warn); }
+  .pill.new { background: rgba(142,155,255,.16); color: var(--glow); }
+  .hr { height: 1px; background: var(--hairline); margin: 14px -18px; }
+
+  /* moon status */
+  .moonwrap { display: flex; flex-direction: column; align-items: center; padding: 26px 0 10px; }
+  .moon {
+    width: 108px; height: 108px; border-radius: 50%;
+    background: radial-gradient(circle at 36% 32%, #f0f3ff 0%, #c6cffc 45%, #7e8be0 100%);
+    box-shadow: 0 0 50px 8px rgba(142,155,255,.35), inset -14px -10px 30px rgba(60,70,150,.55);
+    position: relative;
+  }
+  .moon::after { content: ""; position: absolute; inset: -22px; border-radius: 50%; border: 1px solid rgba(167,178,230,.25); }
+  .moon-status { font-family: 'Fraunces', serif; font-size: 24px; margin-top: 28px; }
+  .moon-sub { font-size: 13.5px; color: var(--dim); margin-top: 5px; }
+
+  /* ledger */
+  .ledger-night { display: flex; gap: 14px; padding: 13px 4px; border-bottom: 1px solid var(--hairline); align-items: center; }
+  .ledger-night:last-child { border-bottom: 0; }
+  .ledger-date { width: 52px; text-align: center; }
+  .ledger-date .dow { font-size: 10.5px; letter-spacing: .14em; color: var(--faint); text-transform: uppercase; }
+  .ledger-date .num { font-family: 'Fraunces', serif; font-size: 22px; color: var(--moon); }
+  .ledger-body { flex: 1; min-width: 0; }
+  .ledger-title { font-size: 14.5px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+  .ledger-meta { font-size: 12px; color: var(--dim); margin-top: 3px; }
+  .strip { display: flex; height: 7px; border-radius: 4px; overflow: hidden; margin-top: 7px; opacity: .95; }
+  .chev { color: var(--faint); font-size: 18px; }
+
+  .bigbtn {
+    width: 100%; border: 0; border-radius: 16px; padding: 16px; font-family: 'Hanken Grotesk'; font-size: 16px; font-weight: 600; cursor: pointer;
+    background: linear-gradient(135deg, #9aa6ff, #6c7bf5); color: #0a0d1c;
+    box-shadow: 0 8px 30px -8px rgba(120,135,255,.55);
+  }
+  .ghostbtn { width: 100%; border: 1px solid var(--hairline); background: transparent; color: var(--dim); border-radius: 16px; padding: 14px; font-size: 15px; font-weight: 500; margin-top: 10px; font-family: 'Hanken Grotesk'; cursor: pointer; }
+
+  .prega { display: flex; gap: 11px; padding: 14px 16px; border-radius: 16px; border: 1px dashed rgba(242,198,107,.4); background: rgba(242,198,107,.06); margin-top: 18px; }
+  .prega .dot { font-size: 16px; }
+  .prega p { font-size: 12.5px; line-height: 1.55; color: #d8c79a; }
+  .prega b { color: var(--warn); font-weight: 600; }
+
+  /* hypnogram step chart */
+  .legend { display: flex; gap: 14px; margin: 12px 2px 0; flex-wrap: wrap; }
+  .legend span { font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 5px; }
+  .legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
+  .checks li { list-style: none; display: flex; gap: 10px; padding: 9px 0; font-size: 13.5px; align-items: flex-start; border-bottom: 1px solid var(--hairline); }
+  .checks li:last-child { border-bottom: 0; }
+  .checks .mark { width: 18px; text-align: center; }
+  .checks small { display: block; color: var(--dim); font-size: 12px; margin-top: 2px; }
+
+  .statgrid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+  .stat { text-align: center; padding: 10px 4px; border-radius: 14px; background: rgba(167,178,230,.06); }
+  .stat .v { font-family: 'Fraunces', serif; font-size: 19px; }
+  .stat .k { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-top: 3px; }
+
+  .receipt-line { display: flex; justify-content: space-between; font-size: 13.5px; padding: 8px 0; border-bottom: 1px solid var(--hairline); }
+  .receipt-line:last-child { border-bottom: 0; }
+  .receipt-line .l { color: var(--dim); }
+  .receipt-line .r { font-weight: 600; }
+
+  .tabbar { position: absolute; bottom: 0; left: 0; right: 0; height: 84px; background: rgba(10,13,28,.85); backdrop-filter: blur(20px); border-top: 1px solid var(--hairline); display: flex; justify-content: space-around; padding: 14px 20px 0; z-index: 45; }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10.5px; color: var(--faint); letter-spacing: .04em; }
+  .tab.active { color: var(--moon); }
+  .tab .ico { font-size: 20px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { createElement: h } = React;
+
+/* ---- shared sleep data: minutes from 23:38, total 444m ---- */
+const GOOGLE_SEGS = [
+  ["awake",0,8],["core",8,40],["deep",40,95],["core",95,120],["rem",120,155],
+  ["core",155,210],["deep",210,250],["core",250,265],["awake",265,274],
+  ["core",274,310],["rem",310,360],["core",360,400],["rem",400,430],["core",430,436],["awake",436,444]
+];
+const APPLE_SEGS = [
+  ["awake",4,14],["core",14,52],["deep",52,90],["core",90,126],["rem",126,150],
+  ["core",150,214],["deep",214,246],["core",246,268],["awake",268,280],
+  ["core",280,316],["rem",316,352],["core",352,398],["rem",398,426],["core",426,440]
+];
+const C = { awake:"var(--awake)", rem:"var(--rem)", core:"var(--core)", deep:"var(--deep)" };
+const TOTAL = 444;
+
+function Strip({segs, height=7}) {
+  return <div className="strip" style={{height}}>
+    {segs.map(([st,a,b],i)=><div key={i} style={{width:`${(b-a)/TOTAL*100}%`,background:C[st]}}/>)}
+  </div>;
+}
+
+/* Step hypnogram: classic stage chart, lane = stage row */
+function Hypnogram({segs, width=325, height=120, label, dim}) {
+  const ROWS = { awake:0, rem:1, core:2, deep:3 };
+  const rh = height/4;
+  return <svg width={width} height={height+22} style={{opacity:dim?0.55:1}}>
+    {["Awake","REM","Light","Deep"].map((t,i)=>
+      <text key={t} x={0} y={i*rh+rh/2+4} fontSize="9" fill="var(--faint)" fontFamily="Hanken Grotesk">{t}</text>)}
+    {Object.values(ROWS).map(r=>
+      <line key={r} x1={36} x2={width} y1={r*rh+rh/2} y2={r*rh+rh/2} stroke="rgba(167,178,230,.08)"/>)}
+    {segs.map(([st,a,b],i)=>{
+      const x = 36 + a/TOTAL*(width-36), w = (b-a)/TOTAL*(width-36);
+      const y = ROWS[st]*rh + rh/2;
+      return <g key={i}>
+        <rect x={x} y={y-4} width={Math.max(w,2)} height={8} rx={4} fill={C[st]}/>
+        {i>0 && <line x1={x} x2={x} y1={ROWS[segs[i-1][0]]*rh+rh/2} y2={y} stroke="rgba(167,178,230,.25)" strokeWidth="1"/>}
+      </g>;
+    })}
+    {["11:38 PM","1:30","3:30","5:30","7:02 AM"].map((t,i)=>
+      <text key={t} x={36+(i/4)*(width-42)} y={height+16} fontSize="9" fill="var(--faint)" fontFamily="Hanken Grotesk">{t}</text>)}
+    {label && <text x={width-4} y={12} fontSize="10" fill="var(--dim)" textAnchor="end" fontFamily="Hanken Grotesk" letterSpacing="1.5">{label}</text>}
+  </svg>;
+}
+
+function Phone({children, tab}) {
+  return <div className="phone">
+    <div className="island"/>
+    <div className="statusbar"><span>9:41</span><span style={{letterSpacing:2}}>●●● ⌁ ▮</span></div>
+    <div className="screen">{children}</div>
+    <div className="tabbar">
+      {[["☾","Tonight"],["≣","Ledger"],["⚙","Settings"]].map(([ico,t])=>
+        <div key={t} className={"tab"+(t===tab?" active":"")}><span className="ico">{ico}</span>{t}</div>)}
+    </div>
+  </div>;
+}
+
+/* ---------- Screen 1: Tonight / home ---------- */
+function Home() {
+  return <Phone tab="Tonight">
+    <div className="moonwrap">
+      <div className="moon"/>
+      <div className="moon-status">One night staged</div>
+      <div className="moon-sub">Fetched today, 6:42 AM · nothing written yet</div>
+    </div>
+
+    <div className="section-label">Waiting for your review</div>
+    <div className="card">
+      <div className="row" style={{justifyContent:"space-between"}}>
+        <div>
+          <div style={{fontFamily:"Fraunces",fontSize:19}}>Wed night → Thu</div>
+          <div style={{fontSize:12.5,color:"var(--dim)",marginTop:3}}>11:38 PM – 7:02 AM · 7.4 h · Apple Watch ✓</div>
+        </div>
+        <span className="pill ok">checks pass</span>
+      </div>
+      <Strip segs={GOOGLE_SEGS} height={9}/>
+      <div className="legend">
+        <span><i style={{background:C.deep}}/>Deep 1h32</span>
+        <span><i style={{background:C.rem}}/>REM 1h55</span>
+        <span><i style={{background:C.core}}/>Light 3h26</span>
+        <span><i style={{background:C.awake}}/>Awake 31m</span>
+      </div>
+      <div className="hr"/>
+      <button className="bigbtn">Review & import</button>
+      <button className="ghostbtn">Toss this night</button>
+    </div>
+
+    <div className="section-label">Also staged</div>
+    <div className="card" style={{padding:"6px 18px"}}>
+      {[["♥","Heart rate","412 pts · avg 58 bpm overnight"],
+        ["∿","HRV","8 pts · 42 ms"],
+        ["O₂","SpO₂","avg 96.4% · min 93%"]].map(([ico,t,m])=>
+        <div key={t} className="ledger-night">
+          <div style={{width:30,height:30,borderRadius:10,background:"rgba(167,178,230,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"var(--moon)"}}>{ico}</div>
+          <div className="ledger-body">
+            <div className="ledger-title">{t}</div>
+            <div className="ledger-meta">{m}</div>
+          </div>
+          <span className="chev">›</span>
+        </div>)}
+    </div>
+
+    <div className="prega">
+      <span className="dot">◍</span>
+      <p><b>Pre-GA API.</b> Google Health is still “building in public” — numbers can shift until the Sept 2026 GA. AirKit re-checks every payload against your Apple data before anything is written.</p>
+    </div>
+  </Phone>;
+}
+
+/* ---------- Screen 2: compare/review ---------- */
+function Review() {
+  return <Phone tab="Tonight">
+    <div className="nav-sub" style={{marginBottom:0}}>‹ Tonight</div>
+    <div className="nav-title">Thursday, June 12</div>
+    <div className="nav-sub">Google session vs. what Apple Health already has</div>
+
+    <div className="card">
+      <Hypnogram segs={GOOGLE_SEGS} label="GOOGLE · FITBIT AIR"/>
+      <div className="hr" style={{margin:"8px -18px"}}/>
+      <Hypnogram segs={APPLE_SEGS} label="APPLE WATCH" dim/>
+      <div className="legend">
+        <span><i style={{background:C.awake}}/>Awake</span>
+        <span><i style={{background:C.rem}}/>REM</span>
+        <span><i style={{background:C.core}}/>Light/Core</span>
+        <span><i style={{background:C.deep}}/>Deep</span>
+      </div>
+    </div>
+
+    <div className="statgrid">
+      {[["7.4h","asleep"],["92%","agreement"],["58","avg bpm"],["+9m","vs apple"]].map(([v,k])=>
+        <div key={k} className="stat"><div className="v">{v}</div><div className="k">{k}</div></div>)}
+    </div>
+
+    <div className="section-label">Sanity checks</div>
+    <div className="card">
+      <ul className="checks">
+        <li><span className="mark" style={{color:"var(--ok)"}}>✓</span><div>Duration plausible<small>7h 24m is within your 30-day range</small></div></li>
+        <li><span className="mark" style={{color:"var(--ok)"}}>✓</span><div>Stages tile the session<small>No overlaps; segments sum to 7h 24m</small></div></li>
+        <li><span className="mark" style={{color:"var(--ok)"}}>✓</span><div>Matches Apple Watch timing<small>Onset within 4 min, wake within 2 min</small></div></li>
+        <li><span className="mark" style={{color:"var(--warn)"}}>△</span><div>REM differs from Apple by 22 min<small>Google reads 1h 55m vs Apple 1h 33m — common drift, your call</small></div></li>
+      </ul>
+    </div>
+
+    <button className="bigbtn">Import to Apple Health</button>
+    <button className="ghostbtn">Toss — don’t write anything</button>
+    <p style={{fontSize:12,color:"var(--faint)",textAlign:"center",marginTop:12,lineHeight:1.5}}>Writes 15 stage samples + 1 in-bed sample.<br/>Re-importing later never duplicates — sessions are keyed by Google’s ID.</p>
+  </Phone>;
+}
+
+/* ---------- Screen 3: ledger / history ---------- */
+function Ledger() {
+  const nights = [
+    ["THU","12","Imported 6:45 AM","7.4 h · 15 stages · HR · HRV · SpO₂", GOOGLE_SEGS, "ok", "imported"],
+    ["WED","11","Imported 7:02 AM","6.9 h · 13 stages · HR · SpO₂", APPLE_SEGS, "ok", "imported"],
+    ["TUE","10","Nothing new","Fetched 6:40 AM — no new session upstream", null, null, null],
+    ["MON","9","Tossed by you","Google reported 11.2 h — failed duration check", GOOGLE_SEGS, "warn", "tossed"],
+    ["SUN","8","Imported 6:38 AM","7.1 h · 14 stages · HR · HRV", APPLE_SEGS, "ok", "imported"],
+  ];
+  return <Phone tab="Ledger">
+    <div className="nav-title">Night ledger</div>
+    <div className="nav-sub">Every fetch, what it found, and what was written</div>
+
+    <div className="card" style={{padding:"4px 18px"}}>
+      {nights.map(([dow,num,title,meta,segs,pill,pillText])=>
+        <div key={num} className="ledger-night">
+          <div className="ledger-date"><div className="dow">{dow}</div><div className="num">{num}</div></div>
+          <div className="ledger-body">
+            <div className="ledger-title">{title}{pill&&<span className={"pill "+pill}>{pillText}</span>}</div>
+            <div className="ledger-meta">{meta}</div>
+            {segs&&<Strip segs={segs}/>}
+          </div>
+          <span className="chev">›</span>
+        </div>)}
+    </div>
+
+    <div className="section-label">This week, in Apple Health</div>
+    <div className="card">
+      <div className="receipt-line"><span className="l">Sleep sessions written</span><span className="r">4 nights</span></div>
+      <div className="receipt-line"><span className="l">Stage samples</span><span className="r">57</span></div>
+      <div className="receipt-line"><span className="l">Metric points (HR · HRV · SpO₂)</span><span className="r">1,633</span></div>
+      <div className="receipt-line"><span className="l">Duplicates prevented</span><span className="r">12</span></div>
+      <div className="receipt-line"><span className="l">Tossed after review</span><span className="r">1 night</span></div>
+    </div>
+
+    <div className="prega">
+      <span className="dot">◍</span>
+      <p><b>Schema watch:</b> last fetch matched the known Google Health shape exactly. If Google changes a field before GA, affected nights are held here for review — never silently written.</p>
+    </div>
+  </Phone>;
+}
+
+function App() {
+  return <>
+    <div className="masthead">
+      <h1>AirKit <em>— Night Ledger</em></h1>
+      <span className="tag">Variation A · calm instrument · dark</span>
+    </div>
+    <div className="stage">
+      <div className="slot"><Home/><div className="slot-label">Tonight</div></div>
+      <div className="slot"><Review/><div className="slot-label">Review before import</div></div>
+      <div className="slot"><Ledger/><div className="slot-label">Sync ledger</div></div>
+    </div>
+  </>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
