@@ -114,6 +114,11 @@ final class SyncEngine {
     /// Per-data-type progress through the current fetch (shown while syncing).
     private(set) var pipeline: [PipelineItem] = []
 
+    /// True when the branded notification primer should be on screen — set
+    /// after a successful connect while iOS permission is still undetermined;
+    /// cleared by accept/decline. The sheet, not the system prompt, goes first.
+    private(set) var needsNotificationPriming = false
+
     /// Most recent raw page JSON per data type (pretty-printed). Populated to
     /// verify the pre-GA wire schemas during bring-up; shown in DEBUG builds.
     private(set) var lastRawJSON: [String: String] = [:]
@@ -205,6 +210,7 @@ final class SyncEngine {
             isConnected = true
             status = .idle
             log.record(.connected, title: "Connected to Google Health", detail: "The bridge is open — fetches can begin.")
+            needsNotificationPriming = true
             return
         }
         #endif
@@ -216,9 +222,12 @@ final class SyncEngine {
             Log.sync.info("Connected to Google Health")
             log.record(.connected, title: "Connected to Google Health", detail: "The bridge is open — fetches can begin.")
             await notifier.clearReconnectNeeded()
-            // Ask now, not at first launch — the user just connected, so
-            // "tell me when this sign-in expires" is an easy yes.
-            await notifier.requestAuthorization()
+            // Prime now, not at first launch — the user just connected, so
+            // "tell me when this sign-in expires" is an easy yes. The branded
+            // sheet explains what's coming before iOS asks.
+            if await notifier.isAuthorizationUndetermined() {
+                needsNotificationPriming = true
+            }
         } catch OAuthError.userCancelled {
             // Leave state untouched on cancel.
         } catch {
@@ -288,7 +297,7 @@ final class SyncEngine {
             try await ensureHealthAuthorized()
 
             #if DEBUG
-            status = .syncing(phase: "Probing API schemas (debug)…")
+            status = .syncing(phase: "Warming up the engine…")
             await runDiscoveryProbes(since: since)
             #endif
 
@@ -466,6 +475,30 @@ final class SyncEngine {
             Log.sync.error("Fetch failed: \(error.localizedDescription)")
         }
     }
+
+    // MARK: - Notification priming
+
+    /// "Turn on notifications" on the primer — hands off to the system prompt.
+    func acceptNotifications() async {
+        needsNotificationPriming = false
+        #if DEBUG
+        if isUIMock { return } // never show a real system prompt over fixtures
+        #endif
+        await notifier.requestAuthorization()
+    }
+
+    /// "Not now" (or a swipe-down). Permission stays undetermined, so the
+    /// primer naturally re-offers after the next weekly reconnect.
+    func declineNotifications() {
+        needsNotificationPriming = false
+    }
+
+    #if DEBUG
+    /// Shows the primer over seeded fixtures (`-AirliftUIMockScreen priming`).
+    func primeNotificationsForUIMock() {
+        needsNotificationPriming = true
+    }
+    #endif
 
     // MARK: - History phrasing
 

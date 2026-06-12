@@ -10,9 +10,11 @@ import UserNotifications
 /// pile up unsynced. Manual disconnects never notify; only an expired or
 /// revoked sign-in discovered during a sync does.
 protocol ReconnectNotifying: Sendable {
-    /// Asks for notification permission. Called right after a successful
-    /// connect — the moment the user's intent is clearest — instead of
-    /// ambushing them on first launch.
+    /// True while iOS has never shown the permission prompt — the only state
+    /// where the branded primer (and then the system prompt) makes sense.
+    func isAuthorizationUndetermined() async -> Bool
+    /// Asks for notification permission. Called from the primer's "Turn on
+    /// notifications" button — after a successful connect, never at launch.
     func requestAuthorization() async
     /// Posts (or refreshes) the reconnect notification. A stable identifier
     /// means repeated failing syncs re-surface one notification rather than
@@ -24,6 +26,10 @@ protocol ReconnectNotifying: Sendable {
 
 final class ReconnectNotifier: ReconnectNotifying {
     private static let identifier = "airlift.reconnect"
+
+    func isAuthorizationUndetermined() async -> Bool {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .notDetermined
+    }
 
     func requestAuthorization() async {
         let center = UNUserNotificationCenter.current()

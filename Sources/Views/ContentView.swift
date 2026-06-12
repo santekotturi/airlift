@@ -42,6 +42,14 @@ struct ContentView: View {
         .preferredColorScheme(
             (DaybreakAppearance(rawValue: appearanceRaw) ?? .system).colorScheme
         )
+        .sheet(isPresented: Binding(
+            get: { model.syncEngine.needsNotificationPriming },
+            set: { if !$0 { model.syncEngine.declineNotifications() } } // swipe-down = "Not now"
+        )) {
+            NotificationPrimerSheet()
+                .presentationDetents([.fraction(0.75), .large])
+                .presentationCornerRadius(32)
+        }
         .onAppear(perform: applyMockRouteIfNeeded)
     }
 
@@ -66,6 +74,8 @@ struct ContentView: View {
             path.append(HistoryRoute())
         case "settings":
             path.append(SettingsRoute())
+        case "priming":
+            model.syncEngine.primeNotificationsForUIMock()
         default:
             break
         }
