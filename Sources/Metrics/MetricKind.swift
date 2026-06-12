@@ -1,7 +1,7 @@
 import Foundation
 import HealthKit
 
-/// Every quantity metric AirKit bridges from Google Health into HealthKit.
+/// Every quantity metric Airlift bridges from Google Health into HealthKit.
 ///
 /// Adding a new metric is one new case here: the Google data-type path, the
 /// HealthKit type/unit, plausibility bounds for sanity checks, and display

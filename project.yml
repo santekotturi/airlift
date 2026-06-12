@@ -1,4 +1,4 @@
-name: AirKit
+name: Airlift
 options:
   bundleIdPrefix: com.santekotturi
   deploymentTarget:
@@ -19,20 +19,20 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
 
 targets:
-  AirKit:
+  Airlift:
     type: application
     platform: iOS
     sources:
       - path: Sources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.santekotturi.airkit
+        PRODUCT_BUNDLE_IDENTIFIER: com.santekotturi.airlift
         INFOPLIST_FILE: Sources/Resources/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_PREVIEWS: YES
         TARGETED_DEVICE_FAMILY: "1" # iPhone only
     entitlements:
-      path: Sources/Resources/AirKit.entitlements
+      path: Sources/Resources/Airlift.entitlements
       properties:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
@@ -44,26 +44,26 @@ targets:
         com.apple.developer.ubiquity-container-identifiers:
           - iCloud.$(CFBundleIdentifier)
 
-  AirKitTests:
+  AirliftTests:
     type: bundle.unit-test
     platform: iOS
     sources:
       - path: Tests
     dependencies:
-      - target: AirKit
+      - target: Airlift
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.santekotturi.airkit.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.santekotturi.airlift.tests
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:
-  AirKit:
+  Airlift:
     build:
       targets:
-        AirKit: all
+        Airlift: all
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - AirKitTests
+        - AirliftTests

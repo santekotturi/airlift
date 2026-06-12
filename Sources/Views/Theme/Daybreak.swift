@@ -90,7 +90,7 @@ enum Daybreak {
 enum DaybreakAppearance: String, CaseIterable, Identifiable {
     case system, day, night
 
-    static let storageKey = "airkit.appearance"
+    static let storageKey = "airlift.appearance"
 
     var id: String { rawValue }
 

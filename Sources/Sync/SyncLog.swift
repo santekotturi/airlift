@@ -36,7 +36,7 @@ final class SyncLogStore {
     private let key: String
     private let cap: Int
 
-    init(defaults: UserDefaults? = .standard, key: String = "airkit.syncLog", cap: Int = 200) {
+    init(defaults: UserDefaults? = .standard, key: String = "airlift.syncLog", cap: Int = 200) {
         self.defaults = defaults
         self.key = key
         self.cap = cap

@@ -45,7 +45,7 @@ struct ContentView: View {
         .onAppear(perform: applyMockRouteIfNeeded)
     }
 
-    /// `-AirKitUIMockScreen <name>` pre-populates the path on first appear:
+    /// `-AirliftUIMockScreen <name>` pre-populates the path on first appear:
     /// `session` opens the held 11.2 h night (the richer, warn-state screen),
     /// `metric` the heart-rate batch.
     private func applyMockRouteIfNeeded() {

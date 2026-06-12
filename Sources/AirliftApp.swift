@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct AirKitApp: App {
+struct AirliftApp: App {
     @State private var model: AppModel
 
     init() {

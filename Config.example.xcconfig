@@ -1,4 +1,4 @@
-// AirKit build configuration — EXAMPLE
+// Airlift build configuration — EXAMPLE
 // ----------------------------------------------------------------------------
 // Copy this file to `Config.xcconfig` (which is gitignored) and fill in the
 // values from the iOS OAuth client you created in Google Cloud Console.

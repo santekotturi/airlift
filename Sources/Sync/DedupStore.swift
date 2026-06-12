@@ -20,7 +20,7 @@ final class UserDefaultsDedupStore: DedupStoring, @unchecked Sendable {
     private let key: String
     private let lock = NSLock()
 
-    init(defaults: UserDefaults = .standard, key: String = "airkit.syncedDataPointIDs") {
+    init(defaults: UserDefaults = .standard, key: String = "airlift.syncedDataPointIDs") {
         self.defaults = defaults
         self.key = key
     }

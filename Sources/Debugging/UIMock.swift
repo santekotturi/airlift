@@ -2,20 +2,20 @@
 import Foundation
 import HealthKit
 
-/// Canned fixtures for UI work, activated by the `-AirKitUIMock 1` launch
+/// Canned fixtures for UI work, activated by the `-AirliftUIMock 1` launch
 /// argument. Everything is built relative to `Date()` so "last night" is
 /// always last night, and check results come from the real `SanityChecks` —
 /// the screens render exactly what production code would produce.
 @MainActor
 enum UIMock {
-    /// True when the app was launched with `-AirKitUIMock 1`.
+    /// True when the app was launched with `-AirliftUIMock 1`.
     static var isActive: Bool {
-        UserDefaults.standard.bool(forKey: "AirKitUIMock")
+        UserDefaults.standard.bool(forKey: "AirliftUIMock")
     }
 
-    /// `-AirKitUIMockScreen <home|session|metric|history|settings>`.
+    /// `-AirliftUIMockScreen <home|session|metric|history|settings>`.
     static var screen: String? {
-        UserDefaults.standard.string(forKey: "AirKitUIMockScreen")
+        UserDefaults.standard.string(forKey: "AirliftUIMockScreen")
     }
 
     /// Seeds the engine and log with the fixture set, shaped to the user's

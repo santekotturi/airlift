@@ -1,5 +1,5 @@
 import XCTest
-@testable import AirKit
+@testable import Airlift
 
 final class DumpStoreTests: XCTestCase {
     private var root: URL!
@@ -9,7 +9,7 @@ final class DumpStoreTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("airkit-dumps-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("airlift-dumps-\(UUID().uuidString)", isDirectory: true)
         store = DumpStore(root: root)
         store.beginFetch(now: now)
     }

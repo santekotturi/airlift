@@ -2,7 +2,7 @@ import Foundation
 import HealthKit
 
 /// Writes everything a fetch produces to `Documents/Dumps/fetch-<timestamp>/`
-/// so it can be pulled off the device (Files app → AirKit, or Xcode → Devices
+/// so it can be pulled off the device (Files app → Airlift, or Xcode → Devices
 /// and Simulators → Download Container) and the pre-GA Google wire schemas
 /// iterated against real payloads:
 ///
@@ -33,7 +33,7 @@ final class DumpStore: @unchecked Sendable {
             .appendingPathComponent("Dumps", isDirectory: true)
         guard root == nil, Self.enabled else { return }
         // Prefer the iCloud Drive container so dumps reach the user's Mac
-        // without cables or AirDrop (Files → iCloud Drive → AirKit → Dumps).
+        // without cables or AirDrop (Files → iCloud Drive → Airlift → Dumps).
         // Resolving the container can block, so it happens off-main; a fetch
         // that starts first falls back to local Documents for that run.
         Task.detached(priority: .utility) { [weak self] in

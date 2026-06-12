@@ -5,7 +5,7 @@ import os
 /// Use category-specific loggers so Console.app filtering is easy during the
 /// pre-GA API period (schemas/quotas may shift — see PRD §4).
 enum Log {
-    private static let subsystem = "com.santekotturi.airkit"
+    private static let subsystem = "com.santekotturi.airlift"
 
     static let auth = Logger(subsystem: subsystem, category: "auth")
     static let api = Logger(subsystem: subsystem, category: "googlehealth")

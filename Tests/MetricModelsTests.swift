@@ -1,5 +1,5 @@
 import XCTest
-@testable import AirKit
+@testable import Airlift
 
 final class MetricModelsTests: XCTestCase {
     private let base = Date(timeIntervalSince1970: 1_750_000_000)
