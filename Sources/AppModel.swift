@@ -55,7 +55,8 @@ final class AppModel {
             state: state,
             settings: UserDefaultsSyncSettings(),
             ledger: FileSyncLedger(),
-            log: log
+            log: log,
+            notifier: ReconnectNotifier()
         )
 
         #if DEBUG
