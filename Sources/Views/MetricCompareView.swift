@@ -12,7 +12,7 @@ struct MetricCompareView: View {
 
     @State private var isImporting = false
 
-    private static let googleSeries = "Fitbit Air"
+    private var googleSeries: String { model.syncEngine.sourceDeviceName }
     private static let appleSeries = "Apple Health"
 
     var body: some View {
@@ -56,7 +56,7 @@ struct MetricCompareView: View {
                     status: batch.worstSeverity == .pass ? .new : .warn
                 )
             }
-            Text("Fitbit Air's reading vs. what's already in Apple Health.")
+            Text("\(googleSeries)'s reading vs. what's already in Apple Health.")
                 .font(Daybreak.bodyFont)
                 .foregroundStyle(Daybreak.mid)
         }
@@ -136,7 +136,7 @@ struct MetricCompareView: View {
     private var chartCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 16) {
-                legendEntry(color: Daybreak.sunDeep, label: Self.googleSeries)
+                legendEntry(color: Daybreak.sunDeep, label: googleSeries)
                 legendEntry(
                     color: batch.appleSamples.isEmpty ? Daybreak.faint : Daybreak.plum,
                     label: Self.appleSeries
@@ -165,7 +165,7 @@ struct MetricCompareView: View {
     private var styledChart: some View {
         comparisonChart
             .chartForegroundStyleScale([
-                Self.googleSeries: Daybreak.sunDeep,
+                googleSeries: Daybreak.sunDeep,
                 Self.appleSeries: Daybreak.plum,
             ])
             .chartLegend(.hidden)
@@ -217,9 +217,9 @@ struct MetricCompareView: View {
                     LineMark(
                         x: .value("Time", sample.start),
                         y: .value(batch.kind.displayName, sample.value),
-                        series: .value("Source", Self.googleSeries)
+                        series: .value("Source", googleSeries)
                     )
-                    .foregroundStyle(by: .value("Source", Self.googleSeries))
+                    .foregroundStyle(by: .value("Source", googleSeries))
                     .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
                     .interpolationMethod(.monotone)
                 }
@@ -243,7 +243,7 @@ struct MetricCompareView: View {
                         y: .value(batch.kind.displayName, sample.value)
                     )
                     .symbolSize(20)
-                    .foregroundStyle(by: .value("Source", Self.googleSeries))
+                    .foregroundStyle(by: .value("Source", googleSeries))
                 }
                 ForEach(batch.appleSamples) { sample in
                     PointMark(
@@ -263,8 +263,8 @@ struct MetricCompareView: View {
                         x: .value("Hour", bucket.start, unit: .hour),
                         y: .value(batch.kind.displayName, bucket.value)
                     )
-                    .foregroundStyle(by: .value("Source", Self.googleSeries))
-                    .position(by: .value("Source", Self.googleSeries))
+                    .foregroundStyle(by: .value("Source", googleSeries))
+                    .position(by: .value("Source", googleSeries))
                     .cornerRadius(2)
                 }
                 ForEach(batch.appleHourly) { bucket in
@@ -281,7 +281,7 @@ struct MetricCompareView: View {
             Chart {
                 if let google = batch.samples.first {
                     RuleMark(y: .value(batch.kind.displayName, google.value))
-                        .foregroundStyle(by: .value("Source", Self.googleSeries))
+                        .foregroundStyle(by: .value("Source", googleSeries))
                         .lineStyle(StrokeStyle(lineWidth: 2, dash: [6, 3]))
                         .annotation(position: .top, alignment: .leading) {
                             Text("Fitbit \(batch.kind.format(google.value))")
@@ -323,7 +323,7 @@ struct MetricCompareView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 14) {
                 statColumn(
-                    source: Self.googleSeries,
+                    source: googleSeries,
                     value: batch.samples.isEmpty ? "—" : batch.kind.format(googleValue),
                     caption: googleCaption
                 )
@@ -451,7 +451,7 @@ struct MetricCompareView: View {
 
     private var microcopy: String {
         let count = batch.samples.count
-        return "Adds \(count) \(sampleNoun(count: count)) to Apple Health, marked as Fitbit Air data. Re-syncs never duplicate. Skipping writes nothing."
+        return "Adds \(count) \(sampleNoun(count: count)) to Apple Health, marked as \(googleSeries) data. Re-syncs never duplicate. Skipping writes nothing."
     }
 
     private func sampleNoun(count: Int) -> String {

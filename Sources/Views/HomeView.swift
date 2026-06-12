@@ -108,7 +108,7 @@ struct HomeView: View {
 
     private var bridgeCard: some View {
         VStack(spacing: 18) {
-            BridgeView()
+            BridgeView(deviceName: engine.sourceDeviceName)
             switch bridgeBody {
             case .syncing: pipelineBody
             case .reconnect: reconnectBody
@@ -338,7 +338,7 @@ struct HomeView: View {
             Text("Start the airlift")
                 .font(Daybreak.numberFont(size: 30))
                 .foregroundStyle(Daybreak.ink)
-            Text("All your Fitbit Air data is fetched locally and merged into Apple Health. You're in control — review everything yourself, or let Airlift auto-merge what passes its checks. Undo anytime.")
+            Text("All your Fitbit data is fetched locally and merged into Apple Health. You're in control — review everything yourself, or let Airlift auto-merge what passes its checks. Undo anytime.")
                 .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)

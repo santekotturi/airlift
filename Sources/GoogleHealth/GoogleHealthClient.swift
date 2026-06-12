@@ -184,6 +184,21 @@ struct GoogleHealthClient {
         return (status, data)
     }
 
+    /// Raw GET against an arbitrary API path ("users/me/devices") — discovery
+    /// probing for endpoints the pre-GA docs don't list yet. Status is data;
+    /// only 401 throws (so the caller can refresh and retry).
+    func probeRawPath(_ path: String, accessToken: String) async throws -> (status: Int, body: Data) {
+        var request = URLRequest(url: Self.baseURL.appendingPathComponent(path))
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, response) = try await session.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+        if status == 401 { throw GoogleHealthError.unauthorized }
+        return (status, data)
+    }
+
     // MARK: - Shared transport
 
     private func fetchDecodedPage<Response: Decodable>(

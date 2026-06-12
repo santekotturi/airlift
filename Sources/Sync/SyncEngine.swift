@@ -137,6 +137,23 @@ final class SyncEngine {
         didSet { settings.enabledKinds = enabledKinds }
     }
 
+    /// Best device label seen on the wire (observable mirror, persisted).
+    private(set) var detectedDeviceLabel: String?
+
+    /// User-chosen device name; wins over detection (observable, persisted).
+    var deviceNameOverride: String? {
+        didSet {
+            settings.deviceNameOverride = deviceNameOverride
+            writer.deviceName = sourceDeviceName
+        }
+    }
+
+    /// What the UI calls the Google-side device, everywhere.
+    var sourceDeviceName: String {
+        if let deviceNameOverride, !deviceNameOverride.isEmpty { return deviceNameOverride }
+        return detectedDeviceLabel ?? DeviceLabel.fallback
+    }
+
     /// Per-(kind, day) sync outcomes — powers the coverage grid.
     let ledger: SyncLedgerStoring
 
@@ -198,6 +215,13 @@ final class SyncEngine {
         self.notifier = notifier
         self.syncMode = settings.syncMode
         self.enabledKinds = settings.enabledKinds
+        self.detectedDeviceLabel = settings.detectedDeviceLabel
+        self.deviceNameOverride = settings.deviceNameOverride
+        writer.deviceName = if let override = settings.deviceNameOverride, !override.isEmpty {
+            override
+        } else {
+            settings.detectedDeviceLabel ?? DeviceLabel.fallback
+        }
         self.isConnected = tokens.load() != nil
     }
 
@@ -557,6 +581,20 @@ final class SyncEngine {
                 dump.writeText("\(error)", name: "probe \(path) ERROR.txt")
             }
         }
+
+        // Non-dataTypes paths: hunting for a devices/data-sources catalog the
+        // docs don't list yet (today device info on points is nearly empty —
+        // these probes will show the moment Google ships something better).
+        for path in ["users/me/devices", "users/me/dataSources", "users/me/identity"] {
+            do {
+                let (status, body) = try await withFreshToken { token in
+                    try await self.api.probeRawPath(path, accessToken: token)
+                }
+                dump.writeProbe(path: path, status: status, body: body)
+            } catch {
+                dump.writeText("\(error)", name: "probe \(path.replacingOccurrences(of: "/", with: "_")) ERROR.txt")
+            }
+        }
         Log.sync.info("Discovery probes complete (\(candidates.count) paths)")
     }
     #endif
@@ -836,7 +874,31 @@ final class SyncEngine {
         { [weak self, dump] data in
             dump.writeRawPage(data, dataType: key)
             let pretty = Self.prettyPrint(data)
-            Task { @MainActor in self?.noteRawPage(key: key, fetchingName: fetchingName, pretty: pretty) }
+            Task { @MainActor in
+                self?.noteDeviceInfo(in: data)
+                self?.noteRawPage(key: key, fetchingName: fetchingName, pretty: pretty)
+            }
+        }
+    }
+
+    /// Envelope-only decode of a raw page, looking for `dataSource.device`.
+    private struct DeviceScan: Decodable {
+        struct Point: Decodable { let dataSource: WireDataSource? }
+        let dataPoints: [Point]?
+    }
+
+    private func noteDeviceInfo(in data: Data) {
+        guard let scan = try? JSONDecoder().decode(DeviceScan.self, from: data) else { return }
+        let candidate = (scan.dataPoints ?? [])
+            .compactMap { $0.dataSource?.fitbitDeviceLabel }
+            .first { !DeviceLabel.isGeneric($0) }
+            ?? (scan.dataPoints ?? []).compactMap { $0.dataSource?.fitbitDeviceLabel }.first
+        let merged = DeviceLabel.merge(current: detectedDeviceLabel, candidate: candidate)
+        if merged != detectedDeviceLabel {
+            detectedDeviceLabel = merged
+            settings.detectedDeviceLabel = merged
+            writer.deviceName = sourceDeviceName
+            Log.sync.info("Detected source device: \(merged ?? "?")")
         }
     }
 
@@ -905,6 +967,7 @@ extension SyncEngine {
         isConnected: Bool
     ) {
         isUIMock = true
+        detectedDeviceLabel = "Fitbit Air"
         mockStagedSeed = staged
         mockMetricsSeed = stagedMetrics
         self.staged = staged

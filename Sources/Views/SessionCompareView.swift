@@ -85,6 +85,8 @@ struct SessionCompareView: View {
 
     let staged: StagedSession
 
+    private var deviceName: String { model.syncEngine.sourceDeviceName }
+
     @State private var isImporting = false
 
     private var session: SleepSession { staged.session }
@@ -129,7 +131,7 @@ struct SessionCompareView: View {
             Text(title)
                 .font(Daybreak.titleFont)
                 .foregroundStyle(Daybreak.ink)
-            Text("Fitbit Air's reading vs. what's already in Apple Health.")
+            Text("\(deviceName)'s reading vs. what's already in Apple Health.")
                 .font(Daybreak.bodyFont)
                 .foregroundStyle(Daybreak.mid)
         }
@@ -157,7 +159,7 @@ struct SessionCompareView: View {
 
     private var comparisonCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            laneLabel("Fitbit Air", detail: hm(session.end.timeIntervalSince(session.start))) {
+            laneLabel(deviceName, detail: hm(session.end.timeIntervalSince(session.start))) {
                 statusChip
             }
             StageStrip(google: session.stages, domain: xDomain, span: session.start...session.end)
@@ -327,7 +329,7 @@ struct SessionCompareView: View {
                 RoundedRectangle(cornerRadius: 2)
                     .fill(Daybreak.stageCore)
                     .frame(width: 14, height: 7)
-                Text("Fitbit Air")
+                Text(deviceName)
             }
             HStack(spacing: 5) {
                 Capsule()
