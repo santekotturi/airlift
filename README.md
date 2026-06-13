@@ -154,6 +154,30 @@ the last ~2 days to catch late/edited sessions) → skip IDs already in the dedu
 stages → write to HealthKit → record IDs → advance the high-water mark. The window is never
 advanced past a failed fetch.
 
+## Living with other sources (Apple Watch, iPhone, other apps)
+
+Once Airlift writes to Apple Health it becomes one *data source* among several — your
+iPhone counts steps, an Apple Watch may record sleep and heart rate, other apps may
+contribute too. How Health resolves the overlap is subtle, and the in-app tutorial
+(Settings → "Learn how to set source priority") walks through it. The short version:
+
+- **Priority reordering exists only for metrics Health adds up** — Steps, Distance,
+  Active Energy and similar. For those, Health counts the *top-priority* source wherever
+  data overlaps. Go to the data type → **Data Sources & Access** → **Edit**, then drag
+  the ≡ handles. The list looks view-only until you tap Edit, and handles only appear
+  next to sources that have actually written that data type.
+- **Sleep, heart rate, SpO₂ and other sampled metrics have no priority at all** — every
+  source's readings coexist. In Edit mode you only get **checkmarks**: unchecking a
+  source hides its data for that metric entirely. To surgically remove Airlift-written
+  days instead, use Airlift's Calendar → day → metric → "Remove from Apple Health".
+- **Old devices linger.** Every Watch (or app) that ever wrote data stays listed as a
+  source forever — including unpaired watches and, if you renamed/reinstalled this app,
+  its previous identity. Harmless, but expect a long list. Removing one requires
+  deleting all of its Health data (tap the source → Delete All Data).
+- Default priority, where it applies: manual entries first, then iPhone/Apple Watch,
+  then third-party apps like Airlift — so Apple Watch owners who prefer the band's
+  steps must reorder (or disable Steps/Distance sync in Airlift entirely).
+
 ## Limitations & known unknowns
 
 - **Wire schema is provisional.** `Sources/GoogleHealth/SleepModels.swift` is a best-effort
