@@ -470,6 +470,16 @@ struct HomeView: View {
         let dayCount: Int
         let newestDay: Date
         var id: String { kindRaw ?? "sleep" }
+
+        /// "18 nights of sleep" / "20 days of heart rate" — what the count
+        /// actually counts.
+        var countLine: String {
+            if kindRaw == nil {
+                return "\(dayCount) night\(dayCount == 1 ? "" : "s") of sleep synced"
+            }
+            let noun = MetricKind(rawValue: kindRaw!)?.inlineName ?? name.lowercased()
+            return "\(dayCount) day\(dayCount == 1 ? "" : "s") of \(noun) synced"
+        }
     }
 
     private var metricRows: [MetricRowInfo] {
@@ -511,9 +521,12 @@ struct HomeView: View {
                                 Text(row.name)
                                     .font(.system(size: 14.5, weight: .bold, design: .rounded))
                                     .foregroundStyle(Daybreak.ink)
-                                Text("\(row.dayCount) day\(row.dayCount == 1 ? "" : "s") in Apple Health · newest \(row.newestDay.formatted(date: .abbreviated, time: .omitted))")
+                                Text(row.countLine)
                                     .font(.system(size: 12.5, design: .rounded))
                                     .foregroundStyle(Daybreak.mid)
+                                Text("Newest · \(row.newestDay.formatted(date: .abbreviated, time: .omitted))")
+                                    .font(.system(size: 11.5, design: .rounded))
+                                    .foregroundStyle(Daybreak.faint)
                             }
                             Spacer(minLength: 0)
                             Image(systemName: "chevron.right")
