@@ -69,9 +69,9 @@ struct SourcePriorityView: View {
                 .daybreakSectionLabel()
             step(1, "Open the Health app and search for a data type — Steps is the one most worth checking.")
             step(2, "Scroll down and tap Data Sources & Access.")
-            step(3, "Tap Edit in the top corner.")
-            step(4, "Touch and hold the reorder handle next to a source, then drag it up or down.")
-            step(5, "Done — the source at the top now wins whenever data overlaps.")
+            step(3, "The list looks view-only at first — tap Edit in the top corner to unlock it.")
+            step(4, "Drag handles (≡) appear next to each source that has written this data type. Touch, hold and drag Airlift where you want it.")
+            step(5, "Done — the source at the top now wins whenever data overlaps. No handle next to a source just means it has no data here yet.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .daybreakCard()
