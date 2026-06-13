@@ -67,11 +67,11 @@ struct SourcePriorityView: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Change the order")
                 .daybreakSectionLabel()
-            step(1, "Open the Health app and search for a data type — Steps is the one most worth checking.")
+            step(1, "Open the Health app and search for a data type — Steps is the one where ordering matters most.")
             step(2, "Scroll down and tap Data Sources & Access.")
             step(3, "The list looks view-only at first — tap Edit in the top corner to unlock it.")
-            step(4, "Drag handles (≡) appear next to each source that has written this data type. Touch, hold and drag Airlift where you want it.")
-            step(5, "Done — the source at the top now wins whenever data overlaps. No handle next to a source just means it has no data here yet.")
+            step(4, "On metrics Health adds up (Steps, Distance, energy), drag handles (≡) appear — drag a source where you want it; the top wins when data overlaps.")
+            step(5, "On metrics that keep every reading (sleep, heart rate) there's no ordering — only checkmarks. Unchecking a source hides its data for that metric entirely.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .daybreakCard()
@@ -109,7 +109,7 @@ struct SourcePriorityView: View {
             )
             suggestion(
                 symbol: "moon.zzz.fill",
-                text: "Sleep, SpO₂ and HRV usually have no competition without an Apple Watch — priority barely matters there."
+                text: "Sleep and vitals never use priority — every source's readings coexist. If one source muddies a metric, uncheck it in Edit (or remove its days from Airlift's calendar)."
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
