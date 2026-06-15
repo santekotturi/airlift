@@ -17,3 +17,6 @@ xcuserdata/
 
 # Claude Code session worktrees & local config
 .claude/
+
+# Generated marketing screenshots (run Scripts/screenshots.sh)
+docs/screenshots/
