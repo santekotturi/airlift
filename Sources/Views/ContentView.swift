@@ -27,6 +27,9 @@ struct ContentView: View {
     @AppStorage(DaybreakAppearance.storageKey)
     private var appearanceRaw = DaybreakAppearance.system.rawValue
 
+    @AppStorage("airlift.hasCompletedOnboarding")
+    private var hasCompletedOnboarding = false
+
     @State private var tab = Tab.home
     @State private var path = NavigationPath()
     @State private var appliedMockRoute = false
@@ -64,6 +67,21 @@ struct ContentView: View {
                 .presentationCornerRadius(32)
         }
         .onAppear(perform: applyMockRouteIfNeeded)
+        .fullScreenCover(isPresented: Binding(
+            get: { showOnboarding },
+            set: { if !$0 { hasCompletedOnboarding = true } }
+        )) {
+            OnboardingView { hasCompletedOnboarding = true }
+        }
+    }
+
+    /// First launch shows the walkthrough; under the UI mock it's only shown
+    /// when explicitly requested with `-AirliftUIMockScreen onboarding`.
+    private var showOnboarding: Bool {
+        #if DEBUG
+        if model.syncEngine.isUIMock { return UIMock.screen == "onboarding" }
+        #endif
+        return !hasCompletedOnboarding
     }
 
     private var homeStack: some View {

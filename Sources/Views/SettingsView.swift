@@ -19,6 +19,8 @@ struct SettingsView: View {
     /// asks first instead of acting on a stray tap.
     @State private var confirmingDisconnect = false
 
+    @State private var reportingBug = false
+
     #if DEBUG
     @State private var pushedJSONKey: String?
     #endif
@@ -35,6 +37,7 @@ struct SettingsView: View {
                 connectionCard
                 deviceCard
                 priorityCard
+                helpCard
                 aboutCard
                 #if DEBUG
                 debugCard
@@ -47,6 +50,9 @@ struct SettingsView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: engine.syncMode)
+        .sheet(isPresented: $reportingBug) {
+            BugReportView()
+        }
         #if DEBUG
         .navigationDestination(item: $pushedJSONKey) { key in
             RawJSONView(json: engine.lastRawJSON[key] ?? "")
@@ -260,6 +266,44 @@ struct SettingsView: View {
         .daybreakCard()
     }
 
+    // MARK: - Help & feedback
+
+    private var helpCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Help & feedback")
+                .daybreakSectionLabel()
+            Button {
+                reportingBug = true
+            } label: {
+                settingsRow(symbol: "ladybug.fill", tint: Daybreak.sunDeep, title: "Report a bug")
+            }
+            .buttonStyle(.plain)
+            Divider().overlay(Daybreak.line)
+            Link(destination: AppInfo.repositoryURL.appendingPathComponent("issues")) {
+                settingsRow(symbol: "checklist", tint: Daybreak.plum, title: "Open issues on GitHub", external: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .daybreakCard()
+    }
+
+    private func settingsRow(symbol: String, tint: Color, title: String, external: Bool = false) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 24)
+            Text(title)
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(Daybreak.ink)
+            Spacer(minLength: 0)
+            Image(systemName: external ? "arrow.up.right" : "chevron.right")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Daybreak.faint)
+        }
+        .contentShape(Rectangle())
+    }
+
     // MARK: - About
 
     // MARK: - Device
@@ -321,7 +365,7 @@ struct SettingsView: View {
                     .font(Daybreak.bodyFont)
                     .foregroundStyle(Daybreak.ink)
             }
-            Link(destination: URL(string: "https://github.com/santekotturi/airlift")!) {
+            Link(destination: AppInfo.repositoryURL) {
                 HStack(spacing: 5) {
                     Text("README & source")
                     Image(systemName: "arrow.up.right")
@@ -372,8 +416,6 @@ struct SettingsView: View {
     }
     #endif
 
-    private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
-    }
+    private var version: String { AppInfo.version }
 }
 
