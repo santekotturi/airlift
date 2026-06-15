@@ -59,9 +59,15 @@ it as a bridge until (and if) native sync makes it redundant.
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`) — the Xcode
   project is generated, not committed.
 - An Apple Developer account to install on a real device — a **free personal team** is
-  enough, since HealthKit is the app's only entitlement. (The Simulator can't run HealthKit
-  writes against real data, but the app builds and the unit tests run there with no
-  account at all.)
+  enough, since HealthKit is the app's only entitlement. Note that apps signed with a free
+  team **expire after 7 days**, so you re-build/re-install from Xcode about once a week; a
+  paid ($99/yr) account removes that limit. (The Simulator can't run HealthKit writes against
+  real data, but the app builds and the unit tests run there with no account at all.)
+
+> **Why build it yourself?** Airlift can't ship on the public App Store yet — that needs one
+> shared, Google-verified OAuth client (a restricted-scope security assessment) and the
+> Google Health API to reach GA. Until then it's a build-it-yourself / sideload app, or
+> TestFlight to a small allowlisted group. See [docs/app-store-checklist.md](docs/app-store-checklist.md).
 
 ## Setup
 

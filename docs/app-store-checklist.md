@@ -5,6 +5,16 @@ owns it. **Read the blocker first — it gates the actual upload.**
 
 ---
 
+## Distribution options at a glance
+
+| Path | Possible now? | Apple account | Google verification | Notes |
+|---|---|---|---|---|
+| **Public App Store** | ❌ | $99/yr | Required (CASA) + Health API GA | The blocker below. |
+| **TestFlight (internal/allowlisted)** | ✅ limited | $99/yr | **Not** required | Embed your own OAuth client in *Testing* status; add each tester's Google account as a Test user (≤100); testers click through the "unverified app" screen and re-auth ~weekly. Internal testers skip Beta App Review; external (public link) needs it. |
+| **Source / sideload** | ✅ | **Free** Apple ID | Each user brings their own client | Mac + Xcode required. Free-team signing **expires every 7 days** (rebuild weekly); $99 removes that. |
+
+---
+
 ## 🚫 Blocker — production OAuth client (do this first)
 
 The App Store ships one pre-compiled binary, so it must embed **one shared Google
