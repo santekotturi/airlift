@@ -55,6 +55,17 @@ struct MetricCompareView: View {
 
     // MARK: - Header
 
+    /// Review status, worded as the sanity-check outcome — matching the sleep
+    /// view. (The old "new to Apple" chip contradicted the "already in Health"
+    /// line and made no sense in history mode.)
+    private var statusChip: DaybreakChip {
+        switch batch.worstSeverity {
+        case .pass, .info: DaybreakChip("✓ checks pass", status: .ok)
+        case .warn: DaybreakChip("! held back", status: .warn)
+        case .fail: DaybreakChip("✕ failed checks", status: .fail)
+        }
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(batch.kind.displayName)
@@ -64,10 +75,7 @@ struct MetricCompareView: View {
                 Text(dayLabel)
                     .font(.system(.subheadline, design: .rounded, weight: .semibold))
                     .foregroundStyle(Daybreak.mid)
-                DaybreakChip(
-                    batch.worstSeverity == .pass ? "new to Apple" : "! held back",
-                    status: batch.worstSeverity == .pass ? .new : .warn
-                )
+                statusChip
             }
             Text(batch.appleSamples.isEmpty
                  ? "\(googleSeries)'s reading — Apple Health has nothing for this day yet."
