@@ -78,5 +78,5 @@ repository with a new date above.
 
 ## Contact
 
-Questions: **hello@santekotturi.com**, or open an issue at
+Questions: **airlift@santekotturi.com**, or open an issue at
 <https://github.com/santekotturi/airlift/issues>.

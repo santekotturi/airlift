@@ -8,7 +8,7 @@ device and is excluded from backups and device transfers.
 
 ## Reporting a vulnerability
 
-Please report security issues **privately** to **hello@santekotturi.com** rather
+Please report security issues **privately** to **airlift@santekotturi.com** rather
 than opening a public issue.
 
 **In scope:** the OAuth/PKCE flow, Keychain token handling, and anything that could

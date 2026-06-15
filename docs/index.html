@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airlift — your Fitbit sleep & health, in Apple Health</title>
+<meta name="description" content="Airlift bridges Fitbit Air sleep (with full stages) plus heart rate, HRV, SpO2, steps and more into Apple Health. On-device, open source, no server.">
+<meta property="og:title" content="Airlift — Fitbit to Apple Health">
+<meta property="og:description" content="Last night's Fitbit sleep, with full stages, plus your health metrics — carried into Apple Health. On-device. No account, no server.">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --ink: #2A2440; --mid: #75708C; --faint: #AAA6BD;
+    --sun: #FF9D5C; --sun-deep: #F4753A; --plum: #6C5CE0; --ok: #2FA56F;
+    --card: #FFFFFF; --line: #ECE9F4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(180deg, #FDF3E7 0%, #F7E3E0 42%, #E8E6F7 100%);
+    background-attachment: fixed;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 22px; }
+  a { color: var(--plum); }
+
+  /* Hero */
+  header { padding: 64px 0 28px; text-align: center; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -0.01em; }
+  .logo .box { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--sun), var(--sun-deep)); display: grid; place-items: center; color: #fff; font-size: 16px; }
+  h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.05; letter-spacing: -0.02em; margin: 30px auto 16px; max-width: 12ch; font-weight: 800; }
+  .lede { font-size: clamp(17px, 2.4vw, 21px); color: var(--mid); max-width: 60ch; margin: 0 auto 8px; }
+  .badge { display: inline-block; margin-top: 18px; font-size: 13px; font-weight: 600; color: var(--plum); background: #EDE9FF; padding: 6px 14px; border-radius: 999px; }
+
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 30px 0 6px; }
+  .btn { display: inline-block; font-weight: 700; font-size: 16px; padding: 14px 26px; border-radius: 16px; text-decoration: none; }
+  .btn-primary { color: #fff; background: linear-gradient(135deg, var(--sun), var(--sun-deep)); box-shadow: 0 10px 26px rgba(244,117,58,0.36); }
+  .btn-ghost { color: var(--plum); background: rgba(108,92,224,0.09); }
+  .fine { font-size: 13px; color: var(--faint); margin-top: 12px; }
+
+  /* Shots */
+  .shots { display: flex; gap: 18px; justify-content: center; margin: 46px 0 10px; flex-wrap: wrap; }
+  .shots img { width: 240px; max-width: 70vw; border-radius: 26px; box-shadow: 0 22px 50px rgba(42,36,64,0.18); border: 1px solid rgba(255,255,255,0.6); }
+  .shots img:nth-child(2) { margin-top: -18px; }
+
+  /* Sections */
+  section { padding: 50px 0; }
+  h2 { font-size: clamp(24px, 4vw, 34px); letter-spacing: -0.02em; text-align: center; margin-bottom: 8px; }
+  .sub { text-align: center; color: var(--mid); max-width: 56ch; margin: 0 auto 34px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .feat { background: rgba(255,255,255,0.72); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+  .feat .ico { font-size: 22px; }
+  .feat h3 { font-size: 17px; margin: 10px 0 5px; }
+  .feat p { color: var(--mid); font-size: 15px; }
+
+  /* Get it */
+  .paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .path { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 24px; }
+  .path h3 { font-size: 18px; margin-bottom: 6px; }
+  .path .tag { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; display: inline-block; margin-bottom: 12px; }
+  .tag-now { color: var(--ok); background: #E3F5EC; }
+  .tag-soon { color: var(--plum); background: #EDE9FF; }
+  .path p { color: var(--mid); font-size: 14px; margin-bottom: 14px; }
+  .path a.go { font-weight: 700; text-decoration: none; }
+
+  .note { background: rgba(255,255,255,0.6); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; color: var(--mid); font-size: 14px; max-width: 70ch; margin: 22px auto 0; }
+  .note b { color: var(--ink); }
+
+  footer { text-align: center; padding: 40px 0 60px; color: var(--faint); font-size: 14px; }
+  footer a { margin: 0 10px; }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="logo"><span class="box">&#128230;</span> Airlift</div>
+  <h1>Your Fitbit sleep, in Apple&nbsp;Health.</h1>
+  <p class="lede">Last night's sleep — with full stages — plus heart rate, HRV, SpO&#8322;, steps and more, carried from your Fitbit into Apple Health. Every morning. On your iPhone.</p>
+  <div class="badge">On-device &middot; open source &middot; no account, no server</div>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="#get-it">How to get it</a>
+    <a class="btn btn-ghost" href="https://github.com/santekotturi/airlift">View source</a>
+  </div>
+  <p class="fine">For Fitbit Air and other Google-account Fitbit devices.</p>
+
+  <div class="shots">
+    <img src="assets/home.jpg" alt="Airlift home screen showing the bridge from Fitbit to Apple Health" loading="lazy">
+    <img src="assets/sleep.jpg" alt="Sleep stages compared side by side with Apple Health" loading="lazy">
+    <img src="assets/heart-rate.jpg" alt="Heart rate chart comparing Fitbit and Apple Health" loading="lazy">
+  </div>
+</header>
+
+<section id="what">
+  <div class="wrap">
+    <h2>One place for everything you track</h2>
+    <p class="sub">The Fitbit Air keeps your data in Google's world, and it doesn't write to Apple Health on its own. Airlift bridges the gap.</p>
+    <div class="grid">
+      <div class="feat"><div class="ico">&#128564;</div><h3>Full sleep stages</h3><p>Awake, light, deep and REM — mapped faithfully, plus time in bed.</p></div>
+      <div class="feat"><div class="ico">&#128147;</div><h3>Your vitals</h3><p>Heart rate, resting HR, HRV, SpO&#8322; and respiratory rate.</p></div>
+      <div class="feat"><div class="ico">&#128694;</div><h3>Activity</h3><p>Steps and distance, on the days your band recorded them.</p></div>
+      <div class="feat"><div class="ico">&#9989;</div><h3>Checked first</h3><p>Every reading is compared to what Apple Health already has. Auto-import the clean ones, or review everything yourself.</p></div>
+      <div class="feat"><div class="ico">&#128274;</div><h3>Private by design</h3><p>Runs entirely on your iPhone. Your Google sign-in stays in the Keychain. No analytics, no ads, no server.</p></div>
+      <div class="feat"><div class="ico">&#127758;</div><h3>Travel-correct</h3><p>A night logged in one time zone lands on the right day, wherever you sync.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="get-it">
+  <div class="wrap">
+    <h2>How to get it</h2>
+    <p class="sub">Airlift isn't on the public App Store yet — Apple distribution needs a Google health-data security review and the Google Health API to reach general availability. Here's what's possible today.</p>
+    <div class="paths">
+      <div class="path">
+        <span class="tag tag-soon">Coming</span>
+        <h3>Get notified</h3>
+        <p>Be first to know when Airlift is installable without a Mac — TestFlight or the App Store.</p>
+        <!-- TODO: replace with a real form (Tally / Google Form / Buttondown) for a proper waitlist. mailto works as a fallback. -->
+        <a class="go" href="mailto:airlift@santekotturi.com?subject=Airlift%20waitlist&body=Add%20me%20to%20the%20Airlift%20waitlist.">Join the waitlist &rarr;</a>
+      </div>
+      <div class="path">
+        <span class="tag tag-now">Available now</span>
+        <h3>Build it yourself</h3>
+        <p>Have a Mac and a free Apple ID? Clone the repo, add your own free Google client, and run it on your iPhone today.</p>
+        <a class="go" href="https://github.com/santekotturi/airlift#setup">Setup guide &rarr;</a>
+      </div>
+      <div class="path">
+        <span class="tag tag-now">Available now</span>
+        <h3>Read the code</h3>
+        <p>Every line is public. Star or watch the repo to follow along, and file issues right from the app.</p>
+        <a class="go" href="https://github.com/santekotturi/airlift">On GitHub &rarr;</a>
+      </div>
+    </div>
+    <p class="note"><b>Why the wait?</b> Google's <b>built-in-public</b> Health API is what makes faithful Fitbit sleep stages possible — but it's pre-release, and shipping it to everyone needs Google's restricted-scope security assessment. Airlift is ready and waiting; the waitlist is how you'll hear the moment that clears.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a href="https://github.com/santekotturi/airlift">GitHub</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="mailto:airlift@santekotturi.com">Contact</a>
+    <p style="margin-top:14px;">Airlift is open source under the MIT license. Not affiliated with Google or Apple.</p>
+  </div>
+</footer>
+
+</body>
+</html>

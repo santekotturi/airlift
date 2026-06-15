@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Airlift — Privacy Policy</title>
+<meta name="description" content="Airlift runs entirely on your iPhone. No server, no account, no tracking.">
+<style>
+  :root { --ink: #2A2440; --mid: #75708C; --faint: #AAA6BD; --plum: #6C5CE0; --sun-deep: #F4753A; --line: #ECE9F4; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--ink); line-height: 1.62; -webkit-font-smoothing: antialiased;
+    background: linear-gradient(180deg, #FDF3E7 0%, #F7E3E0 45%, #E8E6F7 100%); background-attachment: fixed;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 48px 22px 72px; }
+  .logo { display: inline-flex; align-items: center; gap: 9px; font-weight: 800; font-size: 18px; text-decoration: none; color: var(--ink); }
+  .logo .box { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, #FF9D5C, var(--sun-deep)); display: grid; place-items: center; color: #fff; font-size: 14px; }
+  h1 { font-size: 34px; letter-spacing: -0.02em; margin: 28px 0 4px; }
+  .updated { color: var(--faint); font-size: 14px; margin-bottom: 26px; }
+  .card { background: rgba(255,255,255,0.78); border: 1px solid var(--line); border-radius: 22px; padding: 26px 28px; }
+  h2 { font-size: 20px; letter-spacing: -0.01em; margin: 26px 0 8px; }
+  h2:first-of-type { margin-top: 6px; }
+  p, li { color: var(--mid); font-size: 16px; margin-bottom: 10px; }
+  li b, p b { color: var(--ink); }
+  ul { margin: 0 0 10px 22px; }
+  a { color: var(--plum); }
+  .highlight { background: #EDE9FF; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; }
+  .highlight p:last-child { margin-bottom: 0; }
+  footer { text-align: center; color: var(--faint); font-size: 14px; margin-top: 28px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="logo" href="index.html"><span class="box">&#128230;</span> Airlift</a>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: 15 June 2026</p>
+
+  <div class="card">
+    <div class="highlight">
+      <p><b>The short version.</b> Airlift runs entirely on your iPhone. There is no Airlift server and no Airlift account. Your data is never sent to the developer. The only network connections are directly between your phone and Google (to sign in and read your health data) and Apple Health on your device. No analytics, no advertising, no tracking.</p>
+    </div>
+
+    <h2>What data Airlift handles, and where it goes</h2>
+    <p><b>Google / Fitbit health data.</b> When you connect your Google account, Airlift reads your sleep sessions and the metrics you enable (heart rate, resting heart rate, HRV, blood oxygen, respiratory rate, steps, distance) directly from Google's Health API, processes them on your device, and writes them into Apple Health. They are never transmitted anywhere else.</p>
+    <p><b>Apple Health (HealthKit).</b> Airlift writes the above into Apple Health, and reads your existing Apple Health samples <b>only</b> to compare against the Fitbit data so it can avoid duplicates and flag discrepancies. HealthKit data is never used for advertising, never sent off your device by Airlift, never shared with third parties, and never stored in iCloud by Airlift.</p>
+    <p><b>Your Google sign-in.</b> The token that keeps you signed in lives in the iOS Keychain, marked device-only (excluded from backups and transfers). It leaves your phone only when your phone sends it to Google for a fresh access token.</p>
+
+    <h2>Bug reports</h2>
+    <p>If you choose to report a bug from inside the app, Airlift opens a pre-filled <b>GitHub</b> issue in your browser for you to review and submit. It includes the app version and your device model plus any text you type — <b>no health data and no sign-in information.</b> Nothing is sent until you submit it yourself, subject to <a href="https://docs.github.com/site-policy">GitHub's privacy policy</a>. This is entirely optional.</p>
+
+    <h2>What Airlift does <i>not</i> do</h2>
+    <ul>
+      <li>It does not collect, sell, rent, or share your personal data.</li>
+      <li>It does not use advertising or analytics SDKs.</li>
+      <li>It does not track you across apps or websites, or build a profile about you.</li>
+    </ul>
+
+    <h2>Children</h2>
+    <p>Airlift is not directed at children and does not knowingly collect data from children.</p>
+
+    <h2>Your control</h2>
+    <p>Disconnect your Google account any time in Settings (this removes the sign-in from the Keychain). Remove anything Airlift wrote to Apple Health from within the app or from the Health app directly. Deleting the app removes its local data and the stored sign-in.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, the updated version will be posted here with a new date above.</p>
+
+    <h2>Contact</h2>
+    <p>Questions: <a href="mailto:airlift@santekotturi.com">airlift@santekotturi.com</a>, or open an issue at <a href="https://github.com/santekotturi/airlift/issues">github.com/santekotturi/airlift</a>.</p>
+  </div>
+
+  <footer>&#128230; Airlift &middot; <a href="index.html">Home</a> &middot; <a href="https://github.com/santekotturi/airlift">GitHub</a></footer>
+</div>
+</body>
+</html>
