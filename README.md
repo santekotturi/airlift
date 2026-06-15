@@ -17,6 +17,19 @@ there is no backend, unlike most of the commercial Fitbit↔Health sync apps.
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/assets/home.jpg" width="22%" alt="Home — the bridge from Fitbit to Apple Health" />
+  <img src="docs/assets/sleep.jpg" width="22%" alt="Sleep stages compared with Apple Health" />
+  <img src="docs/assets/heart-rate.jpg" width="22%" alt="Heart rate, Fitbit vs Apple Health" />
+  <img src="docs/assets/calendar.jpg" width="22%" alt="Calendar of bridged days" />
+</p>
+
+<p align="center"><em>Home &middot; sleep stages side by side &middot; metric comparison &middot; coverage calendar.</em></p>
+
+---
+
 ## Features
 
 - 🛌 **Full sleep stages** — wake → `.awake`, light → `.asleepCore`, deep → `.asleepDeep`,
@@ -71,25 +84,46 @@ it as a bridge until (and if) native sync makes it redundant.
 
 ## Setup
 
+Roughly 15 minutes: create a free Google OAuth client, drop three values into a config
+file, and build. No Apple paid account needed for the Simulator; a free Apple ID works for
+your own device (re-sign weekly).
+
 ### 1. Create your Google OAuth client
 
-1. In the [Google Cloud Console](https://console.cloud.google.com/), create (or reuse) a
-   project and **enable the Google Health API**.
-2. Configure the **OAuth consent screen** as **External / Testing** and add your personal
-   Google account (the one your Fitbit is on) under **Test users**. See
-   [OAuth & consent](#oauth--consent-read-this-before-you-start) below for why.
-3. Create an **iOS OAuth client ID**. The bundle ID you register must match the
-   `AIRLIFT_BUNDLE_ID` you'll set in `Config.xcconfig` in the next step (pick any
-   reverse-DNS name you own, e.g. `com.yourname.airlift`). iOS clients are public
-   clients — **no client secret**; Airlift uses PKCE.
-4. On the consent screen's **Scopes** step, add exactly the three read-only Google Health
-   scopes Airlift requests:
+Everything here is in the free [Google Cloud Console](https://console.cloud.google.com/).
+
+1. **Create or pick a project**, then **enable the Google Health API**
+   (APIs & Services → Library → search "Google Health").
+
+   > _📸 Screenshot to add: `docs/assets/setup/01-enable-api.png` — the Google Health API
+   > Library page with the **Enable** button._
+
+2. **Configure the OAuth consent screen** as **External**, publishing status **Testing**.
+   Under **Test users**, add the personal Google account your Fitbit data lives on. (Why
+   Testing/External: see [OAuth & consent](#oauth--consent-read-this-before-you-start).)
+
+   > _📸 Screenshot to add: `docs/assets/setup/02-consent-screen.png` — External + Testing,
+   > with your account under Test users._
+
+3. On the consent screen's **Scopes** step, add exactly the three read-only scopes Airlift
+   uses — nothing more:
    - `googlehealth.sleep.readonly`
    - `googlehealth.health_metrics_and_measurements.readonly`
    - `googlehealth.activity_and_fitness.readonly`
 
-   Do **not** add any `.writeonly` scope — Airlift never writes back to Google. (Future
-   data types will use Google's incremental authorization, so no need to over-grant now.)
+   Do **not** add any `.writeonly` scope — Airlift never writes back to Google.
+
+   > _📸 Screenshot to add: `docs/assets/setup/03-scopes.png` — the three googlehealth
+   > read-only scopes selected._
+
+4. **Create an iOS OAuth client ID** (Credentials → Create Credentials → OAuth client ID →
+   iOS). The **bundle ID** you register must match the `AIRLIFT_BUNDLE_ID` you set in the
+   next step — pick any reverse-DNS name, e.g. `com.yourname.airlift`. iOS clients are
+   public clients (**no secret**); Airlift uses PKCE. Copy the **Client ID** and its
+   reversed form.
+
+   > _📸 Screenshot to add: `docs/assets/setup/04-ios-client.png` — the iOS OAuth client
+   > with the Client ID and bundle ID visible (redact the digits)._
 
 ### 2. Configure the build
 
@@ -119,8 +153,22 @@ xcodegen generate
 open Airlift.xcodeproj
 ```
 
-Build & run on your device, tap **Connect Google Health**, grant the consent screen and the
-HealthKit prompt, then **Fetch now**. Open Apple Health → Browse → Sleep to verify.
+Select your iPhone, build & run.
+
+### 4. First launch
+
+<img src="docs/assets/welcome.jpg" width="220" align="right" alt="Airlift onboarding welcome screen" />
+
+1. The onboarding walkthrough explains what Airlift does — tap through to **Get started**.
+2. Tap **Connect Google Health** and complete the Google sign-in. (In Testing mode you'll
+   see an "unverified app" screen — that's expected; continue.)
+3. Grant the **HealthKit** prompt.
+4. Tap **Fetch now**. The first sync pulls about a week of data and can take a minute or two.
+5. Open **Apple Health → Browse → Sleep** to confirm the night landed.
+
+That's it — from then on, **Fetch now** only pulls what's new.
+
+<br clear="right" />
 
 ---
 
