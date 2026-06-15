@@ -1,6 +1,30 @@
 import SwiftUI
 import HealthKit
 
+// MARK: - Chart axis helpers
+
+/// X-axis tick dates anchored to clock time (midnight, then every
+/// `everyHours`) that fall inside `domain`. Anchoring to the wall clock — not
+/// to the padded domain edge, which Charts' `.stride` does — guarantees a tick
+/// lands near the start of the axis (e.g. 12 AM) instead of floating in at a
+/// ragged offset like 3 AM.
+func clockAlignedTicks(in domain: ClosedRange<Date>, everyHours: Int, calendar: Calendar = .current) -> [Date] {
+    guard everyHours > 0 else { return [] }
+    // Trim only the trailing edge so the last label doesn't clip to "…"; keep
+    // the leading tick (the y-axis sits left of it, so it has room) — that's
+    // the one that anchors the axis near its start.
+    let span = domain.upperBound.timeIntervalSince(domain.lowerBound)
+    let upper = domain.upperBound.addingTimeInterval(-span * 0.08)
+    var ticks: [Date] = []
+    var tick = calendar.startOfDay(for: domain.lowerBound)
+    while tick <= domain.upperBound {
+        if tick >= domain.lowerBound && tick <= upper { ticks.append(tick) }
+        guard let next = calendar.date(byAdding: .hour, value: everyHours, to: tick) else { break }
+        tick = next
+    }
+    return ticks
+}
+
 // MARK: - Stage strip
 
 extension LaneStage {
@@ -140,8 +164,17 @@ extension StageStrip {
 /// parachute — drifting across on delivery.
 struct BridgeView: View {
     var deviceName: String = DeviceLabel.fallback
+    /// Whether a delivery is actually in flight. The package only travels
+    /// while the engine is carrying data — a perpetual loop would imply
+    /// activity that isn't happening (and burn frames doing it).
+    var isSyncing: Bool = true
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let loopDuration: Double = 3.4
+
+    /// Reduce Motion always wins: the bridge parks the package mid-arc.
+    private var animates: Bool { isSyncing && !reduceMotion }
 
     var body: some View {
         HStack(alignment: .top, spacing: 4) {
@@ -158,7 +191,7 @@ struct BridgeView: View {
         VStack(spacing: 6) {
             badge()
             Text(caption)
-                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                .font(.system(.caption2, design: .rounded, weight: .semibold))
                 .foregroundStyle(Daybreak.mid)
         }
     }
@@ -190,37 +223,48 @@ struct BridgeView: View {
             }
     }
 
+    @ViewBuilder
     private var arc: some View {
-        TimelineView(.animation) { timeline in
-            let phase = timeline.date.timeIntervalSinceReferenceDate
-                .truncatingRemainder(dividingBy: Self.loopDuration) / Self.loopDuration
-            GeometryReader { geo in
-                let size = geo.size
-                let p0 = CGPoint(x: 4, y: size.height * 0.8)
-                let p1 = CGPoint(x: size.width - 4, y: size.height * 0.8)
-                let control = CGPoint(x: size.width / 2, y: -size.height * 0.5)
-                // Clamped parameter range keeps the package clear of the
-                // endpoint badges flanking the canvas.
-                let t = 0.10 + 0.80 * phase
-                let position = Self.quadPoint(t: t, p0: p0, control: control, p1: p1)
-
-                Canvas { context, _ in
-                    var path = Path()
-                    path.move(to: p0)
-                    path.addQuadCurve(to: p1, control: control)
-                    context.stroke(
-                        path,
-                        with: .color(Daybreak.faint.opacity(0.8)),
-                        style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [0.5, 7])
-                    )
-                }
-                CarePackage()
-                    // Gentle pendulum sway as it drifts.
-                    .rotationEffect(.degrees(sin(phase * 2 * .pi * 2) * 5))
-                    // Fade through the ends so loop restarts read as a new drop.
-                    .opacity(min(1, min(phase, 1 - phase) * 12))
-                    .position(x: position.x, y: position.y - 8)
+        if animates {
+            TimelineView(.animation) { timeline in
+                let phase = timeline.date.timeIntervalSinceReferenceDate
+                    .truncatingRemainder(dividingBy: Self.loopDuration) / Self.loopDuration
+                arcContent(phase: phase)
             }
+        } else {
+            // Phase 0.5 parks the package at the top of the arc with zero
+            // sway and full opacity — a calm still frame, no special cases.
+            arcContent(phase: 0.5)
+        }
+    }
+
+    private func arcContent(phase: Double) -> some View {
+        GeometryReader { geo in
+            let size = geo.size
+            let p0 = CGPoint(x: 4, y: size.height * 0.8)
+            let p1 = CGPoint(x: size.width - 4, y: size.height * 0.8)
+            let control = CGPoint(x: size.width / 2, y: -size.height * 0.5)
+            // Clamped parameter range keeps the package clear of the
+            // endpoint badges flanking the canvas.
+            let t = 0.10 + 0.80 * phase
+            let position = Self.quadPoint(t: t, p0: p0, control: control, p1: p1)
+
+            Canvas { context, _ in
+                var path = Path()
+                path.move(to: p0)
+                path.addQuadCurve(to: p1, control: control)
+                context.stroke(
+                    path,
+                    with: .color(Daybreak.faint.opacity(0.8)),
+                    style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [0.5, 7])
+                )
+            }
+            CarePackage()
+                // Gentle pendulum sway as it drifts.
+                .rotationEffect(.degrees(sin(phase * 2 * .pi * 2) * 5))
+                // Fade through the ends so loop restarts read as a new drop.
+                .opacity(min(1, min(phase, 1 - phase) * 12))
+                .position(x: position.x, y: position.y - 8)
         }
     }
 
@@ -339,7 +383,7 @@ struct AgreementMeter: View {
             }
             .frame(height: 10)
             Text(caption)
-                .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                .font(.system(.caption, design: .rounded, weight: .bold))
                 .foregroundStyle(agrees ? Daybreak.ok : Daybreak.warn)
         }
     }
@@ -376,10 +420,10 @@ struct CheckCard: View {
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text(result.name)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(Daybreak.ink)
                 Text(result.detail)
-                    .font(.system(size: 12.5, design: .rounded))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Daybreak.mid)
             }
             Spacer(minLength: 0)
@@ -395,6 +439,10 @@ struct MiniStat: View {
     let value: String
     let caption: String
 
+    /// Exact numeral size matters for the 2×2 grid, so it scales via metric
+    /// rather than snapping to a text style.
+    @ScaledMetric(relativeTo: .title2) private var valueSize: CGFloat = 24
+
     init(_ symbol: String, value: String, caption: String) {
         self.symbol = symbol
         self.value = value
@@ -404,14 +452,14 @@ struct MiniStat: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(symbol)
-                .font(.system(size: 16))
+                .font(.system(.callout))
             Text(value)
-                .font(Daybreak.numberFont(size: 24))
+                .font(Daybreak.numberFont(size: valueSize))
                 .foregroundStyle(Daybreak.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(caption)
-                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                .font(.system(.caption2, design: .rounded, weight: .medium))
                 .foregroundStyle(Daybreak.mid)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -455,7 +503,7 @@ struct HeadsUpCard: View {
                 .shadow(color: Daybreak.sunDeep.opacity(0.45), radius: 8)
             (Text("\(lead) ").bold().foregroundStyle(Color(daybreakLight: 0xB3622A, dark: 0xF0A468))
                 + Text(message).foregroundStyle(Color(daybreakLight: 0x7C5A33, dark: 0xC9A77E)))
-                .font(.system(size: 12.5, design: .rounded))
+                .font(.system(.caption, design: .rounded))
             Spacer(minLength: 0)
         }
         .padding(16)
@@ -479,6 +527,12 @@ struct HeadsUpCard: View {
 struct DayBadge: View {
     let date: Date
 
+    // The badge is a tight fixed-proportion layout, so the square and both
+    // type sizes scale together — text styles alone would outgrow the box.
+    @ScaledMetric(relativeTo: .title3) private var side: CGFloat = 46
+    @ScaledMetric(relativeTo: .title3) private var daySize: CGFloat = 18
+    @ScaledMetric(relativeTo: .caption2) private var weekdaySize: CGFloat = 9
+
     init(date: Date) {
         self.date = date
     }
@@ -492,14 +546,14 @@ struct DayBadge: View {
                 ],
                 startPoint: .top, endPoint: .bottom
             ))
-            .frame(width: 46, height: 46)
+            .frame(width: side, height: side)
             .overlay {
                 VStack(spacing: 0) {
                     Text(date, format: .dateTime.day())
-                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                        .font(.system(size: daySize, weight: .heavy, design: .rounded))
                         .foregroundStyle(Daybreak.plum)
                     Text(date, format: .dateTime.weekday(.abbreviated))
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .font(.system(size: weekdaySize, weight: .bold, design: .rounded))
                         .textCase(.uppercase)
                         .foregroundStyle(Daybreak.plum.opacity(0.65))
                 }
@@ -527,7 +581,7 @@ struct TrustList: View {
                 tint: Daybreak.plum,
                 background: Daybreak.newChipBackground,
                 title: "Open source",
-                detail: "Every line of code is public on GitHub and community-reviewed."
+                detail: "Every line of code is public on GitHub — open for anyone to review."
             )
             TrustRow(
                 symbol: "key.fill",
@@ -565,10 +619,10 @@ private struct TrustRow: View {
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                    .font(.system(.footnote, design: .rounded, weight: .bold))
                     .foregroundStyle(Daybreak.ink)
                 Text(detail)
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Daybreak.mid)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -593,7 +647,7 @@ enum CompareMode: Equatable, Hashable {
 struct DaybreakDestructiveGhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 15, weight: .semibold, design: .rounded))
+            .font(.system(.subheadline, design: .rounded, weight: .semibold))
             .foregroundStyle(Daybreak.fail)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 13)

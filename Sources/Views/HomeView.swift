@@ -16,6 +16,19 @@ struct HomeView: View {
     @State private var showPager = false
     @State private var browseTarget: BrowseTarget?
 
+    // Banner numerals keep their exact Daybreak proportions but still track
+    // Dynamic Type — these scale the sizes handed to `Daybreak.numberFont`.
+    @ScaledMetric(relativeTo: .largeTitle) private var bannerNumberSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .title2) private var bannerSuffixSize: CGFloat = 22
+    @ScaledMetric(relativeTo: .title) private var headlineNumberSize: CGFloat = 30
+
+    /// The engine guards re-entrancy itself; the controls mirror that so a
+    /// tap during a sync doesn't silently do nothing.
+    private var isSyncing: Bool {
+        if case .syncing = engine.status { return true }
+        return false
+    }
+
     /// Home → metric history pager entry (newest day, swipe back from there).
     struct BrowseTarget: Hashable, Identifiable {
         let kindRaw: String?
@@ -110,7 +123,7 @@ struct HomeView: View {
 
     private var bridgeCard: some View {
         VStack(spacing: 18) {
-            BridgeView(deviceName: engine.sourceDeviceName)
+            BridgeView(deviceName: engine.sourceDeviceName, isSyncing: isSyncing)
             switch bridgeBody {
             case .syncing: pipelineBody
             case .reconnect: reconnectBody
@@ -146,8 +159,10 @@ struct HomeView: View {
             parts.append("a day of \(batches[0].kind.inlineName)")
         case (let days, 1):
             parts.append("\(days) days of \(batches[0].kind.inlineName)")
-        case (let days, _):
-            parts.append("\(days) metrics")
+        case (let days, let kindCount):
+            // Each batch is one day of one metric — "N metrics" would
+            // undercount what's actually waiting.
+            parts.append("\(days) days across \(kindCount) metrics")
         }
         let joined = parts.joined(separator: " + ")
         // "a day of distance" can lead the banner — give it a capital.
@@ -161,7 +176,7 @@ struct HomeView: View {
         guard engine.syncMode == .automatic else { return counts }
         return counts
             + Text(" held for review")
-                .font(Daybreak.numberFont(size: 22))
+                .font(Daybreak.numberFont(size: bannerSuffixSize))
                 .foregroundStyle(Daybreak.ink)
     }
 
@@ -193,11 +208,11 @@ struct HomeView: View {
     private var queueBody: some View {
         VStack(spacing: 14) {
             queueBanner
-                .font(Daybreak.numberFont(size: 40))
+                .font(Daybreak.numberFont(size: bannerNumberSize))
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.7)
             Text(queueSubline)
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(.footnote, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)
             if waitingCount > 1 {
@@ -229,6 +244,20 @@ struct HomeView: View {
 
     // MARK: All clear
 
+    /// True once a fetch has actually run this launch. The app no longer pulls
+    /// on open, so the idle launch state must not claim "all caught up" — it
+    /// hasn't checked anything yet.
+    private var hasCheckedThisSession: Bool {
+        switch engine.status {
+        case .success, .fetched, .autoSynced: return true
+        default: return false
+        }
+    }
+
+    private var allClearHeadline: String {
+        hasCheckedThisSession ? "All caught up" : "Ready when you are"
+    }
+
     private var allClearSubline: String {
         switch engine.status {
         case .autoSynced(let written, _, _) where written > 0:
@@ -238,8 +267,10 @@ struct HomeView: View {
         case .fetched, .autoSynced:
             return "Nothing new from Google — you're all caught up."
         default:
+            // Idle on launch: we haven't pulled, so be honest about when we
+            // last did and let the user decide.
             if let last = engine.lastSyncedDate {
-                return "Quiet since \(last.formatted(date: .abbreviated, time: .shortened)) — fetch to check for new nights."
+                return "Last checked \(last.formatted(date: .abbreviated, time: .shortened)). Fetch when you want to look for new nights and readings."
             }
             return "Fetch from Google to carry your first night across."
         }
@@ -247,11 +278,11 @@ struct HomeView: View {
 
     private var allClearBody: some View {
         VStack(spacing: 14) {
-            Text("All caught up")
-                .font(Daybreak.numberFont(size: 30))
+            Text(allClearHeadline)
+                .font(Daybreak.numberFont(size: headlineNumberSize))
                 .foregroundStyle(Daybreak.ink)
             Text(allClearSubline)
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(.footnote, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)
             Menu {
@@ -259,11 +290,11 @@ struct HomeView: View {
             } label: {
                 primaryMenuLabel("Fetch now")
             } primaryAction: {
-                fetch(days: 7)
+                fetchNew()
             }
-            .disabled(!model.isConfigured)
-            Text("Checks the last 7 days · touch and hold for more")
-                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+            .disabled(!model.isConfigured || isSyncing)
+            Text("Looks for anything new · touch and hold to reach further back")
+                .font(.system(.caption2, design: .rounded, weight: .medium))
                 .foregroundStyle(Daybreak.faint)
         }
     }
@@ -272,29 +303,34 @@ struct HomeView: View {
 
     private var pipelineBody: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if case .syncing(let phase) = engine.status {
-                Text(phase)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundStyle(Daybreak.ink)
-                    .contentTransition(.opacity)
+            // One generic headline — the per-row state below already shows
+            // exactly which kind is fetching and how far along it is.
+            Text("Fetching data…")
+                .font(.system(.subheadline, design: .rounded, weight: .bold))
+                .foregroundStyle(Daybreak.ink)
+            if let notice = engine.catchUpNotice {
+                Label(notice, systemImage: "clock.arrow.circlepath")
+                    .font(.system(.caption, design: .rounded, weight: .medium))
+                    .foregroundStyle(Daybreak.plum)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             ForEach(engine.pipeline) { item in
                 HStack(spacing: 10) {
                     pipelineIcon(item.step)
-                        .font(.system(size: 14))
+                        .font(.system(.subheadline))
                         .frame(width: 22)
                     Text(item.name)
-                        .font(.system(size: 13.5, weight: .medium, design: .rounded))
+                        .font(.system(.footnote, design: .rounded, weight: .medium))
                         .foregroundStyle(Daybreak.ink)
                     Spacer()
                     Text(pipelineLabel(item))
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(Daybreak.mid)
                         .contentTransition(.opacity)
                 }
             }
             Text("Nothing lands without checks.")
-                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                .font(.system(.caption2, design: .rounded, weight: .medium))
                 .foregroundStyle(Daybreak.faint)
                 .frame(maxWidth: .infinity)
         }
@@ -345,10 +381,10 @@ struct HomeView: View {
     private var connectBody: some View {
         VStack(spacing: 14) {
             Text("Start the airlift")
-                .font(Daybreak.numberFont(size: 30))
+                .font(Daybreak.numberFont(size: headlineNumberSize))
                 .foregroundStyle(Daybreak.ink)
-            Text("All your Fitbit data is fetched locally and merged into Apple Health. You're in control — review everything yourself, or let Airlift auto-merge what passes its checks. Undo anytime.")
-                .font(.system(size: 13, design: .rounded))
+            Text("Your Fitbit sleep and health metrics — heart rate, SpO₂, steps and more — are fetched locally and written into Apple Health. You're in control — review everything yourself, or let Airlift auto-merge what passes its checks. Undo anytime.")
+                .font(.system(.footnote, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)
             TrustList()
@@ -358,7 +394,7 @@ struct HomeView: View {
             .buttonStyle(.daybreakPrimary)
             .disabled(!model.isConfigured)
             Text("One Google limitation while their Health API is pre-release: sign-ins last about 7 days, so you'll reconnect weekly. Airlift sends a reminder when it's time.")
-                .font(.system(size: 11.5, design: .rounded))
+                .font(.system(.caption2, design: .rounded))
                 .foregroundStyle(Daybreak.faint)
                 .multilineTextAlignment(.center)
         }
@@ -389,9 +425,9 @@ struct HomeView: View {
                 title: "That fetch didn't make it across",
                 detail: message
             )
-            Button("Try again") { fetch(days: 7) }
+            Button("Try again") { fetchNew() }
                 .buttonStyle(.daybreakPrimary)
-                .disabled(!model.isConfigured)
+                .disabled(!model.isConfigured || isSyncing)
         }
     }
 
@@ -403,10 +439,10 @@ struct HomeView: View {
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(Daybreak.ink)
                 Text(detail)
-                    .font(.system(size: 12.5, design: .rounded))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Daybreak.mid)
             }
             Spacer(minLength: 0)
@@ -418,8 +454,10 @@ struct HomeView: View {
     // MARK: Fetch
 
     private var fetchOptions: some View {
-        ForEach([7, 14, 30], id: \.self) { days in
-            Button("Last \(days) days") { fetch(days: days) }
+        Section("Reach further back") {
+            ForEach([7, 14, 30], id: \.self) { days in
+                Button("Last \(days) days") { fetch(days: days) }
+            }
         }
     }
 
@@ -427,22 +465,22 @@ struct HomeView: View {
         Menu {
             fetchOptions
         } label: {
-            Text("Fetch again · last 7 days")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+            Text("Check for new data")
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(Daybreak.plum)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
                 .background(Daybreak.plum.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         } primaryAction: {
-            fetch(days: 7)
+            fetchNew()
         }
-        .disabled(!model.isConfigured)
+        .disabled(!model.isConfigured || isSyncing)
     }
 
     /// Mirrors the primary button style for `Menu`, which can't take a `ButtonStyle`.
     private func primaryMenuLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 17, weight: .bold, design: .rounded))
+            .font(.system(.body, design: .rounded, weight: .bold))
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)
@@ -450,6 +488,19 @@ struct HomeView: View {
             .shadow(color: Daybreak.sunDeep.opacity(0.45), radius: 14, y: 8)
     }
 
+    /// Incremental fetch — only what's new since the last saved data. The
+    /// default action of the fetch buttons; cheap in steady state.
+    private func fetchNew() {
+        Task {
+            await engine.syncNow()
+            if engine.syncMode == .automatic {
+                await engine.autoImportClean()
+            }
+        }
+    }
+
+    /// Explicit backfill of a fixed span (the touch-and-hold menu) — for
+    /// reaching back past what's already saved.
     private func fetch(days: Int) {
         Task {
             await engine.fetchForReview(days: days)
@@ -474,10 +525,10 @@ struct HomeView: View {
         /// "18 nights of sleep" / "20 days of heart rate" — what the count
         /// actually counts.
         var countLine: String {
-            if kindRaw == nil {
+            guard let kindRaw else {
                 return "\(dayCount) night\(dayCount == 1 ? "" : "s") of sleep synced"
             }
-            let noun = MetricKind(rawValue: kindRaw!)?.inlineName ?? name.lowercased()
+            let noun = MetricKind(rawValue: kindRaw)?.inlineName ?? name.lowercased()
             return "\(dayCount) day\(dayCount == 1 ? "" : "s") of \(noun) synced"
         }
     }
@@ -519,13 +570,13 @@ struct HomeView: View {
                                 }
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(row.name)
-                                    .font(.system(size: 14.5, weight: .bold, design: .rounded))
+                                    .font(.system(.subheadline, design: .rounded, weight: .bold))
                                     .foregroundStyle(Daybreak.ink)
                                 Text(row.countLine)
-                                    .font(.system(size: 12.5, design: .rounded))
+                                    .font(.system(.caption, design: .rounded))
                                     .foregroundStyle(Daybreak.mid)
                                 Text("Newest · \(row.newestDay.formatted(date: .abbreviated, time: .omitted))")
-                                    .font(.system(size: 11.5, design: .rounded))
+                                    .font(.system(.caption2, design: .rounded))
                                     .foregroundStyle(Daybreak.faint)
                             }
                             Spacer(minLength: 0)
@@ -570,10 +621,10 @@ struct HomeView: View {
                         .padding(.top, 5)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(entry.title)
-                            .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                            .font(.system(.footnote, design: .rounded, weight: .bold))
                             .foregroundStyle(Daybreak.ink)
                         Text("\(Self.whenLabel(entry.date)) — \(Self.previewDetail(entry.detail))")
-                            .font(.system(size: 12, design: .rounded))
+                            .font(.system(.caption, design: .rounded))
                             .foregroundStyle(Daybreak.mid)
                             .lineLimit(3)
                     }
@@ -589,9 +640,9 @@ struct HomeView: View {
                 HStack(spacing: 4) {
                     Text("See all")
                     Image(systemName: "arrow.right")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(.caption2, weight: .bold))
                 }
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(Daybreak.plum)
             }
             .buttonStyle(.plain)
@@ -606,6 +657,7 @@ struct HomeView: View {
         case .tossed, .held: Daybreak.warn
         case .nothingNew: Daybreak.faint
         case .connected: Daybreak.ok
+        case .disconnected: Daybreak.faint
         case .error: Daybreak.fail
         }
     }
@@ -640,10 +692,10 @@ struct HomeView: View {
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Not configured")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(Daybreak.ink)
                 Text("Copy Config.example.xcconfig to Config.xcconfig and add your Google Cloud iOS OAuth client ID, then rebuild. See the README.")
-                    .font(.system(size: 12.5, design: .rounded))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Daybreak.mid)
             }
             Spacer(minLength: 0)

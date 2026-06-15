@@ -23,7 +23,6 @@ struct ReviewPagerView: View {
 
     @State private var pages: [Page] = []
     @State private var selection: String?
-    @State private var totalAtOpen = 0
 
     private var engine: SyncEngine { model.syncEngine }
 
@@ -59,7 +58,7 @@ struct ReviewPagerView: View {
     private var counterChip: some View {
         let position = pages.firstIndex { $0.id == selection }.map { $0 + 1 } ?? 1
         return Text("\(position) of \(pages.count)")
-            .font(.system(size: 12, weight: .bold, design: .rounded))
+            .font(.system(.caption, design: .rounded, weight: .bold))
             .foregroundStyle(Daybreak.mid)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
@@ -69,13 +68,14 @@ struct ReviewPagerView: View {
     private func loadDeck() {
         guard pages.isEmpty else { return }
         pages = engine.staged.map(Page.session) + engine.stagedMetrics.map(Page.batch)
-        totalAtOpen = pages.count
         selection = pages.first?.id
         if pages.isEmpty { dismiss() }
     }
 
     /// Removes the decided page and slides to the one that takes its place;
-    /// dismisses when the deck is empty.
+    /// dismisses when the deck is empty. Only called on a real decision —
+    /// the compare screens keep a failed import on its page instead of
+    /// advancing past a night that never landed.
     private func advance(past id: String) {
         guard let index = pages.firstIndex(where: { $0.id == id }) else { return }
         var next = pages

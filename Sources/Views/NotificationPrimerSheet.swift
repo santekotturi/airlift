@@ -10,19 +10,23 @@ struct NotificationPrimerSheet: View {
 
     private var engine: SyncEngine { model.syncEngine }
 
+    /// Exact headline size matters against the fixed glow bell, so it scales
+    /// via metric rather than snapping to a text style.
+    @ScaledMetric(relativeTo: .title) private var headlineSize: CGFloat = 26
+
     var body: some View {
         VStack(spacing: 18) {
             glowBell
                 .padding(.top, 30)
 
             Text("One notification that matters")
-                .font(Daybreak.numberFont(size: 26))
+                .font(Daybreak.numberFont(size: headlineSize))
                 .foregroundStyle(Daybreak.ink)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text("You're connected — the airlift is running. There's just one thing it can't recover from on its own:")
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(.footnote, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -30,7 +34,7 @@ struct NotificationPrimerSheet: View {
             reconnectRow
 
             Text("That's the only notification Airlift sends. No streaks, no summaries, no marketing.")
-                .font(.system(size: 12, design: .rounded))
+                .font(.system(.caption, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -48,7 +52,7 @@ struct NotificationPrimerSheet: View {
             .buttonStyle(.daybreakGhost)
 
             Text("iOS will confirm with its own prompt.")
-                .font(.system(size: 11, design: .rounded))
+                .font(.system(.caption2, design: .rounded))
                 .foregroundStyle(Daybreak.faint)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -86,10 +90,10 @@ struct NotificationPrimerSheet: View {
                 }
             VStack(alignment: .leading, spacing: 3) {
                 Text("Reconnect reminder")
-                    .font(.system(size: 14.5, weight: .bold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(Daybreak.ink)
                 Text("Google sign-ins expire about every 7 days. When yours does, syncing stops until you reconnect — this nudge is how you find out, instead of discovering missing nights later.")
-                    .font(.system(size: 12.5, design: .rounded))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Daybreak.mid)
                     .fixedSize(horizontal: false, vertical: true)
             }

@@ -100,14 +100,14 @@ struct CalendarDayView: View {
                             }
                         VStack(alignment: .leading, spacing: 2) {
                             Text(snapshot.displayName)
-                                .font(.system(size: 14.5, weight: .bold, design: .rounded))
+                                .font(.system(.subheadline, design: .rounded, weight: .bold))
                                 .foregroundStyle(Daybreak.ink)
                             Text("\(snapshot.ownCount.formatted()) reading\(snapshot.ownCount == 1 ? "" : "s") · \(snapshot.ownSummary)")
-                                .font(.system(size: 12.5, design: .rounded))
+                                .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(Daybreak.mid)
                             if let other = snapshot.otherSummary {
                                 Text(other)
-                                    .font(.system(size: 12, design: .rounded))
+                                    .font(.system(.caption, design: .rounded))
                                     .foregroundStyle(Daybreak.plum)
                             }
                         }
@@ -125,7 +125,7 @@ struct CalendarDayView: View {
                 }
             }
             Text("Tap a metric for the full side-by-side charts — removal lives there too.")
-                .font(.system(size: 11.5, design: .rounded))
+                .font(.system(.caption2, design: .rounded))
                 .foregroundStyle(Daybreak.faint)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -196,10 +196,10 @@ struct CalendarDayView: View {
                 }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14.5, weight: .bold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(Daybreak.ink)
                 Text(detail)
-                    .font(.system(size: 12.5, design: .rounded))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Daybreak.mid)
             }
             Spacer(minLength: 0)

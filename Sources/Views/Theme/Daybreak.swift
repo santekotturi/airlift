@@ -74,13 +74,17 @@ enum Daybreak {
 
     // MARK: - Typography (SF Rounded everywhere)
 
-    static let titleFont = Font.system(size: 30, weight: .bold, design: .rounded)
+    // Tokens ride the system text styles so every screen tracks the user's
+    // Dynamic Type setting — fixed point sizes would pin the copy in place.
+    static let titleFont = Font.system(.title, design: .rounded, weight: .bold)
     static let bodyFont = Font.system(.subheadline, design: .rounded)
     static let captionFont = Font.system(.caption, design: .rounded)
-    static let chipFont = Font.system(size: 11.5, weight: .bold, design: .rounded)
-    static let sectionLabelFont = Font.system(size: 11.5, weight: .semibold, design: .rounded)
+    static let chipFont = Font.system(.caption2, design: .rounded, weight: .bold)
+    static let sectionLabelFont = Font.system(.caption2, design: .rounded, weight: .semibold)
 
     /// Big-number font for banners and stats; pair emphasis spans with `sunDeep`.
+    /// Pass a `@ScaledMetric` value so the numeral grows with Dynamic Type —
+    /// a literal here would freeze the one piece of text users look at most.
     static func numberFont(size: CGFloat = 44) -> Font {
         .system(size: size, weight: .heavy, design: .rounded)
     }
@@ -191,7 +195,7 @@ extension View {
 struct DaybreakPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 17, weight: .bold, design: .rounded))
+            .font(.system(.body, design: .rounded, weight: .bold))
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)
@@ -205,7 +209,7 @@ struct DaybreakPrimaryButtonStyle: ButtonStyle {
 struct DaybreakGhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 15, weight: .semibold, design: .rounded))
+            .font(.system(.subheadline, design: .rounded, weight: .semibold))
             .foregroundStyle(Daybreak.plum)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 13)

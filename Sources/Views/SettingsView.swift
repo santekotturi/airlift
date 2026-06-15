@@ -15,6 +15,10 @@ struct SettingsView: View {
         DaybreakAppearance(rawValue: appearanceRaw) ?? .system
     }
 
+    /// Disconnecting forgets the Google sign-in from the Keychain, so it
+    /// asks first instead of acting on a stray tap.
+    @State private var confirmingDisconnect = false
+
     #if DEBUG
     @State private var pushedJSONKey: String?
     #endif
@@ -78,10 +82,10 @@ struct SettingsView: View {
                     .padding(.top, 1)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(mode.displayName)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundStyle(Daybreak.ink)
                     Text(mode.blurb)
-                        .font(.system(size: 12.5, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(Daybreak.mid)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
@@ -140,10 +144,10 @@ struct SettingsView: View {
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(option.displayName)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
                         .foregroundStyle(Daybreak.ink)
                     Text(option.detail)
-                        .font(.system(size: 12.5, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(Daybreak.mid)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
@@ -179,15 +183,27 @@ struct SettingsView: View {
                     .fill(connectionTint)
                     .frame(width: 9, height: 9)
                 Text(connectionText)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
                     .foregroundStyle(Daybreak.ink)
                 Spacer(minLength: 0)
             }
             if engine.isConnected {
                 Button("Disconnect") {
-                    engine.disconnect()
+                    confirmingDisconnect = true
                 }
                 .buttonStyle(.daybreakDestructiveGhost)
+                .confirmationDialog(
+                    "Disconnect from Google Health?",
+                    isPresented: $confirmingDisconnect,
+                    titleVisibility: .visible
+                ) {
+                    Button("Disconnect", role: .destructive) {
+                        engine.disconnect()
+                    }
+                    Button("Stay connected", role: .cancel) {}
+                } message: {
+                    Text("Airlift forgets your Google sign-in on this iPhone. Everything already in Apple Health stays put.")
+                }
             } else {
                 Button("Connect Google Health") {
                     Task { await engine.connect() }
@@ -196,7 +212,7 @@ struct SettingsView: View {
                 .disabled(!model.isConfigured)
             }
             Text("While the Google Cloud project is in Testing mode, sign-ins expire weekly — reconnect when Airlift asks.")
-                .font(.system(size: 12, design: .rounded))
+                .font(.system(.caption, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -234,9 +250,9 @@ struct SettingsView: View {
                 HStack(spacing: 5) {
                     Text("Learn how to set source priority")
                     Image(systemName: "arrow.right")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(.caption2, weight: .bold))
                 }
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(Daybreak.plum)
             }
         }
@@ -267,7 +283,7 @@ struct SettingsView: View {
             .padding(12)
             .background(Daybreak.track, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             Text(deviceCardFootnote)
-                .font(.system(size: 12, design: .rounded))
+                .font(.system(.caption, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -309,9 +325,9 @@ struct SettingsView: View {
                 HStack(spacing: 5) {
                     Text("README & source")
                     Image(systemName: "arrow.up.right")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(.caption2, weight: .bold))
                 }
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(Daybreak.plum)
             }
             HeadsUpCard.forMode(engine.syncMode)
@@ -336,7 +352,7 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Text(key)
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .font(.system(.subheadline, design: .rounded, weight: .semibold))
                                 .foregroundStyle(Daybreak.ink)
                             Spacer()
                             Image(systemName: "chevron.right")

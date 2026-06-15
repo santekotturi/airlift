@@ -43,30 +43,29 @@ struct HistoryView: View {
             MiniStat("🌉", value: "\(nightsBridged)",
                      caption: nightsBridged == 1 ? "night bridged" : "nights bridged")
             MiniStat("🛡️", value: "\(log.count(of: .held))", caption: "held back by checks")
-            MiniStat("♻️", value: "\(duplicatesBlocked)",
-                     caption: duplicatesBlocked == 1 ? "duplicate blocked" : "duplicates blocked")
+            MiniStat("📥", value: readingsWritten.formatted(),
+                     caption: readingsWritten == 1 ? "reading written" : "readings written")
             MiniStat("🔒", value: "0", caption: "bytes off-device")
         }
     }
 
-    /// Sleep imports only — the engine always titles them with "night"
-    /// ("Last night landed…"), and metric imports never are.
+    /// Nights of sleep the ledger says actually landed — counted at write
+    /// time, not inferred from log copy that might change wording.
     private var nightsBridged: Int {
-        log.entries.filter {
-            ($0.kind == .imported || $0.kind == .autoImported)
-                && $0.title.localizedCaseInsensitiveContains("night")
+        model.syncEngine.ledger.all.filter { entry in
+            guard entry.kind == sleepLedgerKind else { return false }
+            if case .synced = entry.status { return true }
+            return false
         }.count
     }
 
-    /// Dedup hits aren't instrumented, so this is the honest proxy: every
-    /// synced sample (ledger) and every toss is an ID a re-sync can never
-    /// write twice.
-    private var duplicatesBlocked: Int {
-        let synced = model.syncEngine.ledger.all.reduce(0) { total, entry in
+    /// Every sample Airlift has written into Apple Health, straight from the
+    /// ledger's per-day synced counts.
+    private var readingsWritten: Int {
+        model.syncEngine.ledger.all.reduce(0) { total, entry in
             if case .synced(let samples, _) = entry.status { return total + samples }
             return total
         }
-        return synced + log.count(of: .tossed)
     }
 
     // MARK: - Timeline
@@ -87,12 +86,12 @@ struct HistoryView: View {
     private var emptyTimeline: some View {
         VStack(spacing: 8) {
             Text("🌉")
-                .font(.system(size: 30))
+                .font(.system(.title))
             Text("Nothing has crossed the bridge yet")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .font(.system(.subheadline, design: .rounded, weight: .bold))
                 .foregroundStyle(Daybreak.ink)
             Text("Fetch from Google on the home screen and every crossing will be recorded here.")
-                .font(.system(size: 12.5, design: .rounded))
+                .font(.system(.caption, design: .rounded))
                 .foregroundStyle(Daybreak.mid)
                 .multilineTextAlignment(.center)
         }
@@ -123,11 +122,11 @@ struct HistoryView: View {
                 Text(dayLabel(entry.date))
                     .daybreakSectionLabel()
                 Text(entry.title)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
                     .foregroundStyle(Daybreak.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(entry.detail)
-                    .font(.system(size: 12.5, design: .rounded))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Daybreak.mid)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -145,6 +144,7 @@ struct HistoryView: View {
         case .tossed, .held: Daybreak.warn
         case .nothingNew: Daybreak.faint
         case .connected: Daybreak.ok
+        case .disconnected: Daybreak.faint
         case .error: Daybreak.fail
         }
     }

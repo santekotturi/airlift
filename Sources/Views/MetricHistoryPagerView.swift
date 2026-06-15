@@ -40,13 +40,13 @@ struct MetricHistoryPagerView: View {
             ?? startDay.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
         return HStack(spacing: 6) {
             Text(label)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(.caption, design: .rounded, weight: .bold))
                 .foregroundStyle(Daybreak.ink)
             if days.count > 1 {
                 Text("·")
                     .foregroundStyle(Daybreak.faint)
                 Text("\(index + 1) of \(days.count)")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(.caption, design: .rounded, weight: .semibold))
                     .foregroundStyle(Daybreak.mid)
             }
         }

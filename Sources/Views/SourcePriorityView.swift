@@ -24,7 +24,7 @@ struct SourcePriorityView: View {
                 }
                 .buttonStyle(.daybreakPrimary)
                 Text("Priority is a Health feature, set per data type — Airlift can't change it for you, which is exactly the point: your data, your order.")
-                    .font(.system(size: 11.5, design: .rounded))
+                    .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(Daybreak.faint)
                     .frame(maxWidth: .infinity)
                     .multilineTextAlignment(.center)
@@ -84,11 +84,11 @@ struct SourcePriorityView: View {
                 .frame(width: 28, height: 28)
                 .overlay {
                     Text("\(number)")
-                        .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        .font(.system(.footnote, design: .rounded, weight: .heavy))
                         .foregroundStyle(Daybreak.plum)
                 }
             Text(text)
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(.footnote, design: .rounded))
                 .foregroundStyle(Daybreak.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
@@ -127,7 +127,7 @@ struct SourcePriorityView: View {
                         .foregroundStyle(Daybreak.ok)
                 }
             Text(text)
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(.footnote, design: .rounded))
                 .foregroundStyle(Daybreak.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)

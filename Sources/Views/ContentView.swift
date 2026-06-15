@@ -31,6 +31,11 @@ struct ContentView: View {
     @State private var path = NavigationPath()
     @State private var appliedMockRoute = false
 
+    // The pill is a tight fixed-proportion layout, so its icon and label
+    // scale by metric — text styles alone would break the stack's balance.
+    @ScaledMetric(relativeTo: .title3) private var pillIconSize: CGFloat = 20
+    @ScaledMetric(relativeTo: .caption2) private var pillLabelSize: CGFloat = 11
+
     var body: some View {
         // Both stacks stay in the hierarchy so each tab keeps its navigation
         // state; the bar is a custom bottom-leading glass pill (Health-style)
@@ -78,6 +83,7 @@ struct ContentView: View {
                             Image(systemName: "gearshape.fill")
                                 .foregroundStyle(Daybreak.mid)
                         }
+                        .accessibilityLabel("Settings")
                     }
                 }
                 .toolbarBackground(.hidden, for: .navigationBar)
@@ -115,9 +121,9 @@ struct ContentView: View {
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: pillIconSize, weight: .semibold))
                 Text(label)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: pillLabelSize, weight: .semibold, design: .rounded))
             }
             .foregroundStyle(tab == target ? Daybreak.sunDeep : Daybreak.mid)
             .frame(width: 78, height: 60)

@@ -34,6 +34,10 @@ struct CalendarView: View {
     @State private var month = Calendar.current.startOfDay(for: Date())
     @State private var pushedDay: Date?
 
+    /// Day cells hold scaling text, so their height scales with it — fixed
+    /// rows would clip large type sizes.
+    @ScaledMetric(relativeTo: .subheadline) private var cellHeight: CGFloat = 44
+
     private var engine: SyncEngine { model.syncEngine }
 
     /// Ledger entries grouped by civil-day string, computed once per render.
@@ -91,7 +95,7 @@ struct CalendarView: View {
                     if let day {
                         dayCell(day)
                     } else {
-                        Color.clear.frame(height: 44)
+                        Color.clear.frame(height: cellHeight)
                     }
                 }
             }
@@ -110,9 +114,10 @@ struct CalendarView: View {
                     .frame(width: 34, height: 34)
                     .background(Daybreak.plum.opacity(0.08), in: Circle())
             }
+            .accessibilityLabel("Previous month")
             Spacer()
             Text(month.formatted(.dateTime.month(.wide).year()))
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .font(.system(.body, design: .rounded, weight: .bold))
                 .foregroundStyle(Daybreak.ink)
             Spacer()
             Button {
@@ -124,6 +129,7 @@ struct CalendarView: View {
                     .frame(width: 34, height: 34)
                     .background(Daybreak.plum.opacity(isCurrentMonth ? 0.04 : 0.08), in: Circle())
             }
+            .accessibilityLabel("Next month")
             .disabled(isCurrentMonth)
         }
     }
@@ -136,7 +142,7 @@ struct CalendarView: View {
         HStack(spacing: 4) {
             ForEach(MonthGrid.weekdaySymbols(), id: \.self) { symbol in
                 Text(symbol)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(.caption2, design: .rounded, weight: .semibold))
                     .foregroundStyle(Daybreak.faint)
                     .frame(maxWidth: .infinity)
             }
@@ -155,7 +161,7 @@ struct CalendarView: View {
         } label: {
             VStack(spacing: 4) {
                 Text(day, format: .dateTime.day())
-                    .font(.system(size: 14, weight: isToday ? .heavy : .medium, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: isToday ? .heavy : .medium))
                     .foregroundStyle(isFuture ? Daybreak.faint : (isToday ? Daybreak.sunDeep : Daybreak.ink))
                 HStack(spacing: 2.5) {
                     ForEach(Array(dots.enumerated()), id: \.offset) { _, color in
@@ -165,7 +171,7 @@ struct CalendarView: View {
                 .frame(height: 5)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .frame(height: cellHeight)
             .background(
                 isToday
                     ? RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -177,8 +183,8 @@ struct CalendarView: View {
         .disabled(entries.isEmpty)
     }
 
-    /// Up to four dots: green for landed data, amber while held for review,
-    /// gray for removed/skipped days.
+    /// Up to four dots, in stable kind order: green for landed data, amber
+    /// while held for review, gray for removed/skipped days.
     private func dotColors(for entries: [LedgerEntry]) -> [Color] {
         var colors: [Color] = []
         for entry in entries.sorted(by: { $0.kind < $1.kind }) {
@@ -188,9 +194,6 @@ struct CalendarView: View {
             case .tossed: colors.append(Daybreak.faint)
             case .noData: continue
             }
-        }
-        if colors.count > 4 {
-            colors = Array(colors.sorted(by: { _, _ in false }).prefix(4))
         }
         return Array(colors.prefix(4))
     }
@@ -209,7 +212,7 @@ struct CalendarView: View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text(text)
-                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                .font(.system(.caption2, design: .rounded, weight: .medium))
                 .foregroundStyle(Daybreak.mid)
         }
     }

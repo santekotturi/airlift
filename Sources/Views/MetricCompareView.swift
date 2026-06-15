@@ -15,7 +15,12 @@ struct MetricCompareView: View {
     var onDecision: (() -> Void)?
 
     @State private var isImporting = false
+    @State private var importFailed = false
     @State private var confirmingRemoval = false
+
+    /// Exact numeral size matters for the side-by-side columns, so it scales
+    /// via metric rather than snapping to a text style.
+    @ScaledMetric(relativeTo: .title) private var statValueSize: CGFloat = 26
 
     private var googleSeries: String { model.syncEngine.sourceDeviceName }
     private static let appleSeries = "Apple Health"
@@ -39,7 +44,7 @@ struct MetricCompareView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 4)
+            .padding(.top, 12)
             .padding(.bottom, 28)
         }
         .scrollIndicators(.hidden)
@@ -52,12 +57,12 @@ struct MetricCompareView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("\(batch.kind.displayName), side by side")
+            Text(batch.kind.displayName)
                 .font(Daybreak.titleFont)
                 .foregroundStyle(Daybreak.ink)
             HStack(spacing: 8) {
                 Text(dayLabel)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
                     .foregroundStyle(Daybreak.mid)
                 DaybreakChip(
                     batch.worstSeverity == .pass ? "new to Apple" : "! held back",
@@ -121,10 +126,16 @@ struct MetricCompareView: View {
         batch.day...batch.day.addingTimeInterval(86_400)
     }
 
-    /// Bars span the whole day; sampled kinds zoom to the data (overnight
-    /// vitals would otherwise occupy a sliver of a 24 h axis).
+    /// Bars span the whole day (with a half-hour of slack each side so the
+    /// midnight bar doesn't sit flush against the y-axis); sampled kinds zoom
+    /// to the data (overnight vitals would otherwise occupy a sliver of a 24 h
+    /// axis).
     private var chartDomain: ClosedRange<Date> {
-        guard style != .hourlyBars else { return dayInterval }
+        guard style != .hourlyBars else {
+            let lo = dayInterval.lowerBound.addingTimeInterval(-1800)
+            let hi = dayInterval.upperBound.addingTimeInterval(1800)
+            return lo...hi
+        }
         let dates = batch.samples.flatMap { [$0.start, $0.end] }
             + batch.appleSamples.flatMap { [$0.start, $0.end] }
         guard let min = dates.min(), let max = dates.max(), max > min else { return dayInterval }
@@ -132,13 +143,16 @@ struct MetricCompareView: View {
         return min.addingTimeInterval(-pad)...max.addingTimeInterval(pad)
     }
 
-    /// Hour stride that yields 4–5 x-axis labels for the visible span.
+    /// A "nice" hour stride (1/2/3/4/6) chosen to keep ~4–5 x-axis labels for
+    /// the visible span — never so few they're uninformative, never so many
+    /// they crowd and clip.
     private var hourStride: Int {
         let hours = chartDomain.upperBound.timeIntervalSince(chartDomain.lowerBound) / 3600
         switch hours {
         case ..<5: return 1
-        case ..<10: return 2
-        case ..<16: return 3
+        case ..<9: return 2
+        case ..<13: return 3
+        case ..<19: return 4
         default: return 6
         }
     }
@@ -167,7 +181,7 @@ struct MetricCompareView: View {
         HStack(spacing: 6) {
             Circle().fill(color).frame(width: 8, height: 8)
             Text(label)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(.caption, design: .rounded, weight: .semibold))
                 .foregroundStyle(Daybreak.mid)
         }
     }
@@ -182,25 +196,30 @@ struct MetricCompareView: View {
             .chartXScale(domain: chartDomain)
             .chartYScale(domain: .automatic(includesZero: batch.kind.isCumulative))
             .chartXAxis {
-                AxisMarks(values: .stride(by: .hour, count: hourStride)) { _ in
+                AxisMarks(values: clockAlignedTicks(in: chartDomain, everyHours: hourStride)) { _ in
                     AxisGridLine().foregroundStyle(Daybreak.line)
                     AxisValueLabel(format: .dateTime.hour())
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.system(.caption2, design: .rounded, weight: .medium))
                         .foregroundStyle(Daybreak.faint)
                 }
             }
             .chartYAxis {
-                AxisMarks { value in
+                // Leading so the y-labels don't crowd the last x-axis label off
+                // the right edge; capped count so the scale stays uncluttered.
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
                     AxisGridLine().foregroundStyle(Daybreak.line)
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
                             Text(yAxisLabel(v))
-                                .font(.system(size: 10, weight: .medium, design: .rounded))
+                                .font(.system(.caption2, design: .rounded, weight: .medium))
                                 .foregroundStyle(Daybreak.faint)
                         }
                     }
                 }
             }
+            // A little top headroom so a peak in the line doesn't touch the
+            // card edge. No horizontal inset — bars should reach the axis.
+            .chartPlotStyle { $0.padding(.top, 8) }
             .frame(height: 210)
     }
 
@@ -295,7 +314,7 @@ struct MetricCompareView: View {
                         .lineStyle(StrokeStyle(lineWidth: 2, dash: [6, 3]))
                         .annotation(position: .top, alignment: .leading) {
                             Text("Fitbit \(batch.kind.format(google.value))")
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .font(.system(.caption2, design: .rounded, weight: .bold))
                                 .foregroundStyle(Daybreak.sunDeep)
                         }
                 }
@@ -347,7 +366,7 @@ struct MetricCompareView: View {
             if let delta {
                 Rectangle().fill(Daybreak.line).frame(height: 1)
                 Text(delta.text)
-                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                    .font(.system(.caption, design: .rounded, weight: .bold))
                     .foregroundStyle(delta.tint)
             }
             if let caveat = batch.kind.appleComparisonCaveat {
@@ -363,12 +382,12 @@ struct MetricCompareView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(source).daybreakSectionLabel()
             Text(value)
-                .font(Daybreak.numberFont(size: 26))
+                .font(Daybreak.numberFont(size: statValueSize))
                 .foregroundStyle(Daybreak.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(caption)
-                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                .font(.system(.caption2, design: .rounded, weight: .medium))
                 .foregroundStyle(Daybreak.mid)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -431,16 +450,32 @@ struct MetricCompareView: View {
 
     private var decisionFooter: some View {
         VStack(spacing: 10) {
-            Button("Looks right — add to Apple Health") {
+            Button(isImporting ? "Adding to Apple Health…" : "Looks right — add to Apple Health") {
                 guard !isImporting else { return }
                 isImporting = true
+                importFailed = false
                 Task {
-                    await model.syncEngine.importMetricBatch(batch.id)
-                    if let onDecision { onDecision() } else { dismiss() }
+                    // A false return means the HealthKit write failed and the
+                    // batch is still staged — moving on would tell the user
+                    // it landed when it didn't.
+                    if await model.syncEngine.importMetricBatch(batch.id) {
+                        if let onDecision { onDecision() } else { dismiss() }
+                    } else {
+                        isImporting = false
+                        importFailed = true
+                    }
                 }
             }
             .buttonStyle(.daybreakPrimary)
             .disabled(isImporting)
+
+            if importFailed {
+                Text("That didn't make it into Apple Health — the day is still here, untouched. Try again in a moment.")
+                    .font(.system(.caption, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Daybreak.fail)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
 
             Button("Skip this day") {
                 model.syncEngine.tossMetricBatch(batch.id)

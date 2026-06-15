@@ -22,19 +22,14 @@ struct AirliftApp: App {
                 .environment(model)
                 .task {
                     guard !model.isUIMock else { return }
+                    // Opening the app no longer pulls from Google on its own —
+                    // a launch fetch surprised users with network/battery use
+                    // and writes they didn't ask for. Fetching is now always
+                    // user-initiated from the home screen, which surfaces the
+                    // last-checked time so the choice is informed. Background
+                    // refresh stays scheduled (best-effort) and is the path
+                    // we'll revisit when we design unattended sync.
                     BackgroundScheduler.shared.scheduleNextRefresh()
-                    // On-launch sync is the real freshness guarantee —
-                    // BGAppRefreshTask is best-effort. The engine gates writes
-                    // by the configured sync mode (review-everything stages
-                    // and writes nothing, matching the old launch behavior);
-                    // the sweep then clears clean leftovers staged under a
-                    // previous review-everything session.
-                    if model.isConfigured, model.syncEngine.isConnected {
-                        await model.syncEngine.syncNow()
-                        if model.syncEngine.syncMode == .automatic {
-                            await model.syncEngine.autoImportClean()
-                        }
-                    }
                 }
         }
     }

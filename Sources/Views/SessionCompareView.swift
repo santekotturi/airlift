@@ -68,17 +68,17 @@ private struct DepthBand: Identifiable {
     let end: Date
 }
 
-/// One vertex of the Apple Watch step line in the depth hypnogram.
+/// One vertex of the Apple Health step line in the depth hypnogram.
 private struct DepthPoint: Identifiable {
     let id = UUID()
     let date: Date
     let depth: Double
 }
 
-/// Side-by-side validation of one Google sleep session against Apple Watch
-/// data: labeled stage strips with an agreement meter, the minute-by-minute
-/// hypnogram and overnight heart rate, the night in numbers, sanity checks,
-/// and the import-or-skip decision.
+/// Side-by-side validation of one Google sleep session against whatever
+/// Apple Health already holds for the night: labeled stage strips with an
+/// agreement meter, the minute-by-minute hypnogram and overnight heart rate,
+/// the night in numbers, sanity checks, and the import-or-skip decision.
 struct SessionCompareView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -92,10 +92,21 @@ struct SessionCompareView: View {
     private var deviceName: String { model.syncEngine.sourceDeviceName }
 
     @State private var isImporting = false
+    @State private var importFailed = false
     @State private var confirmingRemoval = false
 
     private var session: SleepSession { staged.session }
     private var hasApple: Bool { !staged.appleSleep.isEmpty }
+
+    /// What the comparison lane actually is: whatever Apple Health already
+    /// holds for the night — Apple Watch, AutoSleep, iPhone, a manual entry.
+    /// Named when one source wrote it all; mixed or empty falls back to the
+    /// umbrella "Apple Health" rather than guessing.
+    private var appleSourceLabel: String {
+        let names = Set(staged.appleSleep.map(\.sourceName))
+        if names.count == 1, let only = names.first { return only }
+        return "Apple Health"
+    }
 
     var body: some View {
         ScrollView {
@@ -130,8 +141,8 @@ struct SessionCompareView: View {
     /// night began ("Monday night").
     private var title: String {
         Calendar.current.isDateInToday(session.end)
-            ? "Last night, side by side"
-            : "\(session.start.formatted(.dateTime.weekday(.wide))) night, side by side"
+            ? "Last night"
+            : "\(session.start.formatted(.dateTime.weekday(.wide))) night"
     }
 
     private var header: some View {
@@ -151,12 +162,29 @@ struct SessionCompareView: View {
 
     // MARK: - Comparison card
 
-    /// Strip + chart x-domain: union of both sources (including the session
-    /// span itself), so misaligned nights and coverage gaps are obvious.
+    /// Strip + chart x-domain: the night, plus nearby Apple data so misalignment
+    /// shows — but clamped to ±3 h of the session so a distant daytime nap or a
+    /// mis-windowed segment can't balloon the axis and squeeze the night into a
+    /// sliver. Marks outside this range are clipped by the x-scale.
     private var xDomain: ClosedRange<Date> {
-        let starts = [session.start] + staged.appleSleep.map(\.start)
-        let ends = [session.end] + staged.appleSleep.map(\.end)
-        return starts.min()!...ends.max()!
+        let lo = session.start.addingTimeInterval(-3 * 3_600)
+        let hi = session.end.addingTimeInterval(3 * 3_600)
+        let start = ([session.start] + staged.appleSleep.map(\.start)).min()!
+        let end = ([session.end] + staged.appleSleep.map(\.end)).max()!
+        return Swift.max(start, lo)...Swift.min(end, hi)
+    }
+
+    /// A "nice" hour stride (1/2/3/4/6) that keeps ~4–5 x-axis labels for the
+    /// visible span instead of crowding them into an unreadable smear.
+    private var hourStride: Int {
+        let hours = xDomain.upperBound.timeIntervalSince(xDomain.lowerBound) / 3600
+        switch hours {
+        case ..<5: return 1
+        case ..<9: return 2
+        case ..<13: return 3
+        case ..<19: return 4
+        default: return 6
+        }
     }
 
     private var statusChip: DaybreakChip {
@@ -174,7 +202,7 @@ struct SessionCompareView: View {
             }
             StageStrip(google: session.stages, domain: xDomain, span: session.start...session.end)
             if hasApple {
-                laneLabel("Apple Watch", detail: "\(hm(appleAsleepSeconds)) · already in Health")
+                laneLabel(appleSourceLabel, detail: "\(hm(appleAsleepSeconds)) · already in Health")
                     .padding(.top, 6)
                 StageStrip(apple: staged.appleSleep, domain: xDomain)
             } else {
@@ -189,8 +217,8 @@ struct SessionCompareView: View {
                 .fill(Daybreak.line)
                 .frame(height: 1)
                 .padding(.vertical, 4)
-            Text("Agreement with Apple Watch")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+            Text("Agreement with \(appleSourceLabel)")
+                .font(.system(.caption, design: .rounded, weight: .semibold))
                 .foregroundStyle(Daybreak.mid)
             if let percent = agreementPercent {
                 AgreementMeter(percent: percent)
@@ -198,7 +226,7 @@ struct SessionCompareView: View {
                 Text(hasApple
                      ? "The two nights barely overlap — nothing to compare."
                      : "Nothing to compare against — Apple Health has no sleep for this night.")
-                    .font(.system(size: 12.5, weight: .medium, design: .rounded))
+                    .font(.system(.caption, design: .rounded, weight: .medium))
                     .foregroundStyle(Daybreak.faint)
             }
         }
@@ -246,7 +274,7 @@ struct SessionCompareView: View {
                         .fill(stage.daybreakColor)
                         .frame(width: 7, height: 7)
                     Text(stage.legendName)
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .font(.system(.caption2, design: .rounded, weight: .semibold))
                         .foregroundStyle(Daybreak.mid)
                 }
             }
@@ -308,19 +336,19 @@ struct SessionCompareView: View {
             .chartXScale(domain: xDomain)
             .chartYScale(domain: -0.55...3.55)
             .chartXAxis {
-                AxisMarks(values: .stride(by: .hour, count: 2)) { _ in
+                AxisMarks(values: clockAlignedTicks(in: xDomain, everyHours: hourStride)) { _ in
                     AxisGridLine().foregroundStyle(Daybreak.line)
                     AxisValueLabel(format: .dateTime.hour())
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.system(.caption2, design: .rounded, weight: .medium))
                         .foregroundStyle(Daybreak.faint)
                 }
             }
             .chartYAxis {
-                AxisMarks(values: [0.0, 1, 2, 3]) { value in
+                AxisMarks(position: .leading, values: [0.0, 1, 2, 3]) { value in
                     AxisGridLine().foregroundStyle(Daybreak.line)
                     AxisValueLabel {
                         Text(Self.depthLabels[value.as(Double.self) ?? -1] ?? "")
-                            .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                            .font(.system(.caption2, design: .rounded, weight: .semibold))
                             .foregroundStyle(Daybreak.mid)
                     }
                 }
@@ -345,10 +373,10 @@ struct SessionCompareView: View {
                 Capsule()
                     .fill(Daybreak.ink.opacity(0.5))
                     .frame(width: 14, height: 2)
-                Text("Apple Watch")
+                Text(appleSourceLabel)
             }
         }
-        .font(.system(size: 11, weight: .semibold, design: .rounded))
+        .font(.system(.caption2, design: .rounded, weight: .semibold))
         .foregroundStyle(Daybreak.mid)
     }
 
@@ -358,7 +386,7 @@ struct SessionCompareView: View {
         let bpms = staged.heartRate.map(\.bpm)
         let range = "\(Int(bpms.min() ?? 0))–\(Int(bpms.max() ?? 0)) bpm"
         return VStack(alignment: .leading, spacing: 10) {
-            laneLabel("Overnight heart rate", detail: "Apple Watch · \(range)")
+            laneLabel("Overnight heart rate", detail: "Apple Health · \(range)")
             Chart(staged.heartRate) { sample in
                 LineMark(
                     x: .value("Time", sample.date),
@@ -371,18 +399,18 @@ struct SessionCompareView: View {
             .chartXScale(domain: xDomain)
             .chartYScale(domain: .automatic(includesZero: false))
             .chartXAxis {
-                AxisMarks(values: .stride(by: .hour, count: 2)) { _ in
+                AxisMarks(values: clockAlignedTicks(in: xDomain, everyHours: hourStride)) { _ in
                     AxisGridLine().foregroundStyle(Daybreak.line)
                     AxisValueLabel(format: .dateTime.hour())
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.system(.caption2, design: .rounded, weight: .medium))
                         .foregroundStyle(Daybreak.faint)
                 }
             }
             .chartYAxis {
-                AxisMarks { _ in
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { _ in
                     AxisGridLine().foregroundStyle(Daybreak.line)
                     AxisValueLabel()
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.system(.caption2, design: .rounded, weight: .medium))
                         .foregroundStyle(Daybreak.faint)
                 }
             }
@@ -477,15 +505,31 @@ struct SessionCompareView: View {
         VStack(spacing: 10) {
             Button {
                 isImporting = true
+                importFailed = false
                 Task {
-                    await model.syncEngine.importStaged(staged.id)
-                    if let onDecision { onDecision() } else { dismiss() }
+                    // A false return means the HealthKit write failed and the
+                    // night is still staged — moving on would tell the user
+                    // it landed when it didn't.
+                    if await model.syncEngine.importStaged(staged.id) {
+                        if let onDecision { onDecision() } else { dismiss() }
+                    } else {
+                        isImporting = false
+                        importFailed = true
+                    }
                 }
             } label: {
                 Text(isImporting ? "Adding to Apple Health…" : "Looks right — add to Apple Health")
             }
             .buttonStyle(.daybreakPrimary)
             .disabled(isImporting)
+
+            if importFailed {
+                Text("That didn't make it into Apple Health — the night is still here, untouched. Try again in a moment.")
+                    .font(.system(.caption, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Daybreak.fail)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
 
             Button("Skip this night") {
                 model.syncEngine.toss(staged.id)
@@ -495,7 +539,7 @@ struct SessionCompareView: View {
             .disabled(isImporting)
 
             Text("Writes \(session.stages.count) stage samples + 1 in-bed sample. Re-syncs never duplicate.")
-                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                .font(.system(.caption2, design: .rounded, weight: .medium))
                 .foregroundStyle(Daybreak.faint)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
@@ -512,7 +556,7 @@ struct SessionCompareView: View {
             }
             .buttonStyle(.daybreakDestructiveGhost)
             Text("This night is already in Apple Health. Removing takes out Airlift's \(session.stages.count + 1) samples — other sources stay untouched, and it won't come back.")
-                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                .font(.system(.caption2, design: .rounded, weight: .medium))
                 .foregroundStyle(Daybreak.faint)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
