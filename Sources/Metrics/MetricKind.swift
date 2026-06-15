@@ -147,6 +147,18 @@ enum MetricKind: String, CaseIterable, Identifiable {
     /// True when daily values accumulate (sum) rather than read as a level (avg).
     var isCumulative: Bool { self == .steps || self == .distance }
 
+    /// True for metrics measured across a night's sleep, which should be
+    /// attributed to an overnight "day" (6pm the previous evening → 6pm) and
+    /// labelled by the day they wake into — like sleep — instead of being
+    /// split at midnight. HRV is sampled only during sleep, so a single
+    /// night's readings otherwise straddle two calendar days. (SpO2 is the
+    /// same shape and can join this when wanted.)
+    var usesOvernightDay: Bool { self == .heartRateVariability }
+
+    /// The evening boundary for `usesOvernightDay` windows: the overnight day
+    /// labelled `D` spans `[18:00 on D-1, 18:00 on D]`.
+    static let overnightAnchorHour = 18
+
     /// Non-nil when Google and Apple report different statistics for this
     /// metric, so a numeric comparison can't pass or fail — only inform.
     /// HRV: Fitbit reports RMSSD, HealthKit stores SDNN; RMSSD typically runs
@@ -161,6 +173,19 @@ enum MetricKind: String, CaseIterable, Identifiable {
     /// Watch density and keep charts and the Health database sane.
     var downsampleBucketSeconds: TimeInterval? {
         self == .heartRate ? 60 : nil
+    }
+
+    /// How far before the newest already-saved day an incremental fetch reaches
+    /// back, to catch data that arrived or was edited late. Daily aggregates
+    /// (resting HR, respiratory rate) finalize about a day after the fact, so
+    /// they need a wider overlap; the high-frequency intraday types only need
+    /// to cover the device's sync lag across the day boundary. Kept small on
+    /// purpose — the whole point is to stop re-downloading days we already have.
+    var refetchOverlap: TimeInterval {
+        switch self {
+        case .restingHeartRate, .respiratoryRate: return 2 * 86_400
+        default: return 6 * 3_600
+        }
     }
 
     /// Rejects known-invalid wire values before they become samples.

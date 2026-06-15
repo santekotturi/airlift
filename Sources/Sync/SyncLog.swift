@@ -11,6 +11,7 @@ struct SyncLogEntry: Codable, Identifiable, Equatable {
         case held
         case nothingNew
         case connected
+        case disconnected
         case error
     }
 

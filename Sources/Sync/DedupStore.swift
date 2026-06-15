@@ -1,17 +1,20 @@
 import Foundation
 
-/// Tracks which Google sleep dataPoint IDs have already been written to HealthKit.
+/// Tracks which Google dataPoint IDs have already been written to HealthKit.
 ///
 /// HealthKit has no native upsert, so this set is the source of truth for
 /// "already written" (PRD §8). Backed by `UserDefaults` here for simplicity; the
 /// protocol leaves room to swap in SQLite if the set ever grows large.
+///
+/// Reads go through `all` — one snapshot per sync pass. There is deliberately
+/// no per-ID `contains` requirement: per-sample lookups against a
+/// UserDefaults-backed store are linear scans that can pin the main thread
+/// for seconds on an intraday heart-rate day.
 protocol DedupStoring: Sendable {
-    func contains(_ id: String) -> Bool
     func insert(_ id: String)
     /// Batch insert — one persistence write for the whole set. Metric batches
     /// can carry thousands of IDs per day.
     func insertAll(_ ids: [String])
-    func remove(_ id: String)
     var all: Set<String> { get }
 }
 

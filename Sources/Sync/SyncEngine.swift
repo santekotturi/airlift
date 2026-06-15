@@ -95,13 +95,18 @@ extension [CheckResult] {
     }
 }
 
-/// Orchestrates the bridge in *review-first* mode: fetch Google sessions, stage
-/// them alongside Apple Watch reference data and sanity checks, and only write
-/// to HealthKit on an explicit per-session `importStaged` — or discard with
-/// `toss`. Tossed and imported IDs persist so sessions never reappear.
+/// Orchestrates the bridge: fetch Google sleep sessions and metric samples,
+/// stage them alongside Apple Health reference data and sanity checks, then
+/// gate each item through the configured `SyncMode` — in `.automatic`, items
+/// whose checks all pass are written to HealthKit on their own and the rest
+/// wait in the review queue; in `.reviewEverything`, nothing is written
+/// without an explicit per-item `importStaged`/`importMetricBatch` (or is
+/// discarded with `toss`). Tossed and imported IDs persist so resolved items
+/// never reappear; imported sessions also record a content fingerprint so an
+/// upstream *edit* re-stages and rewrites the night.
 ///
-/// `syncNow` (fetch → write everything, no review) is kept for the future
-/// automated mode once the data source is trusted, but nothing calls it today.
+/// `syncNow()` is the main entry point — called on launch and from the
+/// background refresh task; `fetchForReview` is the manual "Fetch again" path.
 @MainActor
 @Observable
 final class SyncEngine {
@@ -117,14 +122,32 @@ final class SyncEngine {
     /// Per-data-type progress through the current fetch (shown while syncing).
     private(set) var pipeline: [PipelineItem] = []
 
+    /// Non-nil while a wide "catching up" fetch is in flight (the window
+    /// reaches back more than a week — first sync, or a long gap). The UI
+    /// shows it so a multi-minute pull doesn't read as a hang. Cleared when
+    /// the pass ends.
+    private(set) var catchUpNotice: String?
+
+    /// How far back the first-ever fetch of a data kind looks when there's no
+    /// saved history to anchor an incremental window to.
+    private static let firstRunLookbackDays = 7
+
+    /// Re-pull overlap for sleep — sessions finalize after wake and can be
+    /// edited upstream for a day or two, so the window reaches back two nights.
+    private static let sleepRefetchOverlap: TimeInterval = 2 * 86_400
+
     /// True when the branded notification primer should be on screen — set
     /// after a successful connect while iOS permission is still undetermined;
     /// cleared by accept/decline. The sheet, not the system prompt, goes first.
     private(set) var needsNotificationPriming = false
 
+    #if DEBUG
     /// Most recent raw page JSON per data type (pretty-printed). Populated to
-    /// verify the pre-GA wire schemas during bring-up; shown in DEBUG builds.
+    /// verify the pre-GA wire schemas during bring-up; shown by the DEBUG
+    /// schema viewer in Settings. Compiled out of release builds — health
+    /// data must not sit in memory for a UI that doesn't exist.
     private(set) var lastRawJSON: [String: String] = [:]
+    #endif
 
     /// Persisted high-water mark, for display when no sync has run this launch.
     var lastSyncedDate: Date? { state.lastSyncedDate }
@@ -176,6 +199,7 @@ final class SyncEngine {
     private let tokens: TokenStoring
     private let dedup: DedupStoring
     private let tossed: DedupStoring
+    private let fingerprints: SessionFingerprintStoring
     private var state: SyncStateStoring
     private var settings: SyncSettingsStoring
     private var healthAuthorized = false
@@ -198,6 +222,7 @@ final class SyncEngine {
         tokens: TokenStoring,
         dedup: DedupStoring,
         tossed: DedupStoring,
+        fingerprints: SessionFingerprintStoring,
         state: SyncStateStoring,
         settings: SyncSettingsStoring,
         ledger: SyncLedgerStoring,
@@ -211,6 +236,7 @@ final class SyncEngine {
         self.tokens = tokens
         self.dedup = dedup
         self.tossed = tossed
+        self.fingerprints = fingerprints
         self.state = state
         self.settings = settings
         self.ledger = ledger
@@ -263,55 +289,72 @@ final class SyncEngine {
         }
     }
 
-    /// Forgets all credentials (used by the "reconnect" path).
+    /// Forgets all credentials on the user's explicit request. Sets `.idle`,
+    /// not `.needsConnection` — that state (and its "sign-in expired" copy)
+    /// is reserved for Google rejecting us; here the user chose to leave, and
+    /// `isConnected == false` already drives the friendly connect card.
     func disconnect() {
         #if DEBUG
         if isUIMock {
             isConnected = false
-            status = .needsConnection
+            status = .idle
             return
         }
         #endif
         try? tokens.clear()
         isConnected = false
-        status = .needsConnection
+        status = .idle
+        log.record(.disconnected, title: "Disconnected from Google Health", detail: "Your Google sign-in was removed from this iPhone. Reconnect whenever you're ready.")
     }
 
     // MARK: - Review flow (fetch → stage → import/toss)
 
-    /// Explicit fetch of the last `days` days ("Fetch again · last 7 days").
-    /// Gated by the configured mode like every other pass — in automatic mode
-    /// clean items land on their own, in review-everything nothing is written.
+    /// Explicit backfill of the last `days` days ("Fetch · last 30 days"). The
+    /// window is forced to exactly that span for every kind — this is how the
+    /// user reaches back past what's already saved. Gated by the configured
+    /// mode like every other pass.
     func fetchForReview(days: Int = 7, now: Date = Date()) async {
-        await run(since: now.addingTimeInterval(-Double(days) * 86_400), now: now, mode: syncMode)
+        await run(explicitSince: now.addingTimeInterval(-Double(days) * 86_400), now: now, mode: syncMode)
     }
 
-    /// The main sync path: fetch since the high-water mark (with the usual
-    /// re-pull window), then gate each staged item through the configured
-    /// mode — auto-importing what the checks trust and holding the rest for
-    /// review. Called on launch and from the background task.
+    /// The main sync path: fetch only what's new since the last saved data
+    /// (per kind), then gate each staged item through the configured mode —
+    /// auto-importing what the checks trust and holding the rest for review.
+    /// Called from the manual "Fetch now" button and the background task.
     func syncNow(now: Date = Date()) async {
-        let since = SyncWindow.fetchSince(lastSynced: state.lastSyncedDate, now: now)
-        await run(since: since, now: now, mode: syncMode)
+        await run(explicitSince: nil, now: now, mode: syncMode)
     }
 
     /// Shared fetch → stage → gate pass.
     ///
+    /// `explicitSince == nil` is the incremental case: each kind fetches only
+    /// from just after the newest day already saved (a tiny window in steady
+    /// state). A non-nil `explicitSince` forces that exact floor for every
+    /// kind — the explicit "last N days" backfill.
+    ///
     /// Sleep failing is fatal for the pass; individual metric kinds failing are
     /// logged and skipped so one flaky pre-GA endpoint can't blank the queue.
-    private func run(since: Date, now: Date, mode: SyncMode) async {
+    private func run(explicitSince: Date?, now: Date, mode: SyncMode) async {
         #if DEBUG
         if isUIMock {
             await mockSyncPass(now: now)
             return
         }
         #endif
+        // One pass at a time: the launch sync and a manual "Fetch again" can
+        // otherwise interleave at await points, double-importing and
+        // clobbering each other's queue and ledger bookkeeping.
+        if case .syncing = status {
+            Log.sync.notice("Sync pass already in flight — ignoring overlapping request")
+            return
+        }
         guard tokens.load() != nil else {
             status = .needsConnection
             return
         }
 
         status = .syncing(phase: "Starting…")
+        catchUpNotice = nil
         rawPageCounts = [:]
         rawPointCounts = [:]
         // A re-fetch re-stages anything still unresolved; only newly held
@@ -320,30 +363,68 @@ final class SyncEngine {
         let kinds = MetricKind.allCases.filter { enabledKinds.contains($0) }
         pipeline = [PipelineItem(id: "sleep", name: "Sleep")]
             + kinds.map { PipelineItem(id: $0.rawValue, name: $0.displayName) }
+
+        // Per-kind fetch windows. Incremental by default — each kind starts
+        // just after the newest day it has already saved, so steady-state
+        // fetches pull only the current day plus a small overlap instead of
+        // re-downloading (and discarding) everything in a fixed window.
+        let floor = now.addingTimeInterval(-Double(Self.firstRunLookbackDays) * 86_400)
+        var sinceByKey: [String: Date] = [:]
+        if let explicitSince {
+            sinceByKey[sleepLedgerKind] = explicitSince
+            for kind in kinds { sinceByKey[kind.rawValue] = explicitSince }
+        } else {
+            sinceByKey[sleepLedgerKind] = incrementalSince(
+                ledgerKind: sleepLedgerKind, overlap: Self.sleepRefetchOverlap, floor: floor, now: now
+            )
+            for kind in kinds {
+                sinceByKey[kind.rawValue] = incrementalSince(
+                    ledgerKind: kind.rawValue, overlap: kind.refetchOverlap, floor: floor, now: now
+                )
+            }
+        }
+        let sleepSince = sinceByKey[sleepLedgerKind] ?? floor
+        let oldestSince = sinceByKey.values.min() ?? floor
+        // Warn when the pull reaches back roughly a week or more (first sync,
+        // a long absence, or a wide manual backfill) — it can take minutes.
+        if now.timeIntervalSince(oldestSince) >= 7 * 86_400 - 3_600 {
+            catchUpNotice = "Catching up since \(oldestSince.formatted(date: .abbreviated, time: .omitted)) — this can take a couple of minutes."
+        }
+
         dump.beginFetch(now: now)
         do {
             try await ensureHealthAuthorized()
 
             #if DEBUG
-            status = .syncing(phase: "Warming up the engine…")
-            await runDiscoveryProbes(since: since)
+            if DumpStore.enabled {
+                status = .syncing(phase: "Warming up the engine…")
+                await runDiscoveryProbes(since: oldestSince)
+            }
             #endif
 
             var written = 0
 
             // One snapshot per pass — the stores are UserDefaults-backed and
             // per-ID lookups against them are linear scans.
-            let seenIDs = dedup.all.union(tossed.all)
+            let dedupIDs = dedup.all
+            let tossedIDs = tossed.all
+            let seenIDs = dedupIDs.union(tossedIDs)
 
             // Sleep sessions.
             status = .syncing(phase: "Fetching sleep…")
             setPipelineStep("sleep", .fetching(readings: 0))
             let sessions = try await withFreshToken { token in
-                try await self.api.fetchSleepSessions(since: since, accessToken: token, onRawPage: self.captureRaw(key: "sleep"))
+                try await self.api.fetchSleepSessions(since: sleepSince, accessToken: token, onRawPage: self.captureRaw(key: "sleep"))
             }
             setPipelineStep("sleep", .comparing)
-            let freshCandidates = sessions.filter {
-                $0.isComplete && !seenIDs.contains($0.id)
+            // Fresh sessions, plus already-imported sessions whose content no
+            // longer matches what was written — an upstream edit. Tossed IDs
+            // never come back.
+            let freshCandidates = sessions.filter { session in
+                guard session.isComplete, !tossedIDs.contains(session.id) else { return false }
+                guard dedupIDs.contains(session.id) else { return true }
+                guard let recorded = fingerprints.fingerprint(for: session.id) else { return false }
+                return recorded != session.contentFingerprint
             }
             var heldSessions: [StagedSession] = []
             var sleepImported = 0
@@ -355,8 +436,7 @@ final class SyncEngine {
                 switch SyncGate.action(for: item.worstSeverity, mode: mode) {
                 case .autoImport:
                     do {
-                        try await writer.write(item.session)
-                        dedup.insert(item.id)
+                        try await writeSession(item.session)
                         ledger.recordSynced(kind: sleepLedgerKind, day: day, samples: 1, at: now)
                         sleepImported += 1
                         log.record(
@@ -383,7 +463,13 @@ final class SyncEngine {
                     }
                 }
             }
-            staged = heldSessions.sorted { $0.session.start > $1.session.start }
+            // Merge, don't replace: unresolved items from earlier (wider)
+            // fetches that this window didn't cover must stay reviewable.
+            let fetchedSessionIDs = Set(sessions.map(\.id))
+            let carriedSessions = staged.filter {
+                !fetchedSessionIDs.contains($0.id) && !seenIDs.contains($0.id)
+            }
+            staged = (heldSessions + carriedSessions).sorted { $0.session.start > $1.session.start }
             written += sleepImported
             setPipelineStep("sleep", .done(imported: sleepImported, held: heldSessions.count))
 
@@ -393,16 +479,17 @@ final class SyncEngine {
             for kind in kinds {
                 status = .syncing(phase: "Fetching \(kind.displayName)…")
                 setPipelineStep(kind.rawValue, .fetching(readings: 0))
+                let kindSince = sinceByKey[kind.rawValue] ?? floor
                 do {
                     let samples = try await withFreshToken { token in
-                        try await self.api.fetchMetricSamples(kind, since: since, accessToken: token, onRawPage: self.captureRaw(key: kind.rawValue, fetchingName: kind.displayName))
+                        try await self.api.fetchMetricSamples(kind, since: kindSince, accessToken: token, onRawPage: self.captureRaw(key: kind.rawValue, fetchingName: kind.displayName))
                     }
                     status = .syncing(phase: "Comparing \(kind.displayName) with Apple Health…")
                     setPipelineStep(kind.rawValue, .comparing)
                     var imported = 0
                     var importedSamples = 0
                     var held = 0
-                    for batch in await stageMetric(kind, samples: samples, seenIDs: seenIDs) {
+                    for batch in await stageMetric(kind, samples: samples, seenIDs: seenIDs, now: now) {
                         dump.writeStagedBatch(batch)
                         let day = CivilDay.string(from: batch.day)
                         switch SyncGate.action(for: batch.worstSeverity, mode: mode) {
@@ -444,6 +531,10 @@ final class SyncEngine {
                         )
                     }
                     setPipelineStep(kind.rawValue, .done(imported: imported, held: held))
+                } catch is CancellationError {
+                    // An expired background task cancels mid-fetch — abort the
+                    // pass so the watermark stays put and nothing half-lands.
+                    throw CancellationError()
                 } catch {
                     failedKinds.insert(kind)
                     setPipelineStep(kind.rawValue, .failed)
@@ -451,32 +542,33 @@ final class SyncEngine {
                     Log.sync.error("Fetch failed for \(kind.rawValue): \(error.localizedDescription) — skipping")
                 }
             }
-            stagedMetrics = heldBatches.sorted {
+            // Merge: keep unresolved batches this pass didn't cover — failed
+            // or disabled kinds, and days older than that kind's fetch window.
+            let carriedBatches = stagedMetrics.filter { old in
+                if failedKinds.contains(old.kind) || !kinds.contains(old.kind) { return true }
+                let kindStart = Calendar.current.startOfDay(for: sinceByKey[old.kind.rawValue] ?? oldestSince)
+                return old.day < kindStart
+            }
+            stagedMetrics = (heldBatches + carriedBatches).sorted {
                 ($0.day, $0.kind.displayName) > ($1.day, $1.kind.displayName)
             }
 
             // Days the pass covered but nothing arrived for: mark "no data from
             // the device" so the coverage grid can tell a quiet band from a
-            // failed sync. Today is excluded — it is still accumulating.
+            // failed sync, and so the next incremental window doesn't keep
+            // reaching back across them. Each kind fills from its own window;
+            // today is excluded — it is still accumulating.
             let yesterday = now.addingTimeInterval(-86_400)
-            if yesterday >= since {
-                for day in CivilDay.days(from: since, through: yesterday) {
-                    ledger.fillIfEmpty(.noData, kind: sleepLedgerKind, day: day)
-                    for kind in kinds where !failedKinds.contains(kind) {
-                        ledger.fillIfEmpty(.noData, kind: kind.rawValue, day: day)
-                    }
-                }
+            fillNoData(kind: sleepLedgerKind, from: sleepSince, through: yesterday)
+            for kind in kinds where !failedKinds.contains(kind) {
+                fillNoData(kind: kind.rawValue, from: sinceByKey[kind.rawValue] ?? floor, through: yesterday)
             }
 
-            // Advance the high-water mark, but never past unresolved items —
-            // a held item must keep falling inside the next fetch window so an
-            // app restart can't strand it. Review-everything passes don't
-            // advance (nothing was written; the window must not move).
-            if mode == .automatic {
-                let oldestHeld = (staged.map(\.session.end) + stagedMetrics.map(\.day)).min()
-                state.lastSyncedDate = min(now, oldestHeld ?? now)
-            }
+            // "Last checked" for the home screen. The fetch window itself is
+            // derived per-kind from the ledger now, not from this mark.
+            state.lastSyncedDate = now
 
+            catchUpNotice = nil
             let heldCount = staged.count + stagedMetrics.count
             if mode == .reviewEverything {
                 status = .fetched(sessions: staged.count, metricBatches: stagedMetrics.count, date: now)
@@ -493,18 +585,58 @@ final class SyncEngine {
             }
             Log.sync.info("Sync pass done — imported \(written), held \(heldCount) for review")
         } catch OAuthError.noRefreshToken {
+            catchUpNotice = nil
             disconnect()
             log.record(.error, title: "Reconnect needed", detail: "Your weekly Google sign-in expired — reconnect to keep the bridge open.")
             await notifier.postReconnectNeeded()
         } catch let error as OAuthError {
+            catchUpNotice = nil
             status = .needsConnection
             log.record(.error, title: "Reconnect needed", detail: "Google turned down the sign-in — reconnect to keep the bridge open.")
             Log.sync.error("Auth error during fetch: \(error.localizedDescription)")
             await notifier.postReconnectNeeded()
         } catch {
+            catchUpNotice = nil
             status = .failed(error.localizedDescription)
             log.record(.error, title: "Fetch didn't finish", detail: error.localizedDescription)
             Log.sync.error("Fetch failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// The civil-time floor for an incremental fetch of one ledger kind: just
+    /// before the newest day already resolved (synced, or confirmed empty),
+    /// minus a re-pull overlap — but never past the oldest day still awaiting
+    /// review, so a cold restart re-fetches and re-stages it. Falls back to
+    /// `floor` (the first-run lookback) when no day has ever resolved.
+    private func incrementalSince(ledgerKind: String, overlap: TimeInterval, floor: Date, now: Date) -> Date {
+        let entries = ledger.all.filter { $0.kind == ledgerKind }
+        let resolved = entries.compactMap { entry -> Date? in
+            switch entry.status {
+            case .synced, .noData, .tossed: return CivilDay.date(from: entry.day)
+            case .pendingReview, .quarantined: return nil
+            }
+        }
+        guard let newestResolved = resolved.max() else { return floor }
+        var since = newestResolved.addingTimeInterval(-overlap)
+        let unresolved = entries.compactMap { entry -> Date? in
+            switch entry.status {
+            case .pendingReview, .quarantined: return CivilDay.date(from: entry.day)
+            case .synced, .noData, .tossed: return nil
+            }
+        }
+        if let oldestUnresolved = unresolved.min() {
+            since = min(since, oldestUnresolved)
+        }
+        return min(since, now)
+    }
+
+    /// Marks every civil day in `[from, through]` that has no ledger entry yet
+    /// as `.noData` for `kind` — a covered-but-empty band, distinct from a day
+    /// a sync never reached.
+    private func fillNoData(kind: String, from: Date, through: Date) {
+        guard through >= from else { return }
+        for day in CivilDay.days(from: from, through: through) {
+            ledger.fillIfEmpty(.noData, kind: kind, day: day)
         }
     }
 
@@ -530,7 +662,7 @@ final class SyncEngine {
     /// other-sources comparison where one exists. Kinds with no Airlift data
     /// that day are omitted.
     func calendarSnapshot(for day: Date) async -> [DayKindSnapshot] {
-        let interval = DateInterval(start: day, duration: 86_400)
+        let interval = Self.dayInterval(containing: day)
         var snapshots: [DayKindSnapshot] = []
 
         #if DEBUG
@@ -557,6 +689,9 @@ final class SyncEngine {
         }
 
         for kind in MetricKind.allCases {
+            // Overnight metrics (HRV) read over their 6pm→6pm window, not the
+            // plain civil day, so the detail matches how the night was stored.
+            let interval = Self.metricDayInterval(kind: kind, day: day)
             guard let own = try? await reader.ownQuantitySamples(kind, in: interval), !own.isEmpty else { continue }
             let values = own.map(\.value)
             let ownSummary = kind.isCumulative
@@ -588,7 +723,7 @@ final class SyncEngine {
         #if DEBUG
         if isUIMock { return UIMock.historicalSession() }
         #endif
-        let interval = DateInterval(start: day, duration: 86_400)
+        let interval = Self.dayInterval(containing: day)
         guard let own = try? await reader.ownSleepSamples(endingIn: interval), !own.isEmpty else { return nil }
         let stages = own.compactMap { sample -> SleepStageSegment? in
             guard
@@ -623,7 +758,7 @@ final class SyncEngine {
         #if DEBUG
         if isUIMock { return UIMock.historicalBatch(kind: kind) }
         #endif
-        let interval = DateInterval(start: day, duration: 86_400)
+        let interval = Self.metricDayInterval(kind: kind, day: day)
         guard let own = try? await reader.ownQuantitySamples(kind, in: interval), !own.isEmpty else { return nil }
         let samples = own
             .map { MetricSample(id: $0.dataPointID ?? $0.id.uuidString, start: $0.start, end: $0.end, value: $0.value) }
@@ -683,7 +818,8 @@ final class SyncEngine {
         }
         #endif
         do {
-            let interval = DateInterval(start: day, duration: 86_400)
+            let interval = kind.map { Self.metricDayInterval(kind: $0, day: day) }
+                ?? Self.dayInterval(containing: day)
             let removedIDs = try await writer.deleteOwnSamples(kind: kind, in: interval)
             tossed.insertAll(removedIDs)
             ledger.set(.tossed, kind: ledgerKind, day: dayString)
@@ -698,6 +834,38 @@ final class SyncEngine {
             status = .failed(error.localizedDescription)
             Log.sync.error("Removal failed for \(ledgerKind) \(dayString): \(error.localizedDescription)")
         }
+    }
+
+    /// Calendar-correct civil-day interval (DST transition days are 23/25 h —
+    /// a fixed 86,400 s window would miss or overshoot the odd hour).
+    nonisolated private static func dayInterval(containing day: Date) -> DateInterval {
+        Calendar.current.dateInterval(of: .day, for: day)
+            ?? DateInterval(start: day, duration: 86_400)
+    }
+
+    /// The instant range a metric `day` covers. Overnight metrics (HRV) use a
+    /// 6pm→6pm window so a whole night's readings stay under the day they wake
+    /// into; everything else is the plain civil day. Used everywhere a kind's
+    /// day is read, written, compared, or removed so the windows never disagree.
+    nonisolated static func metricDayInterval(
+        kind: MetricKind, day: Date, calendar: Calendar = .current
+    ) -> DateInterval {
+        guard kind.usesOvernightDay else { return dayInterval(containing: day) }
+        let start = calendar.date(byAdding: .hour, value: -(24 - MetricKind.overnightAnchorHour), to: day)
+            ?? day.addingTimeInterval(-Double(24 - MetricKind.overnightAnchorHour) * 3_600)
+        return DateInterval(start: start, duration: 86_400)
+    }
+
+    /// The metric `day` (midnight of the wake day) a reading at `start` groups
+    /// into — shifted by the overnight offset for overnight metrics so an
+    /// evening reading rolls into the next morning's day, like sleep.
+    nonisolated static func metricDayKey(
+        kind: MetricKind, start: Date, calendar: Calendar = .current
+    ) -> Date {
+        guard kind.usesOvernightDay else { return calendar.startOfDay(for: start) }
+        let shifted = calendar.date(byAdding: .hour, value: 24 - MetricKind.overnightAnchorHour, to: start)
+            ?? start.addingTimeInterval(Double(24 - MetricKind.overnightAnchorHour) * 3_600)
+        return calendar.startOfDay(for: shifted)
     }
 
     private static func hoursMinutes(_ seconds: TimeInterval) -> String {
@@ -760,8 +928,7 @@ final class SyncEngine {
     }
 
     private static func durationText(_ session: SleepSession) -> String {
-        let minutes = Int(session.end.timeIntervalSince(session.start) / 60)
-        return "\(minutes / 60) h \(minutes % 60) m"
+        hoursMinutes(session.end.timeIntervalSince(session.start))
     }
 
     private static func dayText(_ day: Date) -> String {
@@ -826,9 +993,23 @@ final class SyncEngine {
     }
     #endif
 
+    /// The check appended when Apple Health couldn't be read during staging.
+    /// `.warn` so automatic mode holds the item — a failed comparison read
+    /// must not silently disable the cross-check gate and auto-import anyway.
+    nonisolated private static func readFailureCheck(_ error: Error) -> CheckResult {
+        CheckResult(
+            name: "Apple Health comparison",
+            severity: .warn,
+            detail: "Couldn't read Apple Health for comparison (\(error.localizedDescription)) — review before importing."
+        )
+    }
+
     /// Groups one metric's samples into per-day batches with Apple reference
     /// data and checks. High-frequency kinds are downsampled first (so dedup
-    /// keys are bucket IDs); already-imported/tossed IDs are filtered out.
+    /// keys are bucket IDs); already-imported/tossed IDs are filtered out, and
+    /// so are samples whose window hasn't closed yet (`end > now`) — a
+    /// half-full bucket or in-progress daily aggregate would otherwise be
+    /// frozen forever by its own dedup key. The next pass picks them up whole.
     ///
     /// `nonisolated`: downsampling and grouping tens of thousands of points
     /// must not run on the main actor — the UI stays scrollable mid-fetch.
@@ -838,21 +1019,29 @@ final class SyncEngine {
     nonisolated private func stageMetric(
         _ kind: MetricKind,
         samples: [MetricSample],
-        seenIDs: Set<String>
+        seenIDs: Set<String>,
+        now: Date
     ) async -> [StagedMetricBatch] {
         var samples = samples
         if let bucket = kind.downsampleBucketSeconds {
             samples = samples.downsampled(bucket: bucket, kind: kind)
         }
-        let fresh = samples.filter { !seenIDs.contains($0.id) }
+        let fresh = samples.filter { !seenIDs.contains($0.id) && $0.end <= now }
         guard !fresh.isEmpty else { return [] }
 
         let calendar = Calendar.current
-        let byDay = Dictionary(grouping: fresh) { calendar.startOfDay(for: $0.start) }
+        let byDay = Dictionary(grouping: fresh) { Self.metricDayKey(kind: kind, start: $0.start, calendar: calendar) }
         var batches: [StagedMetricBatch] = []
         for (day, daySamples) in byDay {
-            let interval = DateInterval(start: day, duration: 86_400)
-            let apple = (try? await reader.quantitySamples(kind, in: interval)) ?? []
+            let interval = Self.metricDayInterval(kind: kind, day: day, calendar: calendar)
+            var readFailure: Error?
+            var apple: [QuantitySample] = []
+            do {
+                apple = try await reader.quantitySamples(kind, in: interval)
+            } catch {
+                readFailure = error
+                Log.sync.error("Apple Health read failed while staging \(kind.rawValue): \(error.localizedDescription)")
+            }
             let appleTotal = kind.isCumulative
                 ? try? await reader.cumulativeTotal(kind, in: interval)
                 : nil
@@ -860,12 +1049,16 @@ final class SyncEngine {
                 ? (try? await reader.hourlyTotals(kind, in: interval)) ?? []
                 : []
             let sorted = daySamples.sorted { $0.start < $1.start }
+            var checks = SanityChecks.runMetric(kind: kind, samples: sorted, apple: apple, appleTotal: appleTotal)
+            if let readFailure {
+                checks.append(Self.readFailureCheck(readFailure))
+            }
             batches.append(StagedMetricBatch(
                 kind: kind,
                 day: day,
                 samples: sorted,
                 appleSamples: apple,
-                checks: SanityChecks.runMetric(kind: kind, samples: sorted, apple: apple, appleTotal: appleTotal),
+                checks: checks,
                 appleTotal: appleTotal,
                 appleHourly: appleHourly
             ))
@@ -881,15 +1074,35 @@ final class SyncEngine {
             start: session.start.addingTimeInterval(-6 * 3600),
             end: session.end.addingTimeInterval(6 * 3600)
         )
-        let appleSleep = (try? await reader.sleepSegments(overlapping: window)) ?? []
+        var readFailure: Error?
+        var appleSleep: [AppleSleepSegment] = []
+        do {
+            appleSleep = try await reader.sleepSegments(overlapping: window)
+        } catch {
+            readFailure = error
+            Log.sync.error("Apple Health read failed while staging sleep: \(error.localizedDescription)")
+        }
         let sessionInterval = DateInterval(start: session.start, end: session.end)
         let heartRate = (try? await reader.heartRate(in: sessionInterval)) ?? []
+        var checks = SanityChecks.run(google: session, appleSleep: appleSleep, heartRate: heartRate)
+        if let readFailure {
+            checks.append(Self.readFailureCheck(readFailure))
+        }
         return StagedSession(
             session: session,
             appleSleep: appleSleep,
             heartRate: heartRate,
-            checks: SanityChecks.run(google: session, appleSleep: appleSleep, heartRate: heartRate)
+            checks: checks
         )
+    }
+
+    /// Writes a sleep session plus the bookkeeping that makes the write
+    /// idempotent and edit-aware: the dedup ID and the content fingerprint
+    /// (which lets a future re-pull recognize an upstream edit and rewrite).
+    private func writeSession(_ session: SleepSession) async throws {
+        try await writer.write(session)
+        dedup.insert(session.id)
+        fingerprints.record(session.contentFingerprint, for: session.id)
     }
 
     /// Sweeps the review queue, importing every staged item whose checks
@@ -928,8 +1141,7 @@ final class SyncEngine {
         let now = Date()
         for item in cleanSessions {
             do {
-                try await writer.write(item.session)
-                dedup.insert(item.id)
+                try await writeSession(item.session)
                 staged.removeAll { $0.id == item.id }
                 ledger.recordSynced(kind: sleepLedgerKind, day: CivilDay.string(from: item.session.end), samples: 1, at: now)
                 log.record(
@@ -959,8 +1171,11 @@ final class SyncEngine {
     }
 
     /// Writes one reviewed session to HealthKit and retires it from the queue.
-    func importStaged(_ id: String) async {
-        guard let item = staged.first(where: { $0.id == id }) else { return }
+    /// Returns false (leaving the item staged) when the write fails — callers
+    /// must not dismiss review UI as if it succeeded.
+    @discardableResult
+    func importStaged(_ id: String) async -> Bool {
+        guard let item = staged.first(where: { $0.id == id }) else { return false }
         #if DEBUG
         if isUIMock {
             staged.removeAll { $0.id == id }
@@ -970,12 +1185,11 @@ final class SyncEngine {
                 title: "\(Self.nightName(for: item.session.end)) added to Apple Health",
                 detail: "\(Self.durationText(item.session)) of sleep, \(item.session.stages.count) stage samples — you approved it."
             )
-            return
+            return true
         }
         #endif
         do {
-            try await writer.write(item.session)
-            dedup.insert(id)
+            try await writeSession(item.session)
             staged.removeAll { $0.id == id }
             ledger.recordSynced(
                 kind: sleepLedgerKind,
@@ -990,9 +1204,11 @@ final class SyncEngine {
                 detail: "\(Self.durationText(item.session)) of sleep, \(item.session.stages.count) stage samples — you approved it."
             )
             Log.sync.info("Imported session \(id)")
+            return true
         } catch {
             status = .failed(error.localizedDescription)
             Log.sync.error("Import failed for \(id): \(error.localizedDescription)")
+            return false
         }
     }
 
@@ -1025,8 +1241,11 @@ final class SyncEngine {
     }
 
     /// Writes one reviewed metric batch to HealthKit and retires it.
-    func importMetricBatch(_ id: String) async {
-        guard let batch = stagedMetrics.first(where: { $0.id == id }) else { return }
+    /// Returns false (leaving the batch staged) when the write fails — callers
+    /// must not dismiss review UI as if it succeeded.
+    @discardableResult
+    func importMetricBatch(_ id: String) async -> Bool {
+        guard let batch = stagedMetrics.first(where: { $0.id == id }) else { return false }
         #if DEBUG
         if isUIMock {
             stagedMetrics.removeAll { $0.id == id }
@@ -1036,7 +1255,7 @@ final class SyncEngine {
                 title: "\(batch.kind.displayName) for \(Self.dayText(batch.day)) added to Apple Health",
                 detail: "\(batch.samples.count) readings — you approved it."
             )
-            return
+            return true
         }
         #endif
         do {
@@ -1056,9 +1275,11 @@ final class SyncEngine {
                 detail: "\(batch.samples.count) readings — you approved it."
             )
             Log.sync.info("Imported \(batch.samples.count) \(batch.kind.rawValue) sample(s)")
+            return true
         } catch {
             status = .failed(error.localizedDescription)
             Log.sync.error("Metric import failed for \(id): \(error.localizedDescription)")
+            return false
         }
     }
 
@@ -1108,17 +1329,24 @@ final class SyncEngine {
     /// Cumulative data points received per data type this fetch.
     private var rawPointCounts: [String: Int] = [:]
 
-    /// `@Sendable` sink for raw page JSON: written to the dump folder verbatim,
-    /// stored per data type for the debug schema viewer, and (when
-    /// `fetchingName` is set) surfaced as paging progress in the status.
+    /// `@Sendable` sink for raw page JSON: written to the dump folder (when
+    /// dumps are enabled), stored per data type for the DEBUG schema viewer,
+    /// and (when `fetchingName` is set) surfaced as paging progress in the
+    /// status. The device scan is production behavior — it powers the
+    /// detected-device label.
     private func captureRaw(key: String, fetchingName: String? = nil) -> @Sendable (Data) -> Void {
         { [weak self, dump] data in
             dump.writeRawPage(data, dataType: key)
+            #if DEBUG
             let pretty = Self.prettyPrint(data)
+            #endif
             let scan = try? JSONDecoder().decode(DeviceScan.self, from: data)
             Task { @MainActor in
                 self?.noteDeviceInfo(scan)
-                self?.noteRawPage(key: key, fetchingName: fetchingName, pretty: pretty, newPoints: scan?.dataPoints?.count ?? 0)
+                #if DEBUG
+                self?.lastRawJSON[key] = pretty
+                #endif
+                self?.noteRawPage(key: key, fetchingName: fetchingName, newPoints: scan?.dataPoints?.count ?? 0)
             }
         }
     }
@@ -1144,8 +1372,7 @@ final class SyncEngine {
         }
     }
 
-    private func noteRawPage(key: String, fetchingName: String?, pretty: String, newPoints: Int) {
-        lastRawJSON[key] = pretty
+    private func noteRawPage(key: String, fetchingName: String?, newPoints: Int) {
         rawPageCounts[key, default: 0] += 1
         rawPointCounts[key, default: 0] += newPoints
         // Only narrate while still syncing — pages can land after a failure.
@@ -1164,6 +1391,7 @@ final class SyncEngine {
         pipeline[index].step = step
     }
 
+    #if DEBUG
     nonisolated private static func prettyPrint(_ data: Data) -> String {
         guard
             let object = try? JSONSerialization.jsonObject(with: data),
@@ -1174,6 +1402,7 @@ final class SyncEngine {
         }
         return string
     }
+    #endif
 
     /// Returns a valid access token, refreshing if it has expired.
     private func validAccessToken() async throws -> String {

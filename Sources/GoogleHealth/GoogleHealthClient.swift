@@ -45,7 +45,11 @@ struct GoogleHealthClient {
         calendar: Calendar = .current,
         onRawPage: (@Sendable (Data) -> Void)? = nil
     ) async throws -> [SleepSession] {
-        let filterDate = Self.civilDateString(from, calendar: calendar)
+        // One extra day of slack: the filter compares *civil* end times, which
+        // were recorded in whatever timezone the user slept in — the phone's
+        // current calendar can disagree by up to a day after travel. Re-pulled
+        // sessions are already deduplicated downstream, so over-fetching is free.
+        let filterDate = Self.civilDateString(from.addingTimeInterval(-86_400), calendar: calendar)
         var sessions: [SleepSession] = []
         var pageToken: String?
 
@@ -86,14 +90,16 @@ struct GoogleHealthClient {
         calendar: Calendar = .current,
         onRawPage: (@Sendable (Data) -> Void)? = nil
     ) async throws -> [MetricSample] {
-        let filterDate = Self.civilDateString(from, calendar: calendar)
+        // Same one-day civil-time slack as the sleep fetch; dedup absorbs it.
+        let widenedFrom = from.addingTimeInterval(-86_400)
+        let filterDate = Self.civilDateString(widenedFrom, calendar: calendar)
         let filter = "\(kind.filterMember).interval.civil_end_time >= \"\(filterDate)\""
         do {
             return try await fetchMetricPages(kind, filter: filter, cutoff: nil, accessToken: accessToken, onRawPage: onRawPage)
         } catch GoogleHealthError.http(let status, let body)
             where status == 400 && body.contains("INVALID_DATA_POINT_FILTER") {
             Log.api.notice("\(kind.rawValue): civil-time filter unsupported — paging unfiltered with client-side cutoff")
-            return try await fetchMetricPages(kind, filter: nil, cutoff: from, accessToken: accessToken, onRawPage: onRawPage)
+            return try await fetchMetricPages(kind, filter: nil, cutoff: widenedFrom, accessToken: accessToken, onRawPage: onRawPage)
         }
     }
 
@@ -141,17 +147,15 @@ struct GoogleHealthClient {
         return samples
     }
 
-    // MARK: - Discovery (debug bring-up)
+    #if DEBUG
+    // MARK: - Discovery (debug bring-up; callers exist only behind the dump
+    // opt-in, so none of this ships in release binaries)
 
     /// Raw `GET users/me/dataTypes` — the server's own data-type catalog.
     /// Used during bring-up to learn the exact type names/paths instead of
     /// guessing them; the payload goes straight to the dump folder.
     func fetchDataTypeCatalog(accessToken: String) async throws -> Data {
-        var request = URLRequest(url: Self.baseURL.appendingPathComponent("users/me/dataTypes"))
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
+        let request = Self.authorizedGET(Self.baseURL.appendingPathComponent("users/me/dataTypes"), accessToken: accessToken)
         let (data, response) = try await session.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? -1
         switch status {
@@ -173,31 +177,23 @@ struct GoogleHealthClient {
                 URLQueryItem(name: "filter", value: "\(dataTypePath).interval.civil_end_time >= \"\(filterDate)\""),
             ]
         }
-        var request = URLRequest(url: components.url!)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        let (data, response) = try await session.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? -1
-        if status == 401 { throw GoogleHealthError.unauthorized }
-        return (status, data)
+        return try await probe(components.url!, accessToken: accessToken)
     }
 
     /// Raw GET against an arbitrary API path ("users/me/devices") — discovery
     /// probing for endpoints the pre-GA docs don't list yet. Status is data;
     /// only 401 throws (so the caller can refresh and retry).
     func probeRawPath(_ path: String, accessToken: String) async throws -> (status: Int, body: Data) {
-        var request = URLRequest(url: Self.baseURL.appendingPathComponent(path))
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        try await probe(Self.baseURL.appendingPathComponent(path), accessToken: accessToken)
+    }
 
-        let (data, response) = try await session.data(for: request)
+    private func probe(_ url: URL, accessToken: String) async throws -> (status: Int, body: Data) {
+        let (data, response) = try await session.data(for: Self.authorizedGET(url, accessToken: accessToken))
         let status = (response as? HTTPURLResponse)?.statusCode ?? -1
         if status == 401 { throw GoogleHealthError.unauthorized }
         return (status, data)
     }
+    #endif
 
     // MARK: - Shared transport
 
@@ -228,6 +224,10 @@ struct GoogleHealthClient {
             }
         case 401:
             throw GoogleHealthError.unauthorized
+        case 408, 429:
+            // Timeout / rate limit — retryable like a 5xx. (Retry-After is not
+            // consulted; the backoff policy's exponential delays suffice.)
+            throw RetryableError.serverError(status: status)
         case 500..<600:
             // Known intermittent 500s during the migration period — let backoff retry.
             throw RetryableError.serverError(status: status)
@@ -250,8 +250,11 @@ struct GoogleHealthClient {
             query.append(URLQueryItem(name: "pageToken", value: pageToken))
         }
         components.queryItems = query.isEmpty ? nil : query
+        return Self.authorizedGET(components.url!, accessToken: accessToken)
+    }
 
-        var request = URLRequest(url: components.url!)
+    private static func authorizedGET(_ url: URL, accessToken: String) -> URLRequest {
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")

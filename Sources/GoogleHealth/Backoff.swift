@@ -50,7 +50,8 @@ func withRetry<T>(
     throw lastError ?? RetryableError.exhausted
 }
 
-/// Errors that may be retried (5xx, transient transport failures).
+/// Errors that may be retried (5xx, 408 timeout, 429 rate limit, transient
+/// transport failures).
 enum RetryableError: Error, LocalizedError {
     case serverError(status: Int)
     case transport(Error)
@@ -58,7 +59,8 @@ enum RetryableError: Error, LocalizedError {
 
     var isRetryable: Bool {
         switch self {
-        case .serverError(let status): return (500..<600).contains(status)
+        case .serverError(let status):
+            return (500..<600).contains(status) || status == 408 || status == 429
         case .transport: return true
         case .exhausted: return false
         }

@@ -56,21 +56,29 @@ enum SleepStage: String, Equatable, CaseIterable {
 struct CivilTime: Equatable {
     let date: Date
 
+    /// Cached formatters — an intraday backfill parses hundreds of thousands
+    /// of timestamps, and constructing ISO8601DateFormatter is expensive.
+    /// `nonisolated(unsafe)` is sound here: ISO8601DateFormatter is documented
+    /// thread-safe (unlike DateFormatter), and these are never mutated after init.
+    nonisolated(unsafe) private static let fractionalFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    nonisolated(unsafe) private static let wholeSecondFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
     /// Accepts an RFC 3339 / ISO 8601 string that carries its own offset, e.g.
     /// `2026-06-07T23:14:05-07:00` or `...Z`.
     init?(iso8601 string: String) {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = formatter.date(from: string) {
-            self.date = d
-            return
-        }
-        formatter.formatOptions = [.withInternetDateTime]
-        if let d = formatter.date(from: string) {
-            self.date = d
-            return
-        }
-        return nil
+        guard let d = Self.fractionalFormatter.date(from: string)
+            ?? Self.wholeSecondFormatter.date(from: string)
+        else { return nil }
+        self.date = d
     }
 
     /// Builds an absolute `Date` from wall-clock components plus an explicit

@@ -52,6 +52,10 @@ final class AppModel {
             tokens: tokens,
             dedup: dedup,
             tossed: tossed,
+            // In-memory under the mock, like the ledger below.
+            fingerprints: isUIMock
+                ? InMemorySessionFingerprintStore()
+                : UserDefaultsSessionFingerprintStore(),
             state: state,
             settings: UserDefaultsSyncSettings(),
             // In-memory ledger under the mock — fixture days must not
