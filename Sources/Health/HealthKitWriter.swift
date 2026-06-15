@@ -23,16 +23,24 @@ enum HealthKitError: Error, LocalizedError {
 /// truth for "already written" — this class only owns the write/delete mechanics.
 final class HealthKitWriter: @unchecked Sendable {
     /// Custom metadata key carrying the Google dataPoint ID, for traceability and
-    /// delete-by-id re-sync.
+    /// delete-by-id re-sync. A stable historical constant: changing it would
+    /// orphan every sample already written (delete-by-ID and read-back both
+    /// match on it), so it deliberately does not follow the bundle ID.
     static let dataPointIDKey = "com.santekotturi.airlift.dataPointId"
 
     private let store: HKHealthStore
     private let sleepType = HKCategoryType(.sleepAnalysis)
+    private let lock = NSLock()
+    private var _deviceName = DeviceLabel.fallback
 
     /// Stable device stamp so Health attributes the data to the user's
     /// Fitbit device. The name follows the engine's detected/override label;
     /// changing it only affects future writes (existing samples keep theirs).
-    var deviceName = DeviceLabel.fallback
+    /// Lock-guarded — the `@unchecked Sendable` promise depends on it.
+    var deviceName: String {
+        get { lock.withLock { _deviceName } }
+        set { lock.withLock { _deviceName = newValue } }
+    }
 
     private var device: HKDevice {
         HKDevice(

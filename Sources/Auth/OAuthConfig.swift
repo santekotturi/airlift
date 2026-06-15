@@ -23,19 +23,21 @@ enum OAuthConfig {
     static let authorizationEndpoint = URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!
     static let tokenEndpoint = URL(string: "https://oauth2.googleapis.com/token")!
 
-    /// All read-only Google Health scopes. Airlift only *writes* to HealthKit —
-    /// it never writes back to Google, so no `.writeonly` scope is ever requested.
-    /// Sleep is what v1 syncs; the rest are granted up front so future data types
-    /// need no re-consent.
+    /// Exactly the read-only scopes the app consumes — least privilege, so the
+    /// stored refresh token can never grant more than the app actually reads:
+    /// - `sleep` — sleep sessions and stages
+    /// - `health_metrics_and_measurements` — heart rate, resting HR, HRV,
+    ///   SpO2, respiratory rate
+    /// - `activity_and_fitness` — steps, distance
+    ///
+    /// Airlift only *writes* to HealthKit — it never writes back to Google, so
+    /// no `.writeonly` scope is ever requested. When a new data type ships,
+    /// add its scope here; Google's incremental authorization re-consents
+    /// without disturbing existing grants.
     static let scopes: [String] = [
         "https://www.googleapis.com/auth/googlehealth.sleep.readonly",
         "https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly",
         "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly",
-        "https://www.googleapis.com/auth/googlehealth.location.readonly",
-        "https://www.googleapis.com/auth/googlehealth.nutrition.readonly",
-        "https://www.googleapis.com/auth/googlehealth.profile.readonly",
-        "https://www.googleapis.com/auth/googlehealth.irn.readonly",
-        "https://www.googleapis.com/auth/googlehealth.ecg.readonly",
     ]
 
     static var scopeString: String { scopes.joined(separator: " ") }

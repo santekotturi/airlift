@@ -2,9 +2,9 @@ import Foundation
 import HealthKit
 
 /// Writes everything a fetch produces to `Documents/Dumps/fetch-<timestamp>/`
-/// so it can be pulled off the device (Files app → Airlift, or Xcode → Devices
-/// and Simulators → Download Container) and the pre-GA Google wire schemas
-/// iterated against real payloads:
+/// so it can be pulled off the device (Files app → On My iPhone → Airlift, or
+/// Xcode → Devices and Simulators → Download Container) and the pre-GA Google
+/// wire schemas iterated against real payloads:
 ///
 /// - `google-<dataType>-page<N>.json` — every raw API response page, verbatim
 /// - `staged-sleep-<id>.json` — decoded session + Apple sleep/HR + check results
@@ -13,17 +13,25 @@ import HealthKit
 /// A decoded file with fewer items than its raw page means the wire model is
 /// dropping data — diff the two to find the field that didn't decode.
 ///
-/// No-op in release builds: dumps contain health data and only exist to debug
-/// schema bring-up.
+/// Dumps contain raw health data, so they are **double-gated**: DEBUG builds
+/// only, *and* the `-AirliftDumps 1` launch argument must be set on the scheme
+/// (Edit Scheme → Run → Arguments). Everything stays in the app's local
+/// Documents folder — dumps are never written to iCloud or any other
+/// off-device location. Release builds compile the gate to a constant false.
 final class DumpStore: @unchecked Sendable {
+    /// The app-wide opt-in: DEBUG build *and* `-AirliftDumps 1` launch
+    /// argument. Also gates the discovery probes in `SyncEngine`.
     #if DEBUG
-    private static let enabled = true
+    static let enabled = UserDefaults.standard.bool(forKey: "AirliftDumps")
     #else
-    private static let enabled = false
+    static let enabled = false
     #endif
 
     private let lock = NSLock()
-    private var root: URL
+    private let root: URL
+    /// Instances with an explicit root (tests) always write; the app's
+    /// default-root instance writes only under the opt-in.
+    private let isEnabled: Bool
     private var currentFolder: URL?
     private var pageCounts: [String: Int] = [:]
 
@@ -31,29 +39,12 @@ final class DumpStore: @unchecked Sendable {
         self.root = root ?? FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Dumps", isDirectory: true)
-        guard root == nil, Self.enabled else { return }
-        // Prefer the iCloud Drive container so dumps reach the user's Mac
-        // without cables or AirDrop (Files → iCloud Drive → Airlift → Dumps).
-        // Resolving the container can block, so it happens off-main; a fetch
-        // that starts first falls back to local Documents for that run.
-        Task.detached(priority: .utility) { [weak self] in
-            guard let container = FileManager.default.url(forUbiquityContainerIdentifier: nil) else { return }
-            let dumps = container
-                .appendingPathComponent("Documents", isDirectory: true)
-                .appendingPathComponent("Dumps", isDirectory: true)
-            self?.adoptRoot(dumps)
-        }
-    }
-
-    private func adoptRoot(_ url: URL) {
-        lock.lock()
-        root = url
-        lock.unlock()
+        self.isEnabled = root != nil || Self.enabled
     }
 
     /// Starts a fresh per-fetch folder; all writes until the next call land in it.
     func beginFetch(now: Date = Date()) {
-        guard Self.enabled else { return }
+        guard isEnabled else { return }
         let stamp = Self.folderStampFormatter.string(from: now)
         lock.lock()
         currentFolder = root.appendingPathComponent("fetch \(stamp)", isDirectory: true)
@@ -62,10 +53,9 @@ final class DumpStore: @unchecked Sendable {
     }
 
     /// Saves one raw API response page, numbered per data type within the
-    /// fetch. Capped per type — the first pages prove the schema; sixty
-    /// near-identical files per metric just bloat iCloud.
+    /// fetch. Capped per type — the first pages prove the schema;     /// near-identical files per metric just bloat iCloud.
     func writeRawPage(_ data: Data, dataType: String) {
-        guard Self.enabled else { return }
+        guard isEnabled else { return }
         lock.lock()
         let page = (pageCounts[dataType] ?? 0) + 1
         pageCounts[dataType] = page
@@ -79,7 +69,7 @@ final class DumpStore: @unchecked Sendable {
     /// so a folder listing reads as a result table
     /// (`probe heart_rate HTTP404.json`).
     func writeProbe(path: String, status: Int, body: Data) {
-        guard Self.enabled else { return }
+        guard isEnabled else { return }
         lock.lock()
         let folder = currentFolder
         lock.unlock()
@@ -88,7 +78,7 @@ final class DumpStore: @unchecked Sendable {
 
     /// Saves free-form diagnostic text (e.g. a fetch error per data type).
     func writeText(_ text: String, name: String) {
-        guard Self.enabled else { return }
+        guard isEnabled else { return }
         lock.lock()
         let folder = currentFolder
         lock.unlock()
@@ -96,12 +86,12 @@ final class DumpStore: @unchecked Sendable {
     }
 
     func writeStagedSession(_ item: StagedSession) {
-        guard Self.enabled else { return }
+        guard isEnabled else { return }
         writeJSON(SleepDump(item), name: "staged-sleep-\(Self.fileSafe(item.session.id)).json")
     }
 
     func writeStagedBatch(_ batch: StagedMetricBatch) {
-        guard Self.enabled else { return }
+        guard isEnabled else { return }
         let day = Self.dayFormatter.string(from: batch.day)
         writeJSON(MetricDump(batch), name: "staged-\(batch.kind.rawValue)-\(day).json")
     }

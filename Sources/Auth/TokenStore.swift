@@ -29,7 +29,10 @@ struct KeychainTokenStore: TokenStoring {
     private let service: String
     private let account: String
 
-    init(service: String = "com.santekotturi.airlift.tokens", account: String = "google-health") {
+    init(
+        service: String = "\(Bundle.main.bundleIdentifier ?? "airlift").tokens",
+        account: String = "google-health"
+    ) {
         self.service = service
         self.account = account
     }
@@ -55,26 +58,32 @@ struct KeychainTokenStore: TokenStoring {
             }
             return nil
         }
-        return try? JSONDecoder().decode(StoredTokens.self, from: data)
+        guard let tokens = try? JSONDecoder().decode(StoredTokens.self, from: data) else {
+            // An undecodable item is unrecoverable garbage — clear it so the
+            // app offers a fresh sign-in instead of failing forever.
+            Log.auth.error("Stored token data was undecodable — clearing the keychain item")
+            try? clear()
+            return nil
+        }
+        return tokens
     }
 
     func save(_ tokens: StoredTokens) throws {
         let data = try JSONEncoder().encode(tokens)
 
-        // Upsert: try update first, fall back to add.
-        let attributes: [String: Any] = [
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
-        ]
-        let updateStatus = SecItemUpdate(baseQuery as CFDictionary, attributes as CFDictionary)
-        if updateStatus == errSecItemNotFound {
-            var addQuery = baseQuery
-            addQuery.merge(attributes) { _, new in new }
-            let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
-            guard addStatus == errSecSuccess else { throw KeychainError.unhandled(addStatus) }
-        } else if updateStatus != errSecSuccess {
-            throw KeychainError.unhandled(updateStatus)
-        }
+        // Delete-then-add: SecItemUpdate cannot change the accessibility class
+        // of an existing item, and a token save is rare enough that upsert
+        // performance doesn't matter.
+        SecItemDelete(baseQuery as CFDictionary)
+
+        var addQuery = baseQuery
+        addQuery[kSecValueData as String] = data
+        // ThisDeviceOnly: the refresh token must not migrate via device
+        // backups or transfers. AfterFirstUnlock (not WhenUnlocked) so the
+        // background refresh task can read it on a locked phone.
+        addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        let status = SecItemAdd(addQuery as CFDictionary, nil)
+        guard status == errSecSuccess else { throw KeychainError.unhandled(status) }
     }
 
     func clear() throws {

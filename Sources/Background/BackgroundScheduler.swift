@@ -4,14 +4,16 @@ import BackgroundTasks
 /// Schedules and handles the daily background sync via `BGAppRefreshTask`.
 ///
 /// BGAppRefreshTask timing is best-effort — iOS may not fire it daily. The real
-/// guarantees are the on-launch sync and the manual "Sync now" button (PRD §9);
+/// guarantees are the on-launch sync and the manual "Fetch now" button (PRD §9);
 /// this is the nice-to-have automatic path.
 @MainActor
 final class BackgroundScheduler {
     static let shared = BackgroundScheduler()
 
-    /// Must match `BGTaskSchedulerPermittedIdentifiers` in Info.plist.
-    static let taskIdentifier = "com.santekotturi.airlift.sync"
+    /// Must match `BGTaskSchedulerPermittedIdentifiers` in Info.plist, which
+    /// declares `$(PRODUCT_BUNDLE_IDENTIFIER).sync` — both derive from the
+    /// bundle ID so forks with their own bundle ID need no code change.
+    static let taskIdentifier = "\(Bundle.main.bundleIdentifier ?? "airlift").sync"
 
     private weak var syncEngine: SyncEngine?
     private var didRegister = false
@@ -25,9 +27,12 @@ final class BackgroundScheduler {
         guard !didRegister else { return }
         didRegister = true
 
+        // `using: .main` — the launch handler calls MainActor-isolated code
+        // synchronously; with `nil` the system would invoke it on a private
+        // background queue, violating that isolation when the task fires.
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: Self.taskIdentifier,
-            using: nil
+            using: .main
         ) { [weak self] task in
             guard let refreshTask = task as? BGAppRefreshTask else { return }
             self?.handle(refreshTask)

@@ -5,6 +5,7 @@ import UIKit
 enum OAuthError: Error, LocalizedError {
     case notConfigured
     case userCancelled
+    case cannotStartWebSession
     case missingAuthorizationCode
     case stateMismatch
     case tokenRequest(status: Int, body: String)
@@ -17,12 +18,16 @@ enum OAuthError: Error, LocalizedError {
             return "OAuth is not configured. Fill in Config.xcconfig with your client ID."
         case .userCancelled:
             return "Sign-in was cancelled."
+        case .cannotStartWebSession:
+            return "The sign-in window could not be opened — check that GH_REVERSED_CLIENT_ID in Config.xcconfig is the *reversed* client ID (it should start with \"com.googleusercontent.apps.\")."
         case .missingAuthorizationCode:
             return "Google did not return an authorization code."
         case .stateMismatch:
             return "OAuth state mismatch — the redirect did not match this sign-in attempt."
         case .tokenRequest(let status, let body):
-            return "Token request failed (HTTP \(status)): \(body)"
+            // The body is server-controlled; show a trimmed excerpt and leave
+            // the full payload to the log.
+            return "Token request failed (HTTP \(status)): \(body.prefix(200))"
         case .noRefreshToken:
             return "No refresh token available — please reconnect your Google account."
         case .malformedResponse:
@@ -78,7 +83,8 @@ final class OAuthClient: NSObject {
     }
 
     private func presentWebAuth(url: URL) async throws -> URL {
-        try await withCheckedThrowingContinuation { continuation in
+        defer { webAuthSession = nil }
+        return try await withCheckedThrowingContinuation { continuation in
             let session = ASWebAuthenticationSession(
                 url: url,
                 callbackURLScheme: OAuthConfig.callbackScheme
@@ -100,7 +106,13 @@ final class OAuthClient: NSObject {
             session.presentationContextProvider = self
             session.prefersEphemeralWebBrowserSession = false
             self.webAuthSession = session
-            session.start()
+            // start() returns false when the callback scheme is invalid or no
+            // foreground window exists — the completion handler never fires in
+            // that case, so resume here or the continuation leaks and the
+            // Connect button hangs forever.
+            if !session.start() {
+                continuation.resume(throwing: OAuthError.cannotStartWebSession)
+            }
         }
     }
 
@@ -166,7 +178,9 @@ final class OAuthClient: NSObject {
         let (data, response) = try await session.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? -1
         guard (200..<300).contains(status) else {
-            throw OAuthError.tokenRequest(status: status, body: String(data: data, encoding: .utf8) ?? "")
+            let body = String(data: data, encoding: .utf8) ?? ""
+            Log.auth.error("Token request failed (HTTP \(status)): \(body)")
+            throw OAuthError.tokenRequest(status: status, body: body)
         }
         guard let decoded = try? JSONDecoder.googleHealth.decode(TokenResponse.self, from: data) else {
             throw OAuthError.malformedResponse

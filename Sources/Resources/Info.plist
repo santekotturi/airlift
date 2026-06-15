@@ -34,44 +34,28 @@
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
 
-	<!-- Expose Documents in the Files app / Finder so the Dumps folder (raw API
-	     payloads + staged data, written in DEBUG builds) can be pulled off-device. -->
+	<!-- Expose Documents in the Files app / Finder so the opt-in debug dumps
+	     (DEBUG builds with the -AirliftDumps launch argument) can be pulled
+	     off-device. Documents is empty otherwise. -->
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 
-	<!-- Show the iCloud container in iCloud Drive (Files app / Finder) so dumps
-	     written there sync to the user's Mac. NOTE: literal container ID — if you
-	     change the bundle ID, update this key to iCloud.<your-bundle-id>. -->
-	<key>NSUbiquitousContainers</key>
-	<dict>
-		<key>iCloud.com.santekotturi.airlift</key>
-		<dict>
-			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
-			<true/>
-			<key>NSUbiquitousContainerName</key>
-			<string>Airlift</string>
-			<key>NSUbiquitousContainerSupportedFolderLevels</key>
-			<string>Any</string>
-		</dict>
-	</dict>
-
 	<!-- HealthKit usage strings (required for HKHealthStore authorization prompts) -->
 	<key>NSHealthShareUsageDescription</key>
-	<string>Airlift reads your existing sleep samples so it can avoid writing duplicates.</string>
+	<string>Airlift reads the sleep and health samples already in Apple Health so it can compare them with your Fitbit data and avoid writing duplicates.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Airlift writes your Fitbit Air data into Apple Health: sleep stages, heart rate, resting heart rate, HRV, SpO2, respiratory rate, and steps.</string>
+	<string>Airlift writes your Fitbit data into Apple Health: sleep stages, heart rate, resting heart rate, HRV, SpO2, respiratory rate, steps, and distance.</string>
 
-	<!-- Background execution: daily sleep sync via BGAppRefreshTask -->
+	<!-- Background execution: daily sync via BGAppRefreshTask -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
-		<string>processing</string>
 	</array>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.santekotturi.airlift.sync</string>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).sync</string>
 	</array>
 
 	<!-- OAuth client values, injected from Config.xcconfig at build time. -->
@@ -88,7 +72,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.santekotturi.airlift.oauth</string>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).oauth</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>$(GH_REVERSED_CLIENT_ID)</string>

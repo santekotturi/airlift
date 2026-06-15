@@ -10,6 +10,10 @@
 // repo stays credential-free and each user brings their own client.
 // ----------------------------------------------------------------------------
 
+// Your app's bundle identifier. Use your own reverse-DNS namespace; it must
+// match the bundle ID you registered on your Google iOS OAuth client.
+AIRLIFT_BUNDLE_ID = com.example.airlift
+
 // Your Apple Developer Team ID (10 chars), required to sign for a real device.
 // Leave blank to build for the Simulator only.
 DEVELOPMENT_TEAM =
