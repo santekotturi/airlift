@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: which xcodegen || brew install xcodegen
+
+      - name: Generate Xcode project
+        run: |
+          cp Config.example.xcconfig Config.xcconfig
+          xcodegen generate
+
+      - name: Run unit tests
+        run: |
+          DEVICE=$(xcrun simctl list devices available | grep -E "iPhone [0-9]+" | head -1 | sed -E 's/^ *([^(]+) \(.*/\1/' | xargs)
+          echo "Using simulator: $DEVICE"
+          xcodebuild test -project Airlift.xcodeproj -scheme Airlift \
+            -destination "platform=iOS Simulator,name=$DEVICE"

@@ -1,37 +1,44 @@
 # Airlift
 
-**Your sleep, airlifted to Apple Health every morning. Bridges Fitbit Air (and other Google-account Fitbit devices) sleep data into Apple Health — on-device, open source, no server.**
-
-> Formerly *Airlift*. The Xcode project, scheme, and bundle ID keep the `Airlift` name; everything user-facing says **Airlift**.
+**Your sleep and health metrics, airlifted to Apple Health every morning. Bridges Fitbit Air (and other Google-account Fitbit devices) data into Apple Health — on-device, open source, no server.**
 
 The Fitbit Air is a screenless, sleep-focused tracker whose data lives in Google's
 health ecosystem and does **not** export to Apple Health natively. Airlift is a small
-iOS app that pulls last night's sleep session from the **Google Health API** and writes
-it into HealthKit as `sleepAnalysis` samples with full stage detail (wake / light / deep
-/ REM).
+iOS app that pulls last night's sleep session — plus heart rate, resting heart rate,
+HRV, SpO₂, respiratory rate, steps and distance — from the **Google Health API** and
+writes it all into HealthKit, with full sleep-stage detail (wake / light / deep / REM).
 
 It runs entirely on your device. Your Google refresh token never leaves your phone —
 there is no backend, unlike most of the commercial Fitbit↔Health sync apps.
 
 > **Status:** early / v0.1. The Google Health API is pre-GA ("built in public"); its
 > schemas and scopes may shift before its September 2026 GA. The wire models here are
-> defensive but expect to verify them against a real payload (see [Limitations](#limitations)).
+> defensive but expect to verify them against a real payload (see [Limitations](#limitations--known-unknowns)).
 
 ---
 
 ## Features
 
 - 🛌 **Full sleep stages** — wake → `.awake`, light → `.asleepCore`, deep → `.asleepDeep`,
-  REM → `.asleepREM`, mapped faithfully to HealthKit.
-- 🛏 **Time in bed** — also writes one `.inBed` sample spanning each session.
-- 💓 **All read-only scopes up front** — sleep is what v1 syncs, but the app requests every
-  read-only Google Health scope (health metrics, activity & fitness, location, nutrition) so
-  future data types need no re-consent. No write scope is ever requested.
+  REM → `.asleepREM`, mapped faithfully to HealthKit, plus one `.inBed` sample spanning
+  each session.
+- 💓 **Seven health metrics** — heart rate, resting heart rate, HRV, SpO₂, respiratory
+  rate, steps and distance. Each one can be toggled on or off in Settings.
+- 🔍 **Review-first by design** — every night and metric batch runs through sanity checks
+  that compare it against what's *already in Apple Health* before anything is written.
+  In **Automatic** mode, items that pass every check land on their own; anything flagged
+  waits in a review queue. In **Review everything** mode, nothing is written without a tap.
 - 🔁 **Idempotent** — a dedup store keyed on the Google dataPoint ID means re-running never
-  creates duplicate Health samples; edited sessions are deleted and rewritten.
-- 🔒 **On-device & private** — OAuth (PKCE) + refresh token live in the Keychain. No server.
-- ⏰ **Automatic** — a daily `BGAppRefreshTask`, plus on-launch sync and a manual **Sync now**
-  button as the real guarantee.
+  creates duplicate Health samples. Imported sessions also record a content fingerprint, so
+  when Google edits a session upstream, Airlift detects the change, re-stages it, and the
+  write deletes-then-rewrites the night.
+- 🔒 **On-device & private** — exactly three minimal read-only OAuth scopes, refresh token
+  in the Keychain (this-device-only, never backed up), no server, no iCloud, no telemetry.
+- ⚡ **Incremental & on demand** — fetching is user-initiated: opening the app never pulls on
+  its own, it just shows when it last checked. **Fetch now** pulls only what's new since the
+  last saved data (per metric), so a routine sync is small; a wide catch-up (first run or a
+  long gap) warns it may take a couple of minutes. A daily `BGAppRefreshTask` (best-effort)
+  is the only unattended path.
 - 🌍 **Travel-correct** — sessions are resolved with their own UTC offset, not the phone's
   current time zone.
 
@@ -47,12 +54,14 @@ it as a bridge until (and if) native sync makes it redundant.
 ## Requirements
 
 - An iPhone (iOS 17+) and a Mac with **Xcode 16+**.
-- A Fitbit Air or other Google-account Fitbit device that reports sleep.
+- A Fitbit Air or other Google-account Fitbit device.
 - A Google account with Fitbit data, and your own **Google Cloud project** (free).
-- [XcodeGen](https://github.com/yonsm/XcodeGen) (`brew install xcodegen`) — the Xcode
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`) — the Xcode
   project is generated, not committed.
-- An Apple Developer account to install on a real device (the Simulator can't run HealthKit
-  writes against real data, but the app builds and the unit tests run there).
+- An Apple Developer account to install on a real device — a **free personal team** is
+  enough, since HealthKit is the app's only entitlement. (The Simulator can't run HealthKit
+  writes against real data, but the app builds and the unit tests run there with no
+  account at all.)
 
 ## Setup
 
@@ -63,13 +72,18 @@ it as a bridge until (and if) native sync makes it redundant.
 2. Configure the **OAuth consent screen** as **External / Testing** and add your personal
    Google account (the one your Fitbit is on) under **Test users**. See
    [OAuth & consent](#oauth--consent-read-this-before-you-start) below for why.
-3. Create an **iOS OAuth client ID** with the bundle ID `com.santekotturi.airlift` (or change
-   the bundle ID in `project.yml` to your own and use that). iOS clients are public clients —
-   **no client secret**; Airlift uses PKCE.
-4. On the consent screen's **Scopes** step, add all five read-only Google Health scopes
-   (`googlehealth.sleep.readonly`, `…health_metrics_and_measurements.readonly`,
-   `…activity_and_fitness.readonly`, `…location.readonly`, `…nutrition.readonly`).
-   Do **not** add any `.writeonly` scope — Airlift never writes back to Google.
+3. Create an **iOS OAuth client ID**. The bundle ID you register must match the
+   `AIRLIFT_BUNDLE_ID` you'll set in `Config.xcconfig` in the next step (pick any
+   reverse-DNS name you own, e.g. `com.yourname.airlift`). iOS clients are public
+   clients — **no client secret**; Airlift uses PKCE.
+4. On the consent screen's **Scopes** step, add exactly the three read-only Google Health
+   scopes Airlift requests:
+   - `googlehealth.sleep.readonly`
+   - `googlehealth.health_metrics_and_measurements.readonly`
+   - `googlehealth.activity_and_fitness.readonly`
+
+   Do **not** add any `.writeonly` scope — Airlift never writes back to Google. (Future
+   data types will use Google's incremental authorization, so no need to over-grant now.)
 
 ### 2. Configure the build
 
@@ -83,12 +97,14 @@ Edit `Config.xcconfig` and fill in:
 
 | Key | Value |
 |---|---|
+| `AIRLIFT_BUNDLE_ID` | your bundle ID — **must match the Google OAuth client's** (defaults to `com.example.airlift`) |
 | `GH_CLIENT_ID` | `1234567890-abc.apps.googleusercontent.com` |
 | `GH_REVERSED_CLIENT_ID` | `com.googleusercontent.apps.1234567890-abc` |
 | `DEVELOPMENT_TEAM` | your 10-char Apple Team ID (blank = Simulator only) |
 
-`Config.xcconfig` is gitignored — your credentials never get committed. (They aren't secrets
-— public iOS clients have no secret — but each user brings their own client.)
+`Config.xcconfig` is gitignored — your settings never get committed, and you never edit
+tracked files like `project.yml` (it reads `$(AIRLIFT_BUNDLE_ID)`). The OAuth values
+aren't secrets — public iOS clients have no secret — but each user brings their own client.
 
 ### 3. Generate & build
 
@@ -98,7 +114,7 @@ open Airlift.xcodeproj
 ```
 
 Build & run on your device, tap **Connect Google Health**, grant the consent screen and the
-HealthKit prompt, then **Sync now**. Open Apple Health → Browse → Sleep to verify.
+HealthKit prompt, then **Fetch now**. Open Apple Health → Browse → Sleep to verify.
 
 ---
 
@@ -138,21 +154,48 @@ personal utility.)
 
 ---
 
+## Privacy
+
+What leaves your device: **nothing**, except the OAuth handshake and read-only API calls
+to Google. There is no server, no analytics, no telemetry, no iCloud — the iCloud
+entitlement doesn't exist in this app.
+
+- **Tokens** — the Google refresh token lives in the iOS Keychain with
+  `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`: it never leaves the device and is
+  excluded from backups and device transfers.
+- **Scopes** — exactly three read-only scopes (sleep, health metrics & measurements,
+  activity & fitness). No location, nutrition, profile or write access, ever.
+- **Debug dumps (opt-in, DEBUG builds only)** — launching a DEBUG build with the
+  `-AirliftDumps 1` launch argument writes raw API pages and staged data to the app's
+  **local** `Documents/Dumps` folder, for diagnosing wire-schema issues. It's off by
+  default, never leaves the device, and is visible in the Files app only because the app
+  enables file sharing (`UIFileSharingEnabled`) so you can inspect or delete the dumps
+  yourself.
+
 ## Architecture
 
 ```
 iOS app (SwiftUI, on-device only)
  ├─ Auth/          PKCE + ASWebAuthenticationSession OAuth, Keychain token store
- ├─ GoogleHealth/  sleep dataPoints client, defensive Codable models, retry/backoff
+ ├─ GoogleHealth/  API client, defensive Codable models, retry/backoff
+ ├─ Metrics/       the seven quantity metrics — kinds, wire models, HealthKit units
  ├─ Health/        stage mapper (pure) + HealthKit writer (per-stage + .inBed)
- ├─ Sync/          dedup store, sync-window logic, SyncEngine orchestration
- └─ Background/    BGAppRefreshTask scheduler
+ ├─ Sync/          dedup + fingerprint stores, sync-window logic, SyncEngine, sync log
+ ├─ Background/    BGAppRefreshTask scheduler (one best-effort refresh per day)
+ ├─ Views/         SwiftUI screens — home, review, calendar, history, settings
+ ├─ Debugging/     opt-in debug dumps, DEBUG-only UI mock fixtures
+ └─ Support/       logging, reconnect notifications
 ```
 
-Sync cycle: ensure a valid access token → `GET sleep dataPoints` for the window (re-pulling
-the last ~2 days to catch late/edited sessions) → skip IDs already in the dedup store → map
-stages → write to HealthKit → record IDs → advance the high-water mark. The window is never
-advanced past a failed fetch.
+Sync cycle: ensure a valid access token → fetch sleep + each enabled metric, each from just
+after the newest day already saved (a small overlap catches late/edited data; the first run
+of a kind looks back a week) → skip IDs already in the dedup store, and re-stage sessions
+whose content fingerprint changed upstream → run sanity checks against what's already in
+Apple Health → stage everything for review. In **Automatic** mode the engine then imports
+items that passed every check on its own; flagged items (and, in **Review everything** mode,
+*all* items) wait for your tap. The per-kind window is derived from the sync ledger and is
+never advanced past a failed fetch or an unresolved held item. The engine guards re-entrancy,
+retries 408/429/5xx with exponential backoff, and re-runs are idempotent.
 
 ## Living with other sources (Apple Watch, iPhone, other apps)
 
@@ -180,11 +223,15 @@ contribute too. How Health resolves the overlap is subtle, and the in-app tutori
 
 ## Limitations & known unknowns
 
-- **Wire schema is provisional.** `Sources/GoogleHealth/SleepModels.swift` is a best-effort
-  shape for the pre-GA API. Capture a real `dataPoints` response and adjust the `CodingKeys`
-  / field names — they are isolated to that one file on purpose.
-- **Background timing is best-effort.** iOS may not fire `BGAppRefreshTask` daily; on-launch
-  and manual sync are the real guarantees.
+- **Wire schema is provisional.** The Google Health wire models are a best-effort shape
+  for the pre-GA API. Capture a real `dataPoints` response and adjust the `CodingKeys`
+  / field names — they are deliberately isolated to `Sources/GoogleHealth`.
+- **Edited sessions that change ID.** If Google edits a session but *keeps* its dataPoint
+  ID, Airlift detects the change and rewrites the night. If Google instead reissues the
+  session under a **new** ID, it imports as a new night alongside the old one — a known
+  limitation you'd resolve manually in Apple Health.
+- **Background timing is best-effort.** iOS may not fire `BGAppRefreshTask` daily, and the app
+  doesn't fetch on launch — **Fetch now** is the reliable way to pull the latest.
 - **Google may make this obsolete.** Native Google Health → Apple Health write-back is
   promised for "later in 2026." If it ships and gives you faithful stages, you may not need this.
 
