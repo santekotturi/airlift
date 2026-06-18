@@ -178,9 +178,11 @@ open Airlift.xcodeproj
 In Xcode, open **Signing & Capabilities**, pick your Team, and confirm the bundle ID
 matches the one you registered with Google. Then select your iPhone and build & run.
 
-> _📸 Screenshot to add: `docs/assets/setup/06-signing.png` — Signing & Capabilities
-> with your Team selected — and `docs/assets/setup/07-run.png` — the scheme/destination
-> bar with your iPhone selected._
+<p align="center">
+  <img src="docs/assets/setup/06-signing.png" width="48%" alt="Signing & Capabilities — Team selected, automatic signing on" />
+  <img src="docs/assets/setup/07-run.png" width="48%" alt="Destination picker with your iPhone selected" />
+</p>
+<p align="center"><em>Signing & Capabilities with your Team selected &middot; pick your iPhone in the destination bar, then Run.</em></p>
 
 > 💡 The Xcode screenshots above (and the on-device **consent** screen earlier) still need to
 > be captured — they're of your own machine. See [docs/assets/setup/](docs/assets/setup/) for

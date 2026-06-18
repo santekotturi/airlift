@@ -31,8 +31,8 @@ is fine — these end up in a public repo).
 | Filename | Status | What it shows |
 |---|---|---|
 | `05-config-xcconfig.png` | ✅ have | `Config.xcconfig` open in Xcode with the four keys (placeholder values shown). |
-| `06-signing.png` | ⬜ still needed | Target → Signing & Capabilities, showing the Team selected and "Automatically manage signing" on, with the bundle ID matching the OAuth client. |
-| `07-run.png` | ⬜ still needed | The scheme/destination bar with your iPhone selected and the Run button — what "build & run" looks like. |
+| `06-signing.png` | ✅ have | Target → Signing & Capabilities — Team selected, "Automatically manage signing" on, bundle ID from `$(AIRLIFT_BUNDLE_ID)`. |
+| `07-run.png` | ✅ have | The destination picker with the iPhone selected. |
 
 ## Recommended format
 
