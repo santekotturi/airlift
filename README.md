@@ -111,11 +111,9 @@ Everything here is in the free [Google Cloud Console](https://console.cloud.goog
    </p>
    <p align="center"><em>Audience → User type <strong>External</strong>, Publishing status <strong>Testing</strong> &middot; add your account under <strong>Test users</strong>.</em></p>
 
-3. On **Data Access** (Google Auth Platform → Data Access), click **Add or remove scopes**.
-   The scope table only lists scopes for APIs Google surfaces there — the pre-GA
-   `googlehealth.*` scopes usually **won't appear**, so use the **"Manually add scopes"**
-   box and paste these three full URLs (one per line), then **Add to Table** → **Update** →
-   **Save**:
+3. **You don't pre-register scopes for personal use.** Airlift requests these three
+   read-only scopes in its *own* sign-in request, and you grant them **on-device** in the
+   Google consent dialog when you tap *Connect Google Health* — not in the console:
 
    ```
    https://www.googleapis.com/auth/googlehealth.sleep.readonly
@@ -123,12 +121,16 @@ Everything here is in the free [Google Cloud Console](https://console.cloud.goog
    https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly
    ```
 
-   These are read-only and land under **restricted scopes** (health data). Add **nothing
-   more** — no `.writeonly` scope, ever; Airlift never writes back to Google. Until you add
-   them, the Data Access page shows "No rows to display" in all three buckets.
+   They're read-only — Airlift never writes back to Google, so no `.writeonly` scope is ever
+   requested. In **Testing** mode your project's **Data Access** page can stay **empty**
+   ("No rows to display"); these pre-GA scopes don't even appear in the console's scope
+   picker, and the grant happens in the on-device consent screen instead. Only if Google ever
+   *blocks* the grant, or you move to **Production / verification**, add them by hand under
+   Data Access → *Add or remove scopes* → *Manually add scopes*.
 
-   > _📸 Screenshot to add: `docs/assets/setup/03-scopes.png` — the three googlehealth
-   > read-only scopes listed under **Your restricted scopes**._
+   > _📸 Screenshot to add: `docs/assets/setup/03-consent-grant.png` — the on-device Google
+   > consent screen showing the read permissions being granted (this is where access is
+   > actually given)._
 
 4. **Create an iOS OAuth client ID** (Credentials → Create Credentials → OAuth client ID →
    iOS). The **bundle ID** you register must match the `AIRLIFT_BUNDLE_ID` you set in the
@@ -181,9 +183,9 @@ matches the one you registered with Google. Then select your iPhone and build & 
 > with your Team selected — and `docs/assets/setup/07-run.png` — the scheme/destination
 > bar with your iPhone selected._
 
-> 💡 The Xcode screenshots above (and the OAuth **scopes** step earlier) still need to be
-> captured — they're of your own machine. See [docs/assets/setup/](docs/assets/setup/) for a
-> checklist with the exact filenames.
+> 💡 The Xcode screenshots above (and the on-device **consent** screen earlier) still need to
+> be captured — they're of your own machine. See [docs/assets/setup/](docs/assets/setup/) for
+> a checklist with the exact filenames.
 
 ### 4. First launch
 

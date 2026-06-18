@@ -17,7 +17,7 @@ is fine — these end up in a public repo).
 | `01-enable-api.png` | ✅ have | APIs & Services → Library → the **Google Health API** result. |
 | `02-consent-screen.png` | ✅ have | Google Auth Platform → Audience: **External** user type, **Testing** publishing status. |
 | `02b-test-users.png` | ✅ have | The **Add users** panel for adding your Google account as a test user. |
-| `03-scopes.png` | ⬜ still needed | Data Access → the three `googlehealth.*` **read-only** scopes selected (sleep, health metrics & measurements, activity & fitness) — and nothing else. |
+| `03-consent-grant.png` | ⬜ still needed | The **on-device** Google consent screen during *Connect Google Health*, showing the three read permissions being granted. This — not the console's Data Access page — is where access is actually given; in Testing mode the Data Access page stays empty. |
 | `04a-create-credentials.png` | ✅ have | Credentials → **Create credentials** → OAuth client ID. |
 | `04b-app-type.png` | ✅ have | Create OAuth client → choosing the **iOS** application type. |
 | `04-ios-client.png` | ✅ have | The iOS OAuth client form — name, bundle ID, Team ID. |
