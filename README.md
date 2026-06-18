@@ -111,16 +111,24 @@ Everything here is in the free [Google Cloud Console](https://console.cloud.goog
    </p>
    <p align="center"><em>Audience → User type <strong>External</strong>, Publishing status <strong>Testing</strong> &middot; add your account under <strong>Test users</strong>.</em></p>
 
-3. On the consent screen's **Scopes** step, add exactly the three read-only scopes Airlift
-   uses — nothing more:
-   - `googlehealth.sleep.readonly`
-   - `googlehealth.health_metrics_and_measurements.readonly`
-   - `googlehealth.activity_and_fitness.readonly`
+3. On **Data Access** (Google Auth Platform → Data Access), click **Add or remove scopes**.
+   The scope table only lists scopes for APIs Google surfaces there — the pre-GA
+   `googlehealth.*` scopes usually **won't appear**, so use the **"Manually add scopes"**
+   box and paste these three full URLs (one per line), then **Add to Table** → **Update** →
+   **Save**:
 
-   Do **not** add any `.writeonly` scope — Airlift never writes back to Google.
+   ```
+   https://www.googleapis.com/auth/googlehealth.sleep.readonly
+   https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly
+   https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly
+   ```
+
+   These are read-only and land under **restricted scopes** (health data). Add **nothing
+   more** — no `.writeonly` scope, ever; Airlift never writes back to Google. Until you add
+   them, the Data Access page shows "No rows to display" in all three buckets.
 
    > _📸 Screenshot to add: `docs/assets/setup/03-scopes.png` — the three googlehealth
-   > read-only scopes selected._
+   > read-only scopes listed under **Your restricted scopes**._
 
 4. **Create an iOS OAuth client ID** (Credentials → Create Credentials → OAuth client ID →
    iOS). The **bundle ID** you register must match the `AIRLIFT_BUNDLE_ID` you set in the
