@@ -54,9 +54,13 @@ enum SyncGate {
 /// Persisted user choices that shape every sync pass.
 protocol SyncSettingsStoring: Sendable {
     var syncMode: SyncMode { get set }
-    /// Which quantity metrics sync at all (sleep is always on — it's the
-    /// app's reason to exist). Lets Apple Watch owners turn off steps and
-    /// distance, which double-count against iPhone/Watch sources.
+    /// Whether sleep sessions sync at all. On by default (it's the app's
+    /// headline feature), but toggleable for people who only want specific
+    /// metrics in Apple Health.
+    var syncSleep: Bool { get set }
+    /// Which quantity metrics sync at all. Lets you bridge only what you want —
+    /// e.g. just HRV and resting HR — and turn off steps/distance, which
+    /// double-count against iPhone/Watch sources.
     var enabledKinds: Set<MetricKind> { get set }
     /// Best device label detected from wire `dataSource.device` blocks.
     var detectedDeviceLabel: String? { get set }
@@ -68,6 +72,7 @@ final class UserDefaultsSyncSettings: SyncSettingsStoring, @unchecked Sendable {
     private let defaults: UserDefaults
     private let lock = NSLock()
     private let modeKey = "airlift.syncMode"
+    private let syncSleepKey = "airlift.syncSleep"
     private let kindsKey = "airlift.enabledKinds"
     private let detectedDeviceKey = "airlift.detectedDeviceLabel"
     private let deviceOverrideKey = "airlift.deviceNameOverride"
@@ -85,6 +90,12 @@ final class UserDefaultsSyncSettings: SyncSettingsStoring, @unchecked Sendable {
         set {
             lock.withLock { defaults.set(newValue.rawValue, forKey: modeKey) }
         }
+    }
+
+    var syncSleep: Bool {
+        // Defaults to true when never set.
+        get { lock.withLock { defaults.object(forKey: syncSleepKey) as? Bool ?? true } }
+        set { lock.withLock { defaults.set(newValue, forKey: syncSleepKey) } }
     }
 
     var enabledKinds: Set<MetricKind> {

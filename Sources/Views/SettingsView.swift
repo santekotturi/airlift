@@ -33,6 +33,7 @@ struct SettingsView: View {
                     .foregroundStyle(Daybreak.ink)
                     .padding(.top, 8)
                 modeCard
+                whatSyncsCard
                 appearanceCard
                 connectionCard
                 deviceCard
@@ -121,6 +122,60 @@ struct SettingsView: View {
         if mode == .automatic {
             Task { await engine.autoImportClean() }
         }
+    }
+
+    // MARK: - What syncs
+
+    /// Per-type toggles: sleep plus every quantity metric. Only the enabled
+    /// types are fetched from Google and written to Apple Health.
+    private var whatSyncsCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("What syncs")
+                .daybreakSectionLabel()
+            syncToggle(
+                title: "Sleep",
+                symbol: "moon.zzz.fill",
+                isOn: Binding(get: { engine.syncSleep }, set: { engine.syncSleep = $0 })
+            )
+            ForEach(MetricKind.allCases) { kind in
+                Divider().overlay(Daybreak.line)
+                syncToggle(
+                    title: kind.displayName,
+                    symbol: kind.systemImage,
+                    isOn: Binding(
+                        get: { engine.enabledKinds.contains(kind) },
+                        set: { on in
+                            var set = engine.enabledKinds
+                            if on { set.insert(kind) } else { set.remove(kind) }
+                            engine.enabledKinds = set
+                        }
+                    )
+                )
+            }
+            Text("Only what's on is fetched from Google and written to Apple Health. Turning something off stops new syncs — it doesn't remove what's already there (use Calendar → a day → Remove for that).")
+                .font(.system(.caption, design: .rounded))
+                .foregroundStyle(Daybreak.mid)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .daybreakCard()
+    }
+
+    private func syncToggle(title: String, symbol: String, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            HStack(spacing: 12) {
+                Image(systemName: symbol)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(isOn.wrappedValue ? Daybreak.plum : Daybreak.faint)
+                    .frame(width: 24)
+                Text(title)
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Daybreak.ink)
+            }
+        }
+        .tint(Daybreak.ok)
+        .padding(.vertical, 8)
     }
 
     // MARK: - Appearance

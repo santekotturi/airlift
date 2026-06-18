@@ -35,6 +35,7 @@ struct CalendarDayView: View {
                         }
                         reviewCard
                     }
+                    notSyncingCard
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity)
@@ -208,6 +209,54 @@ struct CalendarDayView: View {
                 .foregroundStyle(Daybreak.faint)
         }
         .contentShape(Rectangle())
+    }
+
+    // MARK: - Not syncing
+
+    /// Sleep and metrics the user has turned off in Settings — surfaced so a
+    /// missing type reads as a deliberate choice, not lost data.
+    private var disabledTypes: [(symbol: String, name: String)] {
+        var list: [(symbol: String, name: String)] = []
+        if !engine.syncSleep { list.append((symbol: "moon.zzz.fill", name: "Sleep")) }
+        for kind in MetricKind.allCases where !engine.enabledKinds.contains(kind) {
+            list.append((symbol: kind.systemImage, name: kind.displayName))
+        }
+        return list
+    }
+
+    @ViewBuilder
+    private var notSyncingCard: some View {
+        let off = disabledTypes
+        if !off.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Not syncing")
+                    .daybreakSectionLabel()
+                ForEach(off, id: \.name) { type in
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(Daybreak.track)
+                            .frame(width: 30, height: 30)
+                            .overlay {
+                                Image(systemName: type.symbol)
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(Daybreak.faint)
+                            }
+                        Text(type.name)
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            .foregroundStyle(Daybreak.mid)
+                        Spacer(minLength: 0)
+                        Text("Off")
+                            .font(Daybreak.chipFont)
+                            .foregroundStyle(Daybreak.faint)
+                    }
+                }
+                Text("Turn these on in Settings → What syncs.")
+                    .font(.system(.caption2, design: .rounded))
+                    .foregroundStyle(Daybreak.faint)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .daybreakCard()
+        }
     }
 
     private var emptyCard: some View {

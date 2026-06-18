@@ -36,7 +36,11 @@ there is no backend, unlike most of the commercial Fitbit↔Health sync apps.
   REM → `.asleepREM`, mapped faithfully to HealthKit, plus one `.inBed` sample spanning
   each session.
 - 💓 **Seven health metrics** — heart rate, resting heart rate, HRV, SpO₂, respiratory
-  rate, steps and distance. Each one can be toggled on or off in Settings.
+  rate, steps and distance.
+- 🎛 **Sync only what you want** — every type, including sleep, has an on/off toggle in
+  Settings → *What syncs*. Bridge just HRV and resting HR, skip steps to avoid
+  double-counting against your iPhone — your call. Disabled types are clearly marked as
+  "not syncing" on each day.
 - 🔍 **Review-first by design** — every night and metric batch runs through sanity checks
   that compare it against what's *already in Apple Health* before anything is written.
   In **Automatic** mode, items that pass every check land on their own; anything flagged

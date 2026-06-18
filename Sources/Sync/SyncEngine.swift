@@ -158,6 +158,11 @@ final class SyncEngine {
         didSet { settings.syncMode = syncMode }
     }
 
+    /// Whether sleep syncs at all (observable mirror, persisted).
+    var syncSleep: Bool {
+        didSet { settings.syncSleep = syncSleep }
+    }
+
     /// Which quantity metrics sync at all (observable mirror, persisted).
     var enabledKinds: Set<MetricKind> {
         didSet { settings.enabledKinds = enabledKinds }
@@ -243,6 +248,7 @@ final class SyncEngine {
         self.log = log
         self.notifier = notifier
         self.syncMode = settings.syncMode
+        self.syncSleep = settings.syncSleep
         self.enabledKinds = settings.enabledKinds
         self.detectedDeviceLabel = settings.detectedDeviceLabel
         self.deviceNameOverride = settings.deviceNameOverride
@@ -361,7 +367,7 @@ final class SyncEngine {
         // items deserve a history line.
         let previouslyHeld = Set(staged.map(\.id)).union(stagedMetrics.map(\.id))
         let kinds = MetricKind.allCases.filter { enabledKinds.contains($0) }
-        pipeline = [PipelineItem(id: "sleep", name: "Sleep")]
+        pipeline = (syncSleep ? [PipelineItem(id: "sleep", name: "Sleep")] : [])
             + kinds.map { PipelineItem(id: $0.rawValue, name: $0.displayName) }
 
         // Per-kind fetch windows. Incremental by default — each kind starts
@@ -371,12 +377,14 @@ final class SyncEngine {
         let floor = now.addingTimeInterval(-Double(Self.firstRunLookbackDays) * 86_400)
         var sinceByKey: [String: Date] = [:]
         if let explicitSince {
-            sinceByKey[sleepLedgerKind] = explicitSince
+            if syncSleep { sinceByKey[sleepLedgerKind] = explicitSince }
             for kind in kinds { sinceByKey[kind.rawValue] = explicitSince }
         } else {
-            sinceByKey[sleepLedgerKind] = incrementalSince(
-                ledgerKind: sleepLedgerKind, overlap: Self.sleepRefetchOverlap, floor: floor, now: now
-            )
+            if syncSleep {
+                sinceByKey[sleepLedgerKind] = incrementalSince(
+                    ledgerKind: sleepLedgerKind, overlap: Self.sleepRefetchOverlap, floor: floor, now: now
+                )
+            }
             for kind in kinds {
                 sinceByKey[kind.rawValue] = incrementalSince(
                     ledgerKind: kind.rawValue, overlap: kind.refetchOverlap, floor: floor, now: now
@@ -410,13 +418,19 @@ final class SyncEngine {
             let tossedIDs = tossed.all
             let seenIDs = dedupIDs.union(tossedIDs)
 
-            // Sleep sessions.
-            status = .syncing(phase: "Fetching sleep…")
-            setPipelineStep("sleep", .fetching(readings: 0))
-            let sessions = try await withFreshToken { token in
-                try await self.api.fetchSleepSessions(since: sleepSince, accessToken: token, onRawPage: self.captureRaw(key: "sleep"))
+            // Sleep sessions — only when enabled. When off, the block no-ops
+            // (no fetch) and any already-held sleep is carried forward untouched.
+            let sessions: [SleepSession]
+            if syncSleep {
+                status = .syncing(phase: "Fetching sleep…")
+                setPipelineStep("sleep", .fetching(readings: 0))
+                sessions = try await withFreshToken { token in
+                    try await self.api.fetchSleepSessions(since: sleepSince, accessToken: token, onRawPage: self.captureRaw(key: "sleep"))
+                }
+                setPipelineStep("sleep", .comparing)
+            } else {
+                sessions = []
             }
-            setPipelineStep("sleep", .comparing)
             // Fresh sessions, plus already-imported sessions whose content no
             // longer matches what was written — an upstream edit. Tossed IDs
             // never come back.
@@ -559,7 +573,9 @@ final class SyncEngine {
             // reaching back across them. Each kind fills from its own window;
             // today is excluded — it is still accumulating.
             let yesterday = now.addingTimeInterval(-86_400)
-            fillNoData(kind: sleepLedgerKind, from: sleepSince, through: yesterday)
+            if syncSleep {
+                fillNoData(kind: sleepLedgerKind, from: sleepSince, through: yesterday)
+            }
             for kind in kinds where !failedKinds.contains(kind) {
                 fillNoData(kind: kind.rawValue, from: sinceByKey[kind.rawValue] ?? floor, through: yesterday)
             }
