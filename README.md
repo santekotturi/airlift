@@ -99,15 +99,17 @@ Everything here is in the free [Google Cloud Console](https://console.cloud.goog
 1. **Create or pick a project**, then **enable the Google Health API**
    (APIs & Services → Library → search "Google Health").
 
-   > _📸 Screenshot to add: `docs/assets/setup/01-enable-api.png` — the Google Health API
-   > Library page with the **Enable** button._
+   <p align="center"><img src="docs/assets/setup/01-enable-api.png" width="90%" alt="Finding the Google Health API in the Cloud Console API Library" /></p>
 
 2. **Configure the OAuth consent screen** as **External**, publishing status **Testing**.
    Under **Test users**, add the personal Google account your Fitbit data lives on. (Why
    Testing/External: see [OAuth & consent](#oauth--consent-read-this-before-you-start).)
 
-   > _📸 Screenshot to add: `docs/assets/setup/02-consent-screen.png` — External + Testing,
-   > with your account under Test users._
+   <p align="center">
+     <img src="docs/assets/setup/02-consent-screen.png" width="48%" alt="Audience page — User type External, Publishing status Testing" />
+     <img src="docs/assets/setup/02b-test-users.png" width="48%" alt="Adding your Google account under Test users" />
+   </p>
+   <p align="center"><em>Audience → User type <strong>External</strong>, Publishing status <strong>Testing</strong> &middot; add your account under <strong>Test users</strong>.</em></p>
 
 3. On the consent screen's **Scopes** step, add exactly the three read-only scopes Airlift
    uses — nothing more:
@@ -126,8 +128,12 @@ Everything here is in the free [Google Cloud Console](https://console.cloud.goog
    public clients (**no secret**); Airlift uses PKCE. Copy the **Client ID** and its
    reversed form.
 
-   > _📸 Screenshot to add: `docs/assets/setup/04-ios-client.png` — the iOS OAuth client
-   > with the Client ID and bundle ID visible (redact the digits)._
+   <p align="center">
+     <img src="docs/assets/setup/04a-create-credentials.png" width="32%" alt="Credentials → Create credentials → OAuth client ID" />
+     <img src="docs/assets/setup/04b-app-type.png" width="32%" alt="Choosing the iOS application type" />
+     <img src="docs/assets/setup/04-ios-client.png" width="32%" alt="Filling in the iOS OAuth client — name, bundle ID, Team ID" />
+   </p>
+   <p align="center"><em>Create credentials → OAuth client ID &middot; pick <strong>iOS</strong> &middot; set the bundle ID and your Apple Team ID.</em></p>
 
 ### 2. Configure the build
 
@@ -167,8 +173,8 @@ matches the one you registered with Google. Then select your iPhone and build & 
 > with your Team selected — and `docs/assets/setup/07-run.png` — the scheme/destination
 > bar with your iPhone selected._
 
-> 💡 The setup screenshots above don't exist yet — they're of your own Google Cloud
-> Console and Xcode. See [docs/assets/setup/](docs/assets/setup/) for a capture
+> 💡 The Xcode screenshots above (and the OAuth **scopes** step earlier) still need to be
+> captured — they're of your own machine. See [docs/assets/setup/](docs/assets/setup/) for a
 > checklist with the exact filenames.
 
 ### 4. First launch

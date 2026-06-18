@@ -12,14 +12,21 @@ is fine — these end up in a public repo).
 
 ## Google Cloud Console
 
-| Filename | What to capture |
-|---|---|
-| `01-enable-api.png` | APIs & Services → Library → "Google Health API" page, with the **Enable** button visible. |
-| `02-consent-screen.png` | OAuth consent screen set to **External** + publishing status **Testing**, with your Google account added under **Test users**. |
-| `03-scopes.png` | The Scopes step showing the three `googlehealth.*` **read-only** scopes selected (sleep, health metrics & measurements, activity & fitness) — and nothing else. |
-| `04-ios-client.png` | Credentials → the **iOS OAuth client** showing the Client ID and the registered bundle ID (**redact the digits** of the client ID). |
+| Filename | Status | What it shows |
+|---|---|---|
+| `01-enable-api.png` | ✅ have | APIs & Services → Library → the **Google Health API** result. |
+| `02-consent-screen.png` | ✅ have | Google Auth Platform → Audience: **External** user type, **Testing** publishing status. |
+| `02b-test-users.png` | ✅ have | The **Add users** panel for adding your Google account as a test user. |
+| `03-scopes.png` | ⬜ still needed | Data Access → the three `googlehealth.*` **read-only** scopes selected (sleep, health metrics & measurements, activity & fitness) — and nothing else. |
+| `04a-create-credentials.png` | ✅ have | Credentials → **Create credentials** → OAuth client ID. |
+| `04b-app-type.png` | ✅ have | Create OAuth client → choosing the **iOS** application type. |
+| `04-ios-client.png` | ✅ have | The iOS OAuth client form — name, bundle ID, Team ID. |
 
-## Xcode
+> The captured shots are placeholder/empty forms (no real client IDs, emails, or Team IDs
+> visible), so nothing needed redacting. If you re-capture any with real values showing,
+> blur them first.
+
+## Xcode (still needed)
 
 | Filename | What to capture |
 |---|---|
