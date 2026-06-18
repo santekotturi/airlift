@@ -150,6 +150,9 @@ Edit `Config.xcconfig` and fill in:
 tracked files like `project.yml` (it reads `$(AIRLIFT_BUNDLE_ID)`). The OAuth values
 aren't secrets — public iOS clients have no secret — but each user brings their own client.
 
+> _📸 Screenshot to add: `docs/assets/setup/05-config-xcconfig.png` — the four keys
+> filled in (redact the real values)._
+
 ### 3. Generate & build
 
 ```bash
@@ -157,7 +160,16 @@ xcodegen generate
 open Airlift.xcodeproj
 ```
 
-Select your iPhone, build & run.
+In Xcode, open **Signing & Capabilities**, pick your Team, and confirm the bundle ID
+matches the one you registered with Google. Then select your iPhone and build & run.
+
+> _📸 Screenshot to add: `docs/assets/setup/06-signing.png` — Signing & Capabilities
+> with your Team selected — and `docs/assets/setup/07-run.png` — the scheme/destination
+> bar with your iPhone selected._
+
+> 💡 The setup screenshots above don't exist yet — they're of your own Google Cloud
+> Console and Xcode. See [docs/assets/setup/](docs/assets/setup/) for a capture
+> checklist with the exact filenames.
 
 ### 4. First launch
 
@@ -297,6 +309,18 @@ contribute too. How Health resolves the overlap is subtle, and the in-app tutori
 
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The pure logic (stage mapping, sync
 window, PKCE, civil-time parsing, backoff) is unit-tested; please keep it that way.
+
+Changes are tracked in [CHANGELOG.md](CHANGELOG.md). Bug reports and feature requests go
+through the [issue templates](.github/ISSUE_TEMPLATE); security issues are reported
+privately — see [SECURITY.md](SECURITY.md).
+
+## Support
+
+Airlift is free, open source, and runs entirely on your device — no server, no
+subscription, unlike the commercial Fitbit↔Health sync apps. If it saved you from paying
+for one, you can buy me a coffee:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black&style=for-the-badge)](https://www.buymeacoffee.com/santekotturi)
 
 ## License
 
