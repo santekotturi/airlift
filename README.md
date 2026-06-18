@@ -166,8 +166,7 @@ Edit `Config.xcconfig` and fill in:
 tracked files like `project.yml` (it reads `$(AIRLIFT_BUNDLE_ID)`). The OAuth values
 aren't secrets — public iOS clients have no secret — but each user brings their own client.
 
-> _📸 Screenshot to add: `docs/assets/setup/05-config-xcconfig.png` — the four keys
-> filled in (redact the real values)._
+<p align="center"><img src="docs/assets/setup/05-config-xcconfig.png" width="90%" alt="Config.xcconfig with the four build keys filled in" /></p>
 
 ### 3. Generate & build
 
