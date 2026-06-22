@@ -1328,7 +1328,7 @@ final class SyncEngine {
 
     /// Runs `operation` with a valid access token, transparently refreshing and
     /// retrying once on 401.
-    private func withFreshToken<T>(_ operation: (String) async throws -> T) async throws -> T {
+    private func withFreshToken<T: Sendable>(_ operation: (String) async throws -> T) async throws -> T {
         let token = try await validAccessToken()
         do {
             return try await operation(token)
