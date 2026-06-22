@@ -854,8 +854,10 @@ final class SyncEngine {
 
     /// Calendar-correct civil-day interval (DST transition days are 23/25 h —
     /// a fixed 86,400 s window would miss or overshoot the odd hour).
-    nonisolated private static func dayInterval(containing day: Date) -> DateInterval {
-        Calendar.current.dateInterval(of: .day, for: day)
+    nonisolated private static func dayInterval(
+        containing day: Date, calendar: Calendar = .current
+    ) -> DateInterval {
+        calendar.dateInterval(of: .day, for: day)
             ?? DateInterval(start: day, duration: 86_400)
     }
 
@@ -866,7 +868,7 @@ final class SyncEngine {
     nonisolated static func metricDayInterval(
         kind: MetricKind, day: Date, calendar: Calendar = .current
     ) -> DateInterval {
-        guard kind.usesOvernightDay else { return dayInterval(containing: day) }
+        guard kind.usesOvernightDay else { return dayInterval(containing: day, calendar: calendar) }
         let start = calendar.date(byAdding: .hour, value: -(24 - MetricKind.overnightAnchorHour), to: day)
             ?? day.addingTimeInterval(-Double(24 - MetricKind.overnightAnchorHour) * 3_600)
         return DateInterval(start: start, duration: 86_400)
