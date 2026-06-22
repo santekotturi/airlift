@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/santekotturi/airlift/security/advisories/new
+    about: Please report security issues privately — see SECURITY.md, not a public issue.
+  - name: Question or discussion
+    url: https://github.com/santekotturi/airlift/discussions
+    about: Setup help, OAuth/consent questions, or general discussion.
+  - name: Support Airlift ☕
+    url: https://www.buymeacoffee.com/santekotturi
+    about: Airlift is free and on-device. If it saved you from a paid sync app, you can buy me a coffee.

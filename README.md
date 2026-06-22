@@ -99,26 +99,41 @@ Everything here is in the free [Google Cloud Console](https://console.cloud.goog
 1. **Create or pick a project**, then **enable the Google Health API**
    (APIs & Services → Library → search "Google Health").
 
-   > _📸 Screenshot to add: `docs/assets/setup/01-enable-api.png` — the Google Health API
-   > Library page with the **Enable** button._
+   <p align="center"><img src="docs/assets/setup/01-enable-api.png" width="90%" alt="Finding the Google Health API in the Cloud Console API Library" /></p>
 
 2. **Configure the OAuth consent screen** as **External**, publishing status **Testing**.
    Under **Test users**, add the personal Google account your Fitbit data lives on. (Why
    Testing/External: see [OAuth & consent](#oauth--consent-read-this-before-you-start).)
 
-   > _📸 Screenshot to add: `docs/assets/setup/02-consent-screen.png` — External + Testing,
-   > with your account under Test users._
+   <p align="center">
+     <img src="docs/assets/setup/02-consent-screen.png" width="48%" alt="Audience page — User type External, Publishing status Testing" />
+     <img src="docs/assets/setup/02b-test-users.png" width="48%" alt="Adding your Google account under Test users" />
+   </p>
+   <p align="center"><em>Audience → User type <strong>External</strong>, Publishing status <strong>Testing</strong> &middot; add your account under <strong>Test users</strong>.</em></p>
 
-3. On the consent screen's **Scopes** step, add exactly the three read-only scopes Airlift
-   uses — nothing more:
-   - `googlehealth.sleep.readonly`
-   - `googlehealth.health_metrics_and_measurements.readonly`
-   - `googlehealth.activity_and_fitness.readonly`
+3. **You don't pre-register scopes for personal use.** Airlift requests these three
+   read-only scopes in its *own* sign-in request, and you grant them **on-device** in the
+   Google consent dialog when you tap *Connect Google Health* — not in the console:
 
-   Do **not** add any `.writeonly` scope — Airlift never writes back to Google.
+   ```
+   https://www.googleapis.com/auth/googlehealth.sleep.readonly
+   https://www.googleapis.com/auth/googlehealth.health_metrics_and_measurements.readonly
+   https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly
+   ```
 
-   > _📸 Screenshot to add: `docs/assets/setup/03-scopes.png` — the three googlehealth
-   > read-only scopes selected._
+   They're read-only — Airlift never writes back to Google, so no `.writeonly` scope is ever
+   requested. In **Testing** mode your project's **Data Access** page can stay **empty**
+   ("No rows to display"); these pre-GA scopes don't even appear in the console's scope
+   picker, and the grant happens in the on-device consent screen instead. Only if Google ever
+   *blocks* the grant, or you move to **Production / verification**, add them by hand under
+   Data Access → *Add or remove scopes* → *Manually add scopes*.
+
+   <p align="center">
+     <img src="docs/assets/setup/03-consent-grant.png" width="40%" alt="On-device Google consent screen granting the three read-only Google Health scopes" />
+   </p>
+
+   _The on-device consent screen during **Connect Google Health** — this is where access is
+   actually granted (sleep, health metrics & measurements, activity & fitness), all read-only._
 
 4. **Create an iOS OAuth client ID** (Credentials → Create Credentials → OAuth client ID →
    iOS). The **bundle ID** you register must match the `AIRLIFT_BUNDLE_ID` you set in the
@@ -126,8 +141,12 @@ Everything here is in the free [Google Cloud Console](https://console.cloud.goog
    public clients (**no secret**); Airlift uses PKCE. Copy the **Client ID** and its
    reversed form.
 
-   > _📸 Screenshot to add: `docs/assets/setup/04-ios-client.png` — the iOS OAuth client
-   > with the Client ID and bundle ID visible (redact the digits)._
+   <p align="center">
+     <img src="docs/assets/setup/04a-create-credentials.png" width="32%" alt="Credentials → Create credentials → OAuth client ID" />
+     <img src="docs/assets/setup/04b-app-type.png" width="32%" alt="Choosing the iOS application type" />
+     <img src="docs/assets/setup/04-ios-client.png" width="32%" alt="Filling in the iOS OAuth client — name, bundle ID, Team ID" />
+   </p>
+   <p align="center"><em>Create credentials → OAuth client ID &middot; pick <strong>iOS</strong> &middot; set the bundle ID and your Apple Team ID.</em></p>
 
 ### 2. Configure the build
 
@@ -150,6 +169,8 @@ Edit `Config.xcconfig` and fill in:
 tracked files like `project.yml` (it reads `$(AIRLIFT_BUNDLE_ID)`). The OAuth values
 aren't secrets — public iOS clients have no secret — but each user brings their own client.
 
+<p align="center"><img src="docs/assets/setup/05-config-xcconfig.png" width="90%" alt="Config.xcconfig with the four build keys filled in" /></p>
+
 ### 3. Generate & build
 
 ```bash
@@ -157,7 +178,18 @@ xcodegen generate
 open Airlift.xcodeproj
 ```
 
-Select your iPhone, build & run.
+In Xcode, open **Signing & Capabilities**, pick your Team, and confirm the bundle ID
+matches the one you registered with Google. Then select your iPhone and build & run.
+
+<p align="center">
+  <img src="docs/assets/setup/06-signing.png" width="48%" alt="Signing & Capabilities — Team selected, automatic signing on" />
+  <img src="docs/assets/setup/07-run.png" width="48%" alt="Destination picker with your iPhone selected" />
+</p>
+<p align="center"><em>Signing & Capabilities with your Team selected &middot; pick your iPhone in the destination bar, then Run.</em></p>
+
+> 💡 The Xcode screenshots above (and the on-device **consent** screen earlier) still need to
+> be captured — they're of your own machine. See [docs/assets/setup/](docs/assets/setup/) for
+> a checklist with the exact filenames.
 
 ### 4. First launch
 
@@ -297,6 +329,18 @@ contribute too. How Health resolves the overlap is subtle, and the in-app tutori
 
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The pure logic (stage mapping, sync
 window, PKCE, civil-time parsing, backoff) is unit-tested; please keep it that way.
+
+Changes are tracked in [CHANGELOG.md](CHANGELOG.md). Bug reports and feature requests go
+through the [issue templates](.github/ISSUE_TEMPLATE); security issues are reported
+privately — see [SECURITY.md](SECURITY.md).
+
+## Support
+
+Airlift is free, open source, and runs entirely on your device — no server, no
+subscription, unlike the commercial Fitbit↔Health sync apps. If it saved you from paying
+for one, you can buy me a coffee:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black&style=for-the-badge)](https://www.buymeacoffee.com/santekotturi)
 
 ## License
 
