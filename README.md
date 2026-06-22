@@ -128,9 +128,12 @@ Everything here is in the free [Google Cloud Console](https://console.cloud.goog
    *blocks* the grant, or you move to **Production / verification**, add them by hand under
    Data Access → *Add or remove scopes* → *Manually add scopes*.
 
-   > _📸 Screenshot to add: `docs/assets/setup/03-consent-grant.png` — the on-device Google
-   > consent screen showing the read permissions being granted (this is where access is
-   > actually given)._
+   <p align="center">
+     <img src="docs/assets/setup/03-consent-grant.png" width="40%" alt="On-device Google consent screen granting the three read-only Google Health scopes" />
+   </p>
+
+   _The on-device consent screen during **Connect Google Health** — this is where access is
+   actually granted (sleep, health metrics & measurements, activity & fitness), all read-only._
 
 4. **Create an iOS OAuth client ID** (Credentials → Create Credentials → OAuth client ID →
    iOS). The **bundle ID** you register must match the `AIRLIFT_BUNDLE_ID` you set in the
