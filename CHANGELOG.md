@@ -27,6 +27,17 @@ API into Apple Health, entirely on-device.
 - Documentation: README setup walkthrough, privacy policy, security policy,
   contributing guide, App Store prep checklist, and a GitHub Pages site.
 
+### Changed
+
+- **HRV-only sync by default.** Google Health 5.05 (Aug 2026) now writes sleep,
+  heart rate, steps, distance, SpO₂, respiratory rate, resting heart rate and
+  more to Apple Health itself — but deliberately omits HRV (Fitbit reports
+  RMSSD; Apple Health's only HRV type is SDNN). Airlift therefore now defaults
+  to bridging **only HRV**: sleep and the other six metrics are off by default,
+  and existing installs are migrated to HRV-only once (everything remains
+  re-enableable in Settings → What syncs for people not using Google Health's
+  own Apple Health sync).
+
 ### Known limitations
 
 - The Google Health API is pre-GA; wire schemas and scopes may shift before its
