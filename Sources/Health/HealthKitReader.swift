@@ -9,6 +9,9 @@ struct AppleSleepSegment: Equatable, Hashable, Identifiable {
     let start: Date
     let end: Date
     let sourceName: String
+    /// False for sleep another app wrote — Google Health, once it writes Fitbit
+    /// sleep into Health itself, would otherwise pass for the Watch's own.
+    var fromAppleDevice: Bool = true
 
     var duration: TimeInterval { end.timeIntervalSince(start) }
 
@@ -26,6 +29,7 @@ struct HRSample: Equatable, Hashable, Identifiable {
     let id: UUID
     let date: Date
     let bpm: Double
+    var fromAppleDevice: Bool = true
 }
 
 /// A generic quantity reading from HealthKit (Apple-side comparison data),
@@ -35,6 +39,21 @@ struct QuantitySample: Equatable, Hashable, Identifiable {
     let start: Date
     let end: Date
     let value: Double
+    /// `HKMetadataKeyAlgorithmVersion`, when the writer set one.
+    var algorithmVersion: Int? = nil
+    var fromAppleDevice: Bool = true
+    var sourceName: String? = nil
+
+    /// Apple's HRV algorithm version 3 (watchOS 27, Ultra 4 hardware) reads
+    /// HRV continuously in ~5-minute windows. Version 2 and earlier is the
+    /// ~60-second spot check taken every couple of hours. The two share the
+    /// SDNN type but not a meaning — a nightly mean across both would average a
+    /// 60 s statistic with a 5 min one.
+    static let continuousHRVAlgorithmVersion = 3
+
+    var isContinuousHRV: Bool {
+        (algorithmVersion ?? 0) >= Self.continuousHRVAlgorithmVersion
+    }
 }
 
 /// Reads existing HealthKit data (Apple Watch sleep + heart rate) so Google
@@ -65,7 +84,8 @@ final class HealthKitReader: @unchecked Sendable {
                 value: value,
                 start: category.startDate,
                 end: category.endDate,
-                sourceName: category.sourceRevision.source.name
+                sourceName: category.sourceRevision.source.name,
+                fromAppleDevice: Self.isAppleDevice(category.sourceRevision.source)
             )
         }
     }
@@ -83,13 +103,50 @@ final class HealthKitReader: @unchecked Sendable {
                 let quantity = sample as? HKQuantitySample,
                 quantity.sourceRevision.source.bundleIdentifier != ownBundleID
             else { return nil }
-            return QuantitySample(
-                id: quantity.uuid,
-                start: quantity.startDate,
-                end: quantity.endDate,
-                value: quantity.quantity.doubleValue(for: kind.hkUnit)
-            )
+            return Self.quantitySample(quantity, unit: kind.hkUnit)
         }
+    }
+
+    /// RMSSD samples from every source except Airlift. The type only exists
+    /// from iOS 27, where Apple Watch Ultra 4 writes it every ~5 minutes asleep;
+    /// earlier systems get an empty array, not an error.
+    ///
+    /// Other apps may write it too (Google Health might, for Fitbit), so each
+    /// sample carries `fromAppleDevice` for the caller to split on.
+    func rmssdSamples(in interval: DateInterval) async throws -> [QuantitySample] {
+        guard #available(iOS 27.0, *) else { return [] }
+        let samples = try await querySamples(
+            type: HKQuantityType(.heartRateVariabilityRMSSD),
+            interval: interval
+        )
+        let ownBundleID = Bundle.main.bundleIdentifier
+        let unit = HKUnit.secondUnit(with: .milli)
+        return samples.compactMap { sample -> QuantitySample? in
+            guard
+                let quantity = sample as? HKQuantitySample,
+                quantity.sourceRevision.source.bundleIdentifier != ownBundleID
+            else { return nil }
+            return Self.quantitySample(quantity, unit: unit)
+        }
+    }
+
+    private static func quantitySample(_ quantity: HKQuantitySample, unit: HKUnit) -> QuantitySample {
+        let version = quantity.metadata?[HKMetadataKeyAlgorithmVersion]
+        return QuantitySample(
+            id: quantity.uuid,
+            start: quantity.startDate,
+            end: quantity.endDate,
+            value: quantity.quantity.doubleValue(for: unit),
+            algorithmVersion: (version as? NSNumber)?.intValue ?? (version as? String).flatMap { Int($0) },
+            fromAppleDevice: isAppleDevice(quantity.sourceRevision.source),
+            sourceName: quantity.sourceRevision.source.name
+        )
+    }
+
+    /// True for data an Apple Watch or iPhone recorded itself. Their sources are
+    /// all `com.apple.health.<device UUID>`; any other app's bundle ID is its own.
+    static func isAppleDevice(_ source: HKSource) -> Bool {
+        source.bundleIdentifier.hasPrefix("com.apple.health")
     }
 
     /// Sum of one cumulative metric over `interval` from sources other than
@@ -190,6 +247,74 @@ final class HealthKitReader: @unchecked Sendable {
         let dataPointID: String?
     }
 
+    /// Samples this app imported, matched by bundle ID *or* by source name.
+    ///
+    /// For read-only analysis only — never for dedup or deletion, which must
+    /// stay strictly bundle-ID scoped so the app can only ever retire samples
+    /// it provably wrote.
+    ///
+    /// The looser match exists because a rebuild under a different bundle ID —
+    /// a re-clone, a fresh `Config.xcconfig`, a change of team — makes every
+    /// previously imported night invisible to `ownQuantitySamples`, and the
+    /// analysis screens then report "no Fitbit data" about data plainly sitting
+    /// in Health. HealthKit keeps the source *name* across such a change, so it
+    /// is the more durable handle on "this came from Airlift".
+    func importedQuantitySamples(_ kind: MetricKind, in interval: DateInterval) async throws -> [OwnSample] {
+        let samples = try await querySamples(
+            type: HKQuantityType(kind.hkIdentifier),
+            interval: interval
+        )
+        let ownBundleID = Bundle.main.bundleIdentifier
+        let ownName = Self.appDisplayName
+        return samples.compactMap { sample -> OwnSample? in
+            guard
+                let quantity = sample as? HKQuantitySample,
+                interval.contains(quantity.startDate)
+            else { return nil }
+            let source = quantity.sourceRevision.source
+            guard source.bundleIdentifier == ownBundleID || source.name == ownName else { return nil }
+            return OwnSample(
+                id: quantity.uuid,
+                start: quantity.startDate,
+                end: quantity.endDate,
+                value: quantity.quantity.doubleValue(for: kind.hkUnit),
+                dataPointID: quantity.metadata?[HealthKitWriter.dataPointIDKey] as? String
+            )
+        }
+    }
+
+    /// Sleep samples this app imported, on the same bundle-ID-or-name rule as
+    /// `importedQuantitySamples`, and read-only for the same reason.
+    func importedSleepSamples(endingIn interval: DateInterval) async throws -> [OwnSample] {
+        let widened = DateInterval(start: interval.start.addingTimeInterval(-86_400), end: interval.end)
+        let samples = try await querySamples(type: HKCategoryType(.sleepAnalysis), interval: widened)
+        let ownBundleID = Bundle.main.bundleIdentifier
+        let ownName = Self.appDisplayName
+        return samples.compactMap { sample -> OwnSample? in
+            guard
+                let category = sample as? HKCategorySample,
+                interval.contains(category.endDate)
+            else { return nil }
+            let source = category.sourceRevision.source
+            guard source.bundleIdentifier == ownBundleID || source.name == ownName else { return nil }
+            return OwnSample(
+                id: category.uuid,
+                start: category.startDate,
+                end: category.endDate,
+                value: Double(category.value),
+                dataPointID: category.metadata?[HealthKitWriter.dataPointIDKey] as? String
+            )
+        }
+    }
+
+    /// The name HealthKit files this app's samples under.
+    static let appDisplayName: String = {
+        let info = Bundle.main.infoDictionary
+        return (info?["CFBundleDisplayName"] as? String)
+            ?? (info?["CFBundleName"] as? String)
+            ?? "Airlift"
+    }()
+
     /// Airlift-authored quantity samples whose *start* falls inside
     /// `interval` — matches how batches are grouped into civil days.
     func ownQuantitySamples(_ kind: MetricKind, in interval: DateInterval) async throws -> [OwnSample] {
@@ -250,7 +375,8 @@ final class HealthKitReader: @unchecked Sendable {
             return HRSample(
                 id: quantity.uuid,
                 date: quantity.startDate,
-                bpm: quantity.quantity.doubleValue(for: bpmUnit)
+                bpm: quantity.quantity.doubleValue(for: bpmUnit),
+                fromAppleDevice: Self.isAppleDevice(quantity.sourceRevision.source)
             )
         }
     }

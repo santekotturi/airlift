@@ -14,6 +14,8 @@ struct HomeView: View {
     @State private var pushedBatch: StagedMetricBatch?
     @State private var showHistory = false
     @State private var showPager = false
+    @State private var showRecovery = false
+    @State private var showHRV = false
     @State private var browseTarget: BrowseTarget?
 
     // Banner numerals keep their exact Daybreak proportions but still track
@@ -48,6 +50,7 @@ struct HomeView: View {
             bridgeCard
                 .homeRow(bottom: 26)
             metricsSection
+            recoveryRow
             recentSection
             HeadsUpCard.forMode(engine.syncMode)
                 .homeRow(bottom: 24)
@@ -62,6 +65,8 @@ struct HomeView: View {
         .navigationDestination(item: $pushedBatch) { MetricCompareView(batch: $0) }
         .navigationDestination(isPresented: $showHistory) { HistoryView() }
         .navigationDestination(isPresented: $showPager) { ReviewPagerView() }
+        .navigationDestination(isPresented: $showRecovery) { RecoveryView() }
+        .navigationDestination(isPresented: $showHRV) { HRVView() }
         .navigationDestination(item: $browseTarget) {
             MetricHistoryPagerView(kind: $0.kind, startDay: $0.startDay)
         }
@@ -595,6 +600,67 @@ struct HomeView: View {
             .daybreakCard(padding: 16)
             .homeRow(bottom: 26)
         }
+    }
+
+    // MARK: - Recovery
+
+    /// Entry to the read-only comparison screen. Only offered once both sides
+    /// exist in Health — with nothing airlifted there is no Fitbit series to
+    /// compare the Watch against, and the screen would open on an empty state.
+    /// Always offered, never gated on the sync ledger.
+    ///
+    /// These screens read Health directly, so they work on data imported by any
+    /// earlier install — while the ledger is local state that a reinstall wipes.
+    /// Gating on it hid the analysis from exactly the person most likely to
+    /// want it: someone who has been airlifting for months and just rebuilt.
+    private var recoveryRow: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            analysisRow(
+                icon: "waveform.path.ecg",
+                title: "HRV",
+                detail: "Apple's number, your own recomputation, and Fitbit — reading by reading."
+            ) { showHRV = true }
+            Divider().overlay(Daybreak.line)
+            analysisRow(
+                icon: "bed.double.fill",
+                title: "Recovery",
+                detail: "Every metric together, restricted to the stages that carry recovery."
+            ) { showRecovery = true }
+        }
+        .daybreakCard(padding: 16)
+        .homeRow(bottom: 26)
+    }
+
+    private func analysisRow(
+        icon: String, title: String, detail: String, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(Daybreak.newChipBackground)
+                    .frame(width: 34, height: 34)
+                    .overlay {
+                        Image(systemName: icon)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(Daybreak.plum)
+                    }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                        .foregroundStyle(Daybreak.ink)
+                    Text(detail)
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(Daybreak.mid)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Daybreak.faint)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Recent crossings

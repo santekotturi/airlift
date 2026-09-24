@@ -325,6 +325,32 @@ contribute too. How Health resolves the overlap is subtle, and the in-app tutori
 - **Google may make this obsolete.** Native Google Health → Apple Health write-back is
   promised for "later in 2026." If it ships and gives you faithful stages, you may not need this.
 
+## Research
+
+Once both devices write to the same store, you can actually compare them night by night.
+[**Sampling density, not signal quality, limits Apple Watch recovery metrics**](docs/research/nocturnal-heart-rate-vs-hrv.md)
+is a single-subject study (37 paired nights) using exactly that setup:
+
+- Apple's published overnight SDNN has a **reliability of 0.18** — most of the night-to-night
+  movement you see in it is the watch disagreeing with itself. Recomputing RMSSD from the
+  beat-to-beat intervals HealthKit already stores triples that, to 0.54.
+- Targeting HRV at deep sleep **cannot work on an Apple Watch**: it samples HRV every 120
+  minutes, and the last deep-sleep bout lasts ~8 minutes — about one usable reading every
+  sixteen nights.
+- **Nocturnal heart rate over core+deep sleep** is the best Apple-side recovery signal tested
+  (ρ = 0.85 vs the Fitbit, reliability 0.98), and it is *not* the resting heart rate already
+  in HealthKit.
+- But that advantage is a **sampling-rate story, not a physiology story**: thinned to HRV's
+  4-samples-a-night, heart rate performs identically to HRV. The watch simply measures it 17×
+  more often.
+
+> n = 1, and the Fitbit is a reference rather than ground truth — see the paper's limitations.
+
+> **Update (Sep 2026):** those numbers are from spot-check watches. Apple Watch Ultra 4 on
+> watchOS 27 writes its own RMSSD about every five minutes asleep (~90 readings a night), which
+> removes the sampling ceiling the paper is about. The Recovery and HRV screens read it and
+> compare it with Fitbit's RMSSD reading for reading.
+
 ## Contributing
 
 PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The pure logic (stage mapping, sync
