@@ -32,6 +32,13 @@ API into Apple Health, entirely on-device.
   Watch reading paired with the Fitbit reading inside it. The continuous v3 SDNN
   the Watch writes alongside is kept out of the "Apple SDNN" series, which stays
   the ~60 s spot check so it means the same thing on every watch.
+- **Fitbit HRV is written as RMSSD on iOS 27**, the statistic it always was,
+  instead of under SDNN. A one-time **Settings → Fitbit HRV → Move to RMSSD**
+  action moves readings already imported: each is copied into RMSSD, the copies
+  are confirmed in Apple Health, and only then are the SDNN originals deleted
+  (Airlift's own samples only). Airlift's Fitbit HRV is read from both types in
+  the meantime, and the sync comparison on iOS 27 sets Fitbit RMSSD beside the
+  Watch's RMSSD.
 - Documentation: README setup walkthrough, privacy policy, security policy,
   contributing guide, App Store prep checklist, and a GitHub Pages site.
 

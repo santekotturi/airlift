@@ -93,17 +93,22 @@ final class HealthKitReader: @unchecked Sendable {
     /// Quantity samples of one bridged metric within `interval`, from sources
     /// other than Airlift, in the metric's HealthKit unit.
     func quantitySamples(_ kind: MetricKind, in interval: DateInterval) async throws -> [QuantitySample] {
-        let samples = try await querySamples(
-            type: HKQuantityType(kind.hkIdentifier),
-            interval: interval
-        )
+        try await quantitySamples(kind.hkIdentifier, unit: kind.hkUnit, in: interval)
+    }
+
+    /// The same, for a type named directly — the Recovery screens need Apple's
+    /// SDNN spot checks even once Airlift's own HRV kind has moved to RMSSD.
+    func quantitySamples(
+        _ identifier: HKQuantityTypeIdentifier, unit: HKUnit, in interval: DateInterval
+    ) async throws -> [QuantitySample] {
+        let samples = try await querySamples(type: HKQuantityType(identifier), interval: interval)
         let ownBundleID = Bundle.main.bundleIdentifier
         return samples.compactMap { sample -> QuantitySample? in
             guard
                 let quantity = sample as? HKQuantitySample,
                 quantity.sourceRevision.source.bundleIdentifier != ownBundleID
             else { return nil }
-            return Self.quantitySample(quantity, unit: kind.hkUnit)
+            return Self.quantitySample(quantity, unit: unit)
         }
     }
 
@@ -120,12 +125,14 @@ final class HealthKitReader: @unchecked Sendable {
             interval: interval
         )
         let ownBundleID = Bundle.main.bundleIdentifier
+        let ownName = Self.appDisplayName
         let unit = HKUnit.secondUnit(with: .milli)
         return samples.compactMap { sample -> QuantitySample? in
-            guard
-                let quantity = sample as? HKQuantitySample,
-                quantity.sourceRevision.source.bundleIdentifier != ownBundleID
-            else { return nil }
+            guard let quantity = sample as? HKQuantitySample else { return nil }
+            let source = quantity.sourceRevision.source
+            // By name too: Airlift's own Fitbit RMSSD from a build under another
+            // bundle ID must not pass for a third app's.
+            guard source.bundleIdentifier != ownBundleID, source.name != ownName else { return nil }
             return Self.quantitySample(quantity, unit: unit)
         }
     }
@@ -259,11 +266,24 @@ final class HealthKitReader: @unchecked Sendable {
     /// analysis screens then report "no Fitbit data" about data plainly sitting
     /// in Health. HealthKit keeps the source *name* across such a change, so it
     /// is the more durable handle on "this came from Airlift".
+    ///
+    /// HRV is read from both types it has lived in — SDNN before iOS 27, RMSSD
+    /// after — so nights not yet migrated still count. A reading caught between
+    /// the two by an interrupted migration is kept once, from the newer type.
     func importedQuantitySamples(_ kind: MetricKind, in interval: DateInterval) async throws -> [OwnSample] {
-        let samples = try await querySamples(
-            type: HKQuantityType(kind.hkIdentifier),
-            interval: interval
-        )
+        var identifiers = [kind.hkIdentifier]
+        if kind == .heartRateVariability, kind.hkIdentifier != MetricKind.legacyHRVIdentifier {
+            identifiers.append(MetricKind.legacyHRVIdentifier)
+        }
+        var samples: [HKSample] = []
+        for identifier in identifiers {
+            samples += try await querySamples(type: HKQuantityType(identifier), interval: interval)
+        }
+        var seen = Set<String>()
+        samples = samples.filter { sample in
+            guard let id = sample.metadata?[HealthKitWriter.dataPointIDKey] as? String else { return true }
+            return seen.insert(id).inserted
+        }
         let ownBundleID = Bundle.main.bundleIdentifier
         let ownName = Self.appDisplayName
         return samples.compactMap { sample -> OwnSample? in

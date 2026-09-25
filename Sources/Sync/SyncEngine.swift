@@ -819,6 +819,67 @@ final class SyncEngine {
         }
     }
 
+    // MARK: - HRV migration
+
+    /// Where the one-time move of Fitbit HRV from SDNN to RMSSD stands.
+    enum HRVMigrationState: Equatable {
+        /// Not checked yet, or not on iOS 27.
+        case unknown
+        case notNeeded
+        /// Airlift SDNN samples waiting to move.
+        case pending(Int)
+        case running
+        case done(HealthKitWriter.HRVMigrationResult)
+        case failed(String)
+    }
+
+    private(set) var hrvMigration: HRVMigrationState = .unknown
+
+    /// Counts Airlift HRV still in the SDNN type. Only meaningful on iOS 27,
+    /// where Fitbit HRV has an RMSSD type to live in.
+    func refreshHRVMigration() async {
+        #if DEBUG
+        if isUIMock {
+            if case .unknown = hrvMigration { hrvMigration = .pending(7_516) }
+            return
+        }
+        #endif
+        guard #available(iOS 27.0, *) else { return }
+        if case .running = hrvMigration { return }
+        do {
+            let count = try await writer.legacyHRVCount()
+            hrvMigration = count > 0 ? .pending(count) : .notNeeded
+        } catch {
+            hrvMigration = .failed(error.localizedDescription)
+        }
+    }
+
+    /// Moves Airlift's SDNN-typed Fitbit HRV into RMSSD. See
+    /// `HealthKitWriter.migrateLegacyHRV()` for why it cannot lose data.
+    func migrateLegacyHRV() async {
+        #if DEBUG
+        if isUIMock {
+            hrvMigration = .done(.init(found: 7_516, written: 7_516, deleted: 7_516))
+            return
+        }
+        #endif
+        guard #available(iOS 27.0, *) else { return }
+        hrvMigration = .running
+        do {
+            let result = try await writer.migrateLegacyHRV()
+            hrvMigration = .done(result)
+            log.record(
+                .imported,
+                title: "Fitbit HRV moved to RMSSD",
+                detail: "\(result.deleted) reading(s) now sit in Apple Health's RMSSD type, beside the Watch's own, instead of under SDNN."
+            )
+            Log.sync.info("HRV migration: \(result.found) found, \(result.written) written, \(result.deleted) deleted")
+        } catch {
+            hrvMigration = .failed(error.localizedDescription)
+            Log.sync.error("HRV migration failed: \(error.localizedDescription)")
+        }
+    }
+
     /// Removes Airlift's data of one kind for one day from Apple Health.
     /// The attached dataPoint IDs are persisted as tossed so the same data
     /// never re-imports, and the ledger cell flips to `.tossed`.

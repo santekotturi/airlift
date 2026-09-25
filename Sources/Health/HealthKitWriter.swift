@@ -72,7 +72,10 @@ final class HealthKitWriter: @unchecked Sendable {
     /// being compared against Apple's SDNN.
     func requestAuthorization() async throws {
         guard isAvailable else { throw HealthKitError.notAvailable }
-        let quantityTypes = MetricKind.allCases.map { HKQuantityType($0.hkIdentifier) }
+        // SDNN is kept even after HRV moves to RMSSD: deleting Airlift's old
+        // SDNN-typed HRV needs share permission for the type it lives in.
+        let quantityTypes = (MetricKind.allCases.map(\.hkIdentifier) + [MetricKind.legacyHRVIdentifier])
+            .map { HKQuantityType($0) }
         let share: Set<HKSampleType> = Set([sleepType] + quantityTypes)
         var read: Set<HKObjectType> = Set([sleepType, HeartbeatSeriesReader.seriesType] + quantityTypes)
         // Read-only: the Watch's own RMSSD, which the Recovery and HRV screens
@@ -99,13 +102,129 @@ final class HealthKitWriter: @unchecked Sendable {
                 device: device,
                 metadata: [
                     Self.dataPointIDKey: sample.id,
-                    HKMetadataKeySyncIdentifier: "airlift-\(kind.rawValue)-\(sample.id)",
+                    HKMetadataKeySyncIdentifier: Self.syncIdentifier(kind: kind, dataPointID: sample.id),
                     HKMetadataKeySyncVersion: 1,
                 ]
             )
         }
         try await store.save(hkSamples)
         Log.health.info("Wrote \(hkSamples.count) \(kind.rawValue) sample(s)")
+    }
+
+    /// HRV in the RMSSD type gets its own identifier scheme. HealthKit does not
+    /// document whether sync identifiers are scoped per type or per source; a
+    /// distinct one means a migrated copy can never be mistaken for — or
+    /// replace — its SDNN original, whichever it is.
+    static func syncIdentifier(kind: MetricKind, dataPointID: String) -> String {
+        let isRMSSD = kind == .heartRateVariability && kind.hkIdentifier != MetricKind.legacyHRVIdentifier
+        return isRMSSD
+            ? "airlift-\(kind.rawValue)-rmssd-\(dataPointID)"
+            : "airlift-\(kind.rawValue)-\(dataPointID)"
+    }
+
+    /// What a legacy-HRV migration did.
+    struct HRVMigrationResult: Equatable {
+        /// Airlift SDNN samples found.
+        let found: Int
+        /// RMSSD copies written this run (fewer than `found` when an earlier,
+        /// interrupted run already wrote some).
+        let written: Int
+        /// SDNN originals deleted.
+        let deleted: Int
+    }
+
+    enum HRVMigrationError: LocalizedError {
+        case copiesMissing(expected: Int, found: Int)
+
+        var errorDescription: String? {
+            switch self {
+            case .copiesMissing(let expected, let found):
+                "Only \(found) of \(expected) RMSSD copies are in Apple Health, so the SDNN originals were left in place. Nothing was lost — try again."
+            }
+        }
+    }
+
+    /// How many of Airlift's HRV samples still sit in the SDNN type.
+    @available(iOS 27.0, *)
+    func legacyHRVCount() async throws -> Int {
+        try await ownSamples(of: HKQuantityType(MetricKind.legacyHRVIdentifier)).count
+    }
+
+    /// Moves every Fitbit HRV sample Airlift wrote into SDNN — the only HRV
+    /// type before iOS 27 — into the RMSSD type it always was.
+    ///
+    /// Copy, confirm, then delete: the RMSSD copies are saved first, the
+    /// store is re-read to confirm every one of them is there, and only then
+    /// are the SDNN originals deleted. An interruption at any point leaves the
+    /// data in one type or both, never neither, and a re-run skips copies it
+    /// already made. Copies keep the time, value, device and dataPoint ID, so
+    /// the dedup store and ledger need no change, and take the RMSSD sync
+    /// identifier a fresh write would, so a later re-import of the same point
+    /// replaces the copy rather than duplicating it. Only this app's own samples are touched —
+    /// `HKSource.default()` — never the Watch's.
+    @available(iOS 27.0, *)
+    func migrateLegacyHRV() async throws -> HRVMigrationResult {
+        let legacyType = HKQuantityType(MetricKind.legacyHRVIdentifier)
+        let rmssdType = HKQuantityType(.heartRateVariabilityRMSSD)
+        let unit = MetricKind.heartRateVariability.hkUnit
+
+        let legacy = try await ownSamples(of: legacyType).compactMap { $0 as? HKQuantitySample }
+        guard !legacy.isEmpty else { return HRVMigrationResult(found: 0, written: 0, deleted: 0) }
+
+        func key(_ sample: HKSample) -> String {
+            (sample.metadata?[Self.dataPointIDKey] as? String)
+                ?? "\(sample.startDate.timeIntervalSince1970)|\(sample.endDate.timeIntervalSince1970)"
+        }
+
+        let alreadyCopied = Set(try await ownSamples(of: rmssdType).map(key))
+        let copies = legacy.filter { !alreadyCopied.contains(key($0)) }.map { original in
+            var metadata = original.metadata ?? [:]
+            if let id = original.metadata?[Self.dataPointIDKey] as? String {
+                metadata[HKMetadataKeySyncIdentifier] = Self.syncIdentifier(kind: .heartRateVariability, dataPointID: id)
+                metadata[HKMetadataKeySyncVersion] = 1
+            }
+            return HKQuantitySample(
+                type: rmssdType,
+                quantity: HKQuantity(unit: unit, doubleValue: original.quantity.doubleValue(for: unit)),
+                start: original.startDate,
+                end: original.endDate,
+                device: original.device ?? device,
+                metadata: metadata
+            )
+        }
+        for batch in stride(from: 0, to: copies.count, by: 500) {
+            try await store.save(Array(copies[batch..<min(batch + 500, copies.count)]))
+        }
+
+        let copied = Set(try await ownSamples(of: rmssdType).map(key))
+        let confirmed = legacy.filter { copied.contains(key($0)) }
+        guard confirmed.count == legacy.count else {
+            throw HRVMigrationError.copiesMissing(expected: legacy.count, found: confirmed.count)
+        }
+        for batch in stride(from: 0, to: confirmed.count, by: 500) {
+            try await store.delete(Array(confirmed[batch..<min(batch + 500, confirmed.count)]))
+        }
+        Log.health.info("Migrated \(legacy.count) HRV sample(s) from SDNN to RMSSD (\(copies.count) newly written)")
+        return HRVMigrationResult(found: legacy.count, written: copies.count, deleted: confirmed.count)
+    }
+
+    /// Every sample of `type` this app wrote, across all time.
+    private func ownSamples(of type: HKSampleType) async throws -> [HKSample] {
+        try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: HKQuery.predicateForObjects(from: HKSource.default()),
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: nil
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: samples ?? [])
+                }
+            }
+            store.execute(query)
+        }
     }
 
     /// Writes one session (per-stage + `.inBed`). Any previously written samples

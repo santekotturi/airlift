@@ -114,20 +114,26 @@ enum MetricKind: String, CaseIterable, Identifiable {
         }
     }
 
-    /// NOTE on HRV: Fitbit computes RMSSD while HealthKit's field is SDNN.
-    /// They correlate but are not the same statistic — values are written as-is
-    /// with that caveat (matches what commercial sync apps do).
+    /// HRV: Fitbit computes RMSSD. From iOS 27 HealthKit has an RMSSD type and
+    /// Fitbit's values go there. Before that SDNN was the only HRV type, so they
+    /// were written into it as-is — a different statistic under the same name,
+    /// which is what `HealthKitWriter.migrateLegacyHRV()` later undoes.
     var hkIdentifier: HKQuantityTypeIdentifier {
         switch self {
         case .heartRate: return .heartRate
         case .restingHeartRate: return .restingHeartRate
-        case .heartRateVariability: return .heartRateVariabilitySDNN
+        case .heartRateVariability:
+            if #available(iOS 27.0, *) { return .heartRateVariabilityRMSSD }
+            return Self.legacyHRVIdentifier
         case .oxygenSaturation: return .oxygenSaturation
         case .respiratoryRate: return .respiratoryRate
         case .steps: return .stepCount
         case .distance: return .distanceWalkingRunning
         }
     }
+
+    /// Where Airlift wrote Fitbit's RMSSD before iOS 27 had a type for it.
+    static let legacyHRVIdentifier: HKQuantityTypeIdentifier = .heartRateVariabilitySDNN
 
     var hkUnit: HKUnit {
         switch self {
@@ -161,10 +167,16 @@ enum MetricKind: String, CaseIterable, Identifiable {
 
     /// Non-nil when Google and Apple report different statistics for this
     /// metric, so a numeric comparison can't pass or fail — only inform.
-    /// HRV: Fitbit reports RMSSD, HealthKit stores SDNN; RMSSD typically runs
-    /// well below SDNN for the same night, so a delta is expected.
+    /// HRV: before iOS 27 Fitbit's RMSSD is compared with the Watch's SDNN,
+    /// which runs well above it. From iOS 27 both sides are RMSSD, but from
+    /// different sensors that disagree by a steady offset (the Watch read ~20%
+    /// higher on the first nights compared), so it still only informs.
     var appleComparisonCaveat: String? {
-        self == .heartRateVariability ? "Google RMSSD vs Apple SDNN — different statistics" : nil
+        guard self == .heartRateVariability else { return nil }
+        if #available(iOS 27.0, *) {
+            return "Google RMSSD vs Watch RMSSD — same statistic, different sensors; an offset is expected"
+        }
+        return "Google RMSSD vs Apple SDNN — different statistics"
     }
 
     /// Bucket width for downsampling before staging/writing, or nil to keep
