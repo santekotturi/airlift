@@ -150,6 +150,29 @@ final class HealthKitWriter: @unchecked Sendable {
         try await ownSamples(of: HKQuantityType(MetricKind.legacyHRVIdentifier)).count
     }
 
+    /// Every source named like this app that holds SDNN samples, with counts —
+    /// "bundle ID: n". Only the entry matching this build's bundle ID can be
+    /// migrated; the others were written by a build under a different one.
+    @available(iOS 27.0, *)
+    func legacyHRVSources() async throws -> [String: Int] {
+        let all: [HKSample] = try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: HKQuantityType(MetricKind.legacyHRVIdentifier),
+                predicate: nil, limit: HKObjectQueryNoLimit, sortDescriptors: nil
+            ) { _, samples, error in
+                if let error { continuation.resume(throwing: error) } else { continuation.resume(returning: samples ?? []) }
+            }
+            store.execute(query)
+        }
+        let ownBundleID = Bundle.main.bundleIdentifier
+        let ownName = HealthKitReader.appDisplayName
+        return all.reduce(into: [String: Int]()) { counts, sample in
+            let source = sample.sourceRevision.source
+            guard source.bundleIdentifier == ownBundleID || source.name == ownName else { return }
+            counts[source.bundleIdentifier, default: 0] += 1
+        }
+    }
+
     /// Moves every Fitbit HRV sample Airlift wrote into SDNN — the only HRV
     /// type before iOS 27 — into the RMSSD type it always was.
     ///

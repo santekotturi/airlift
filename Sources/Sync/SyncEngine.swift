@@ -834,6 +834,10 @@ final class SyncEngine {
     }
 
     private(set) var hrvMigration: HRVMigrationState = .unknown
+    /// Where Airlift-named SDNN samples sit, by bundle ID — shown in debug
+    /// builds so a "nothing to move" can be told apart from "moved under a
+    /// different bundle ID".
+    private(set) var hrvMigrationDiagnostic: String?
 
     /// Counts Airlift HRV still in the SDNN type. Only meaningful on iOS 27,
     /// where Fitbit HRV has an RMSSD type to live in.
@@ -849,6 +853,10 @@ final class SyncEngine {
         do {
             let count = try await writer.legacyHRVCount()
             hrvMigration = count > 0 ? .pending(count) : .notNeeded
+            let sources = try await writer.legacyHRVSources()
+            hrvMigrationDiagnostic = "This build: \(Bundle.main.bundleIdentifier ?? "?"). SDNN by source: "
+                + (sources.isEmpty ? "none" : sources.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }.joined(separator: ", "))
+            Log.sync.info("HRV migration check: \(count) own, sources \(sources)")
         } catch {
             hrvMigration = .failed(error.localizedDescription)
         }

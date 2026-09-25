@@ -307,7 +307,13 @@ struct SettingsView: View {
     private var hrvMigrationCard: some View {
         switch engine.hrvMigration {
         case .unknown, .notNeeded:
+            #if DEBUG
+            hrvMigrationBody(
+                engine.hrvMigration == .unknown ? "Not checked yet." : "Nothing of this build's to move."
+            ) { EmptyView() }
+            #else
             EmptyView()
+            #endif
         case .pending(let count):
             hrvMigrationBody(
                 "Fitbit reports RMSSD, but before iOS 27 Apple Health only had SDNN, so \(count.formatted()) of Fitbit's HRV readings are filed under SDNN. Move them to RMSSD, next to the Watch's own."
@@ -352,6 +358,14 @@ struct SettingsView: View {
                 .foregroundStyle(Daybreak.ink)
                 .fixedSize(horizontal: false, vertical: true)
             action()
+            #if DEBUG
+            if let diagnostic = engine.hrvMigrationDiagnostic {
+                Text(diagnostic)
+                    .font(Daybreak.captionFont)
+                    .foregroundStyle(Daybreak.faint)
+                    .textSelection(.enabled)
+            }
+            #endif
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .daybreakCard()
