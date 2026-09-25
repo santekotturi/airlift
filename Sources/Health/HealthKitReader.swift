@@ -114,9 +114,9 @@ final class HealthKitReader: @unchecked Sendable {
     /// Other apps may write it too (Google Health might, for Fitbit), so each
     /// sample carries `fromAppleDevice` for the caller to split on.
     func rmssdSamples(in interval: DateInterval) async throws -> [QuantitySample] {
-        guard #available(iOS 27.0, *) else { return [] }
+        guard let rmssd = MetricKind.rmssdIdentifier else { return [] }
         let samples = try await querySamples(
-            type: HKQuantityType(.heartRateVariabilityRMSSD),
+            type: HKQuantityType(rmssd),
             interval: interval
         )
         let ownBundleID = Bundle.main.bundleIdentifier

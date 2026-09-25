@@ -77,8 +77,8 @@ final class HealthKitWriter: @unchecked Sendable {
         var read: Set<HKObjectType> = Set([sleepType, HeartbeatSeriesReader.seriesType] + quantityTypes)
         // Read-only: the Watch's own RMSSD, which the Recovery and HRV screens
         // compare with Fitbit's like for like.
-        if #available(iOS 27.0, *) {
-            read.insert(HKQuantityType(.heartRateVariabilityRMSSD))
+        if let rmssd = MetricKind.rmssdIdentifier {
+            read.insert(HKQuantityType(rmssd))
         }
         try await store.requestAuthorization(toShare: share, read: read)
     }
