@@ -23,6 +23,10 @@ struct SettingsView: View {
 
     @State private var confirmingHRVMigration = false
 
+    @State private var reminderOn = MorningReminder.shared.isEnabled
+    @State private var reminderTime = SettingsView.date(minutesAfterMidnight: MorningReminder.shared.minutesAfterMidnight)
+    @State private var reminderShortcut = MorningReminder.shared.shortcutName
+
     #if DEBUG
     @State private var pushedJSONKey: String?
     #endif
@@ -37,6 +41,7 @@ struct SettingsView: View {
                 hrvMigrationCard
                 modeCard
                 whatSyncsCard
+                morningReminderCard
                 appearanceCard
                 connectionCard
                 deviceCard
@@ -297,6 +302,68 @@ struct SettingsView: View {
             return "Sign-in expired — reconnect to keep the bridge open"
         }
         return "Not connected"
+    }
+
+    // MARK: - Morning reminder
+
+    /// A daily notification whose tap runs the user's sync shortcut — the
+    /// unattended path for people who stop their alarm on an Apple Watch and
+    /// leave the phone locked. See `MorningReminder`.
+    private var morningReminderCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Morning sync")
+                .daybreakSectionLabel()
+            Toggle(isOn: $reminderOn) {
+                Text("Daily reminder")
+                    .font(.system(.body, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Daybreak.ink)
+            }
+            .tint(Daybreak.ok)
+            if reminderOn {
+                DatePicker("Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    .font(Daybreak.bodyFont)
+                    .foregroundStyle(Daybreak.ink)
+                HStack {
+                    Text("Shortcut")
+                        .font(Daybreak.bodyFont)
+                        .foregroundStyle(Daybreak.ink)
+                    TextField(MorningReminder.defaultShortcutName, text: $reminderShortcut)
+                        .multilineTextAlignment(.trailing)
+                        .font(Daybreak.bodyFont)
+                        .foregroundStyle(Daybreak.plum)
+                        .autocorrectionDisabled()
+                        .submitLabel(.done)
+                }
+            }
+            Text("Tapping the reminder runs this shortcut. Build it in Shortcuts as Open App → Google Health, Wait 60 seconds, then Airlift's Sync New Data.")
+                .font(.system(.caption, design: .rounded))
+                .foregroundStyle(Daybreak.mid)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .daybreakCard()
+        .onChange(of: reminderOn) { _, on in
+            MorningReminder.shared.isEnabled = on
+            Task {
+                if on { await ReconnectNotifier().requestAuthorization() }
+                await MorningReminder.shared.reschedule()
+            }
+        }
+        .onChange(of: reminderTime) { _, time in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: time)
+            MorningReminder.shared.minutesAfterMidnight = (parts.hour ?? 9) * 60 + (parts.minute ?? 0)
+            Task { await MorningReminder.shared.reschedule() }
+        }
+        .onChange(of: reminderShortcut) { _, name in
+            let trimmed = name.trimmingCharacters(in: .whitespaces)
+            MorningReminder.shared.shortcutName = trimmed.isEmpty ? MorningReminder.defaultShortcutName : trimmed
+        }
+    }
+
+    private static func date(minutesAfterMidnight minutes: Int) -> Date {
+        Calendar.current.date(
+            bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()
+        ) ?? Date()
     }
 
     // MARK: - HRV migration

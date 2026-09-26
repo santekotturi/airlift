@@ -24,6 +24,13 @@ API into Apple Health, entirely on-device.
   token stored in the Keychain (this-device-only, never backed up).
 - **Incremental, on-demand fetching** with an optional best-effort daily
   `BGAppRefreshTask`.
+- **"Sync New Data" Shortcuts action** — an App Intent that runs the full gated
+  sync in the background (no UI), so a personal automation (e.g. wake-up alarm
+  stopped → open Google Health → wait → sync) can land each night's data in
+  Apple Health hands-free. Documented in the README's "Hands-free morning sync".
+  When it finishes it posts a notification with last night's HRV — Fitbit's
+  average beside the Watch's, or why it was held, or that Google had nothing
+  new — switchable per automation ("Notify with HRV summary").
 - **Apple Watch native RMSSD (iOS 27).** watchOS 27 on Ultra 4 hardware writes
   its own RMSSD (`heartRateVariabilityRMSSD`, algorithm version 3) about every
   five minutes asleep, ~90 readings a night instead of ~4 spot checks. The
