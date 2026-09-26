@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 
 @main
@@ -7,6 +8,11 @@ struct AirliftApp: App {
     init() {
         let model = AppModel()
         _model = State(initialValue: model)
+        // The Shortcuts sync intent resolves the engine through the dependency
+        // manager — registered unconditionally so an intent invocation never
+        // crashes on a missing dependency (under the UI mock it just runs
+        // against the fixtures).
+        AppDependencyManager.shared.add(dependency: model.syncEngine)
         // BGTaskScheduler requires handler registration *before* the app
         // finishes launching — doing this in a view's .task is too late and
         // the task would never fire. Skipped under the UI mock so no real

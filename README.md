@@ -311,6 +311,40 @@ contribute too. How Health resolves the overlap is subtle, and the in-app tutori
   then third-party apps like Airlift — so Apple Watch owners who prefer the band's
   steps must reorder (or disable Steps/Distance sync in Airlift entirely).
 
+## Hands-free morning sync
+
+Two independent things must happen before yesterday's data can land in Apple Health, and
+neither is guaranteed to happen on its own:
+
+1. **Band → Google's servers.** The band uploads through the Google Health app over
+   Bluetooth. On iOS that upload is opportunistic — Google's own help docs list only one
+   guaranteed trigger: *opening the Google Health app*. There is no API, webhook, or
+   setting that forces it from another app, and every commercial Fitbit-bridge app has
+   the same limitation.
+2. **Google's servers → Airlift → Apple Health.** Airlift's `BGAppRefreshTask` is
+   scheduled for ~7:00 every morning, but iOS treats that as a hint, not an appointment —
+   rarely-opened apps can be skipped for days.
+
+The reliable fix for both is one Shortcuts personal automation:
+
+1. Shortcuts → **Automation** → **+** → choose a trigger. **"When my wake-up alarm is
+   stopped"** works best — the phone is unlocked and in your hand, which both lets the
+   Google Health app open and lets Airlift's comparison checks read Apple Health. (A
+   plain time-of-day trigger fires on a locked phone, where "Open App" silently fails
+   and Sleep Focus can suppress the run.)
+2. Set it to **Run Immediately** (no confirmation).
+3. Add three actions: **Open App → Google Health** (triggers the band upload), **Wait**
+   ~30 seconds, then **Sync New Data** (Airlift's Shortcuts action). The Airlift step
+   runs invisibly in the background — no UI, and it respects your configured sync mode
+   (automatic import vs. review-everything).
+
+If you'd rather not have Google Health open on wake, drop step "Open App" and accept
+that the band upload happens whenever Google's app gets around to it.
+
+Caveats that break any unattended path: force-quitting either app from the app switcher,
+Low Power Mode, and — until the OAuth client is verified — Google's Testing-mode consent
+expiring every 7 days (Airlift posts a notification when a reconnect is needed).
+
 ## Limitations & known unknowns
 
 - **Wire schema is provisional.** The Google Health wire models are a best-effort shape
@@ -321,7 +355,8 @@ contribute too. How Health resolves the overlap is subtle, and the in-app tutori
   session under a **new** ID, it imports as a new night alongside the old one — a known
   limitation you'd resolve manually in Apple Health.
 - **Background timing is best-effort.** iOS may not fire `BGAppRefreshTask` daily, and the app
-  doesn't fetch on launch — **Fetch now** is the reliable way to pull the latest.
+  doesn't fetch on launch — **Fetch now** is the reliable way to pull the latest, and the
+  Shortcuts automation above is the reliable way to do it hands-free.
 - **Google may make this obsolete.** Native Google Health → Apple Health write-back is
   promised for "later in 2026." If it ships and gives you faithful stages, you may not need this.
 
