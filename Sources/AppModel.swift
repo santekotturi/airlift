@@ -12,6 +12,11 @@ final class AppModel {
     /// Plain-language sync history, rendered by the History screen.
     let syncLog: SyncLogStore
 
+    /// Read-only analysis over data already in Health — Fitbit's HRV against
+    /// the Watch's. Kept beside the sync engine rather than inside it: it never
+    /// writes, and it must not be able to.
+    let recovery: RecoveryEngine
+
     /// True until the user fills in `Config.xcconfig` — the UI shows a setup
     /// hint. Forced true under the UI mock so no setup path can appear.
     let isConfigured: Bool
@@ -44,6 +49,9 @@ final class AppModel {
         let log = SyncLogStore(defaults: isUIMock ? nil : .standard)
 
         self.syncLog = log
+        // The writer is handed over only for its authorization request — the
+        // analysis screens never write.
+        self.recovery = RecoveryEngine(reader: reader, writer: writer)
         self.syncEngine = SyncEngine(
             oauth: oauth,
             api: api,
@@ -68,6 +76,7 @@ final class AppModel {
         #if DEBUG
         if isUIMock {
             UIMock.apply(engine: syncEngine, log: log)
+            UIMock.apply(recovery: recovery)
         }
         #endif
     }

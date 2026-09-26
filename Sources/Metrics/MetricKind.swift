@@ -129,6 +129,16 @@ enum MetricKind: String, CaseIterable, Identifiable {
         }
     }
 
+    /// HealthKit's RMSSD type, when both the SDK this was built against and the
+    /// OS it runs on have one (iOS 27). An availability check alone is not
+    /// enough: Xcode 26's SDK has no such symbol, so it would not compile there.
+    static var rmssdIdentifier: HKQuantityTypeIdentifier? {
+        #if compiler(>=6.4)
+        if #available(iOS 27.0, *) { return .heartRateVariabilityRMSSD }
+        #endif
+        return nil
+    }
+
     var hkUnit: HKUnit {
         switch self {
         case .heartRate, .restingHeartRate, .respiratoryRate:

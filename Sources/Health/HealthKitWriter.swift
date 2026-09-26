@@ -65,11 +65,21 @@ final class HealthKitWriter: @unchecked Sendable {
     /// (HR, resting HR, HRV, SpO2, respiratory rate, steps). One combined request
     /// so the user sees a single permissions sheet; the read side serves
     /// `HealthKitReader` (Apple Watch comparison data).
+    ///
+    /// Beat-to-beat series are read-only and asked for here rather than in a
+    /// second sheet later. They are what the Recovery screen recomputes Apple
+    /// RMSSD from, so Fitbit's RMSSD has a like-for-like counterpart instead of
+    /// being compared against Apple's SDNN.
     func requestAuthorization() async throws {
         guard isAvailable else { throw HealthKitError.notAvailable }
         let quantityTypes = MetricKind.allCases.map { HKQuantityType($0.hkIdentifier) }
         let share: Set<HKSampleType> = Set([sleepType] + quantityTypes)
-        let read: Set<HKObjectType> = Set([sleepType] + quantityTypes)
+        var read: Set<HKObjectType> = Set([sleepType, HeartbeatSeriesReader.seriesType] + quantityTypes)
+        // Read-only: the Watch's own RMSSD, which the Recovery and HRV screens
+        // compare with Fitbit's like for like.
+        if let rmssd = MetricKind.rmssdIdentifier {
+            read.insert(HKQuantityType(rmssd))
+        }
         try await store.requestAuthorization(toShare: share, read: read)
     }
 

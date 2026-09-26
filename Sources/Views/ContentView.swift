@@ -93,6 +93,8 @@ struct ContentView: View {
                 .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
                 .navigationDestination(for: SourcePriorityRoute.self) { _ in SourcePriorityView() }
                 .navigationDestination(for: PagerRoute.self) { _ in ReviewPagerView() }
+                .navigationDestination(for: RecoveryRoute.self) { _ in RecoveryView() }
+                .navigationDestination(for: HRVRoute.self) { _ in HRVView() }
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -184,6 +186,10 @@ struct ContentView: View {
             path.append(PagerRoute())
         case "priority":
             path.append(SourcePriorityRoute())
+        case "recovery":
+            path.append(RecoveryRoute())
+        case "hrv":
+            path.append(HRVRoute())
         case "calendar", "day", "history-pager":
             tab = .calendar
         default:

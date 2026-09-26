@@ -54,13 +54,14 @@ enum SyncGate {
 /// Persisted user choices that shape every sync pass.
 protocol SyncSettingsStoring: Sendable {
     var syncMode: SyncMode { get set }
-    /// Whether sleep sessions sync at all. On by default (it's the app's
-    /// headline feature), but toggleable for people who only want specific
-    /// metrics in Apple Health.
+    /// Whether sleep sessions sync at all. Off by default since Google Health
+    /// 5.05 (Aug 2026) writes sleep to Apple Health itself — syncing both
+    /// double-counts every night. Toggleable for people not using that sync.
     var syncSleep: Bool { get set }
-    /// Which quantity metrics sync at all. Lets you bridge only what you want —
-    /// e.g. just HRV and resting HR — and turn off steps/distance, which
-    /// double-count against iPhone/Watch sources.
+    /// Which quantity metrics sync at all. Defaults to HRV only: it's the one
+    /// metric Google Health's own Apple Health sync refuses to write (RMSSD vs
+    /// SDNN), so it's the one bridge still worth running. Everything else is
+    /// opt-in for people not using Google Health's sync.
     var enabledKinds: Set<MetricKind> { get set }
     /// Best device label detected from wire `dataSource.device` blocks.
     var detectedDeviceLabel: String? { get set }
@@ -76,9 +77,30 @@ final class UserDefaultsSyncSettings: SyncSettingsStoring, @unchecked Sendable {
     private let kindsKey = "airlift.enabledKinds"
     private let detectedDeviceKey = "airlift.detectedDeviceLabel"
     private let deviceOverrideKey = "airlift.deviceNameOverride"
+    private let hrvOnlyMigrationKey = "airlift.hrvOnlyMigration"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        migrateToHRVOnly()
+    }
+
+    /// One-time reset to the HRV-only defaults, applied to installs that
+    /// predate Google Health 5.05's own Apple Health sync (which covers
+    /// everything Airlift bridged except HRV). Runs once; the Settings
+    /// toggles still re-enable anything afterwards.
+    private func migrateToHRVOnly() {
+        lock.withLock {
+            guard !defaults.bool(forKey: hrvOnlyMigrationKey) else { return }
+            defaults.set(true, forKey: hrvOnlyMigrationKey)
+            // Only installs that had already persisted choices need resetting;
+            // fresh installs just fall through to the new defaults.
+            if defaults.object(forKey: syncSleepKey) != nil {
+                defaults.set(false, forKey: syncSleepKey)
+            }
+            if defaults.object(forKey: kindsKey) != nil {
+                defaults.set([MetricKind.heartRateVariability.rawValue], forKey: kindsKey)
+            }
+        }
     }
 
     var syncMode: SyncMode {
@@ -93,8 +115,8 @@ final class UserDefaultsSyncSettings: SyncSettingsStoring, @unchecked Sendable {
     }
 
     var syncSleep: Bool {
-        // Defaults to true when never set.
-        get { lock.withLock { defaults.object(forKey: syncSleepKey) as? Bool ?? true } }
+        // Defaults to false when never set — Google Health writes sleep itself.
+        get { lock.withLock { defaults.object(forKey: syncSleepKey) as? Bool ?? false } }
         set { lock.withLock { defaults.set(newValue, forKey: syncSleepKey) } }
     }
 
@@ -102,7 +124,7 @@ final class UserDefaultsSyncSettings: SyncSettingsStoring, @unchecked Sendable {
         get {
             lock.withLock {
                 guard let raw = defaults.array(forKey: kindsKey) as? [String] else {
-                    return Set(MetricKind.allCases)
+                    return [.heartRateVariability]
                 }
                 return Set(raw.compactMap(MetricKind.init))
             }

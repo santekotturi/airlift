@@ -34,6 +34,10 @@ enum Daybreak {
     /// Links / secondary actions.
     static let plum = Color(daybreakLight: 0x6C5CE0, dark: 0x9D8FF5)
 
+    /// The Watch's own RMSSD in charts — far enough from plum and sun to read
+    /// as a third device-side series.
+    static let teal = Color(daybreakLight: 0x1A93A8, dark: 0x5FC6D8)
+
     static let ok = Color(daybreakLight: 0x2FA56F, dark: 0x4CC793)
     static let warn = Color(daybreakLight: 0xD98A1C, dark: 0xE8A94A)
     static let fail = Color(daybreakLight: 0xD9512C, dark: 0xE87355)
