@@ -107,4 +107,10 @@ final class HRVSyncSummaryTests: XCTestCase {
         XCTAssertEqual(summary.title, "Airlift couldn't sync")
         XCTAssertEqual(summary.body, "The network connection was lost.")
     }
+
+    func testOnlyFailureCountsAsFailure() {
+        XCTAssertTrue(HRVSyncSummary.Outcome.failed("x").isFailure)
+        XCTAssertFalse(HRVSyncSummary.Outcome.imported.isFailure)
+        XCTAssertFalse(HRVSyncSummary.Outcome.held.isFailure)
+    }
 }

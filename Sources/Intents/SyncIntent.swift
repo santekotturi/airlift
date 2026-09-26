@@ -19,9 +19,15 @@ struct SyncNowIntent: AppIntent {
     @Parameter(title: "Notify with HRV summary", default: true)
     var notifyHRV: Bool
 
+    /// Off by default so the action can run on a frequent trigger — every time
+    /// a chosen app opens — and only speak up when a night lands or needs you.
+    @Parameter(title: "Also notify when nothing is new", default: false)
+    var notifyWhenNothingNew: Bool
+
     static var parameterSummary: some ParameterSummary {
         Summary("Sync new data") {
             \.$notifyHRV
+            \.$notifyWhenNothingNew
         }
     }
 
@@ -97,6 +103,8 @@ extension SyncNowIntent {
                 outcome = .imported
             }
         }
+        // Nothing new and nothing wrong: quiet, unless the automation asked.
+        if night == nil, !notifyWhenNothingNew, !outcome.isFailure { return }
         await HRVSyncSummary.post(
             HRVSyncSummary.make(batch: night, outcome: outcome, fitbitName: syncEngine.sourceDeviceName)
         )

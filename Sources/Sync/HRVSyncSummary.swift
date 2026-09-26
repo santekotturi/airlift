@@ -20,6 +20,11 @@ struct HRVSyncSummary: Equatable {
         /// Staged for review (Review everything mode).
         case awaitingReview
         case failed(String)
+
+        var isFailure: Bool {
+            if case .failed = self { return true }
+            return false
+        }
     }
 
     /// - Parameter batch: the newest HRV night this run staged, or nil when
@@ -90,10 +95,16 @@ struct HRVSyncSummary: Equatable {
     }
 
     /// Posts it, replacing the previous morning's rather than stacking. Silent
-    /// when notifications are off — the shortcut's own dialog still says it.
-    static func post(_ summary: HRVSyncSummary) async {
+    /// when notifications are off — the shortcut's own dialog still says it —
+    /// and when it would repeat the last one word for word: a night still held,
+    /// or the same error, on a trigger that fires every time an app opens.
+    static func post(_ summary: HRVSyncSummary, defaults: UserDefaults = .standard) async {
+        let key = "airlift.lastHRVSummary"
+        let fingerprint = "\(summary.title)\n\(summary.body)"
+        guard defaults.string(forKey: key) != fingerprint else { return }
         let center = UNUserNotificationCenter.current()
         guard await center.notificationSettings().authorizationStatus == .authorized else { return }
+        defaults.set(fingerprint, forKey: key)
         let content = UNMutableNotificationContent()
         content.title = summary.title
         content.body = summary.body

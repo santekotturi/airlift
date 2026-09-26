@@ -338,10 +338,17 @@ The reliable fix for both is one Shortcuts personal automation:
    runs invisibly in the background — no UI, and it respects your configured sync mode
    (automatic import vs. review-everything).
 
+**If you stop your alarm on an Apple Watch,** the phone stays locked and this breaks: "Open
+App" can't launch, and HealthKit refuses the comparison reads, so the night is held for review.
+Trigger on **App → Is Opened** instead — pick the app you open first each morning — and drop
+the Open App and Wait steps (the band uploads in the background on its own). It fires on every
+open of that app, which is fine: runs with nothing new stay silent.
+
 When it finishes, Airlift posts a notification with last night's HRV as it landed —
 Fitbit's average and reading count beside the Watch's (e.g. "Google Fitbit Air: 53 ms across
 102 readings. Watch Ultra 4 RMSSD: 65 ms.") — or says it was held for review, or that Google
-had nothing new yet, which usually means the band hadn't uploaded. Turn it off with the
+had nothing new yet (only with **Also notify when nothing is new** on, since it is off by
+default). It never repeats the previous notification word for word. Turn it off with the
 action's **Notify with HRV summary** switch.
 
 If you'd rather not have Google Health open on wake, drop step "Open App" and accept
