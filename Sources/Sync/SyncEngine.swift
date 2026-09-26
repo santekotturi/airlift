@@ -71,6 +71,24 @@ struct StagedMetricBatch: Identifiable, Equatable, Hashable {
     /// Apple's deduplicated hourly sums for cumulative kinds — the honest
     /// chart series (raw `appleSamples` double-count). Empty otherwise.
     var appleHourly: [QuantitySample] = []
+    /// HRV only: whether `appleSamples` are the Watch's RMSSD rather than its
+    /// SDNN spot checks.
+    var appleIsRMSSD: Bool = false
+
+    var appleComparisonCaveat: String? { kind.appleComparisonCaveat(appleIsRMSSD: appleIsRMSSD) }
+
+    /// The device most of Apple's samples came from, or nil when none say.
+    var appleDeviceLabel: String? {
+        let counts = Dictionary(grouping: appleSamples.compactMap(\.deviceLabel), by: { $0 }).mapValues(\.count)
+        return counts.max { $0.value < $1.value || ($0.value == $1.value && $0.key > $1.key) }?.key
+    }
+
+    /// HRV only: the statistic each side reports, for labels.
+    var googleStatistic: String? { kind == .heartRateVariability ? "RMSSD" : nil }
+    var appleStatistic: String? {
+        guard kind == .heartRateVariability else { return nil }
+        return appleIsRMSSD ? "RMSSD" : "SDNN"
+    }
 
     var id: String { "\(kind.rawValue)|\(day.timeIntervalSinceReferenceDate)" }
     var worstSeverity: CheckResult.Severity { checks.worstSeverity }
@@ -718,7 +736,7 @@ final class SyncEngine {
                 if let total = try? await reader.cumulativeTotal(kind, in: interval), total > 0 {
                     otherSummary = "Other sources: \(kind.format(total))"
                 }
-            } else if let others = try? await reader.quantitySamples(kind, in: interval), !others.isEmpty {
+            } else if let others = try? await reader.appleComparisonSamples(kind, in: interval).samples, !others.isEmpty {
                 let avg = others.map(\.value).reduce(0, +) / Double(others.count)
                 otherSummary = "Other sources: avg \(kind.format(avg))"
             }
@@ -779,7 +797,9 @@ final class SyncEngine {
         let samples = own
             .map { MetricSample(id: $0.dataPointID ?? $0.id.uuidString, start: $0.start, end: $0.end, value: $0.value) }
             .sorted { $0.start < $1.start }
-        let apple = (try? await reader.quantitySamples(kind, in: interval)) ?? []
+        let comparison = try? await reader.appleComparisonSamples(kind, in: interval)
+        let apple = comparison?.samples ?? []
+        let appleIsRMSSD = comparison?.isRMSSD ?? false
         let appleTotal = kind.isCumulative ? try? await reader.cumulativeTotal(kind, in: interval) : nil
         let appleHourly = kind.isCumulative ? (try? await reader.hourlyTotals(kind, in: interval)) ?? [] : []
         return StagedMetricBatch(
@@ -787,9 +807,12 @@ final class SyncEngine {
             day: day,
             samples: samples,
             appleSamples: apple,
-            checks: SanityChecks.runMetric(kind: kind, samples: samples, apple: apple, appleTotal: appleTotal),
+            checks: SanityChecks.runMetric(
+                kind: kind, samples: samples, apple: apple, appleTotal: appleTotal, appleIsRMSSD: appleIsRMSSD
+            ),
             appleTotal: appleTotal,
-            appleHourly: appleHourly
+            appleHourly: appleHourly,
+            appleIsRMSSD: appleIsRMSSD
         )
     }
 
@@ -816,6 +839,75 @@ final class SyncEngine {
         case .asleepUnspecified: return .asleep
         case .inBed: return nil
         @unknown default: return nil
+        }
+    }
+
+    // MARK: - HRV migration
+
+    /// Where the one-time move of Fitbit HRV from SDNN to RMSSD stands.
+    enum HRVMigrationState: Equatable {
+        /// Not checked yet, or not on iOS 27.
+        case unknown
+        case notNeeded
+        /// Airlift SDNN samples waiting to move.
+        case pending(Int)
+        case running
+        case done(HealthKitWriter.HRVMigrationResult)
+        case failed(String)
+    }
+
+    private(set) var hrvMigration: HRVMigrationState = .unknown
+    /// Where Airlift-named SDNN samples sit, by bundle ID — shown in debug
+    /// builds so a "nothing to move" can be told apart from "moved under a
+    /// different bundle ID".
+    private(set) var hrvMigrationDiagnostic: String?
+
+    /// Counts Airlift HRV still in the SDNN type. Only meaningful on iOS 27,
+    /// where Fitbit HRV has an RMSSD type to live in.
+    func refreshHRVMigration() async {
+        #if DEBUG
+        if isUIMock {
+            if case .unknown = hrvMigration { hrvMigration = .pending(7_516) }
+            return
+        }
+        #endif
+        guard #available(iOS 27.0, *), MetricKind.rmssdIdentifier != nil else { return }
+        if case .running = hrvMigration { return }
+        do {
+            let count = try await writer.legacyHRVCount()
+            hrvMigration = count > 0 ? .pending(count) : .notNeeded
+            let sources = try await writer.legacyHRVSources()
+            hrvMigrationDiagnostic = "This build: \(Bundle.main.bundleIdentifier ?? "?"). SDNN by source: "
+                + (sources.isEmpty ? "none" : sources.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }.joined(separator: ", "))
+            Log.sync.info("HRV migration check: \(count) own, sources \(sources)")
+        } catch {
+            hrvMigration = .failed(error.localizedDescription)
+        }
+    }
+
+    /// Moves Airlift's SDNN-typed Fitbit HRV into RMSSD. See
+    /// `HealthKitWriter.migrateLegacyHRV()` for why it cannot lose data.
+    func migrateLegacyHRV() async {
+        #if DEBUG
+        if isUIMock {
+            hrvMigration = .done(.init(found: 7_516, written: 7_516, deleted: 7_516))
+            return
+        }
+        #endif
+        guard #available(iOS 27.0, *), MetricKind.rmssdIdentifier != nil else { return }
+        hrvMigration = .running
+        do {
+            let result = try await writer.migrateLegacyHRV()
+            hrvMigration = .done(result)
+            log.record(
+                .imported,
+                title: "Fitbit HRV moved to RMSSD",
+                detail: "\(result.deleted) reading(s) now sit in Apple Health's RMSSD type, beside the Watch's own, instead of under SDNN."
+            )
+            Log.sync.info("HRV migration: \(result.found) found, \(result.written) written, \(result.deleted) deleted")
+        } catch {
+            hrvMigration = .failed(error.localizedDescription)
+            Log.sync.error("HRV migration failed: \(error.localizedDescription)")
         }
     }
 
@@ -1054,8 +1146,9 @@ final class SyncEngine {
             let interval = Self.metricDayInterval(kind: kind, day: day, calendar: calendar)
             var readFailure: Error?
             var apple: [QuantitySample] = []
+            var appleIsRMSSD = false
             do {
-                apple = try await reader.quantitySamples(kind, in: interval)
+                (apple, appleIsRMSSD) = try await reader.appleComparisonSamples(kind, in: interval)
             } catch {
                 readFailure = error
                 Log.sync.error("Apple Health read failed while staging \(kind.rawValue): \(error.localizedDescription)")
@@ -1067,7 +1160,9 @@ final class SyncEngine {
                 ? (try? await reader.hourlyTotals(kind, in: interval)) ?? []
                 : []
             let sorted = daySamples.sorted { $0.start < $1.start }
-            var checks = SanityChecks.runMetric(kind: kind, samples: sorted, apple: apple, appleTotal: appleTotal)
+            var checks = SanityChecks.runMetric(
+                kind: kind, samples: sorted, apple: apple, appleTotal: appleTotal, appleIsRMSSD: appleIsRMSSD
+            )
             if let readFailure {
                 checks.append(Self.readFailureCheck(readFailure))
             }
@@ -1078,7 +1173,8 @@ final class SyncEngine {
                 appleSamples: apple,
                 checks: checks,
                 appleTotal: appleTotal,
-                appleHourly: appleHourly
+                appleHourly: appleHourly,
+                appleIsRMSSD: appleIsRMSSD
             ))
         }
         return batches

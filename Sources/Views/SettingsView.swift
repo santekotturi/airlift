@@ -21,6 +21,8 @@ struct SettingsView: View {
 
     @State private var reportingBug = false
 
+    @State private var confirmingHRVMigration = false
+
     #if DEBUG
     @State private var pushedJSONKey: String?
     #endif
@@ -32,6 +34,7 @@ struct SettingsView: View {
                     .font(Daybreak.titleFont)
                     .foregroundStyle(Daybreak.ink)
                     .padding(.top, 8)
+                hrvMigrationCard
                 modeCard
                 whatSyncsCard
                 appearanceCard
@@ -51,6 +54,7 @@ struct SettingsView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: engine.syncMode)
+        .task { await engine.refreshHRVMigration() }
         .sheet(isPresented: $reportingBug) {
             BugReportView()
         }
@@ -293,6 +297,78 @@ struct SettingsView: View {
             return "Sign-in expired — reconnect to keep the bridge open"
         }
         return "Not connected"
+    }
+
+    // MARK: - HRV migration
+
+    /// Offered only while Airlift's older Fitbit HRV still sits in the SDNN
+    /// type — before iOS 27 that was the only HRV type there was.
+    @ViewBuilder
+    private var hrvMigrationCard: some View {
+        switch engine.hrvMigration {
+        case .unknown, .notNeeded:
+            #if DEBUG
+            hrvMigrationBody(
+                engine.hrvMigration == .unknown ? "Not checked yet." : "Nothing of this build's to move."
+            ) { EmptyView() }
+            #else
+            EmptyView()
+            #endif
+        case .pending(let count):
+            hrvMigrationBody(
+                "Fitbit reports RMSSD, but before iOS 27 Apple Health only had SDNN, so \(count.formatted()) of Fitbit's HRV readings are filed under SDNN. Move them to RMSSD, next to the Watch's own."
+            ) {
+                Button("Move \(count.formatted()) readings to RMSSD") { confirmingHRVMigration = true }
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Daybreak.plum)
+                    .confirmationDialog(
+                        "Move Fitbit HRV to RMSSD?",
+                        isPresented: $confirmingHRVMigration,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Move \(count.formatted()) readings") {
+                            Task { await engine.migrateLegacyHRV() }
+                        }
+                        Button("Not now", role: .cancel) {}
+                    } message: {
+                        Text("Each reading is copied into RMSSD first; the SDNN originals are deleted only once every copy is confirmed in Apple Health. Only Airlift's own readings are touched.")
+                    }
+            }
+        case .running:
+            hrvMigrationBody("Moving Fitbit HRV to RMSSD…") { ProgressView() }
+        case .done(let result):
+            hrvMigrationBody(
+                "Done — \(result.deleted.formatted()) Fitbit HRV readings moved from SDNN to RMSSD."
+            ) { EmptyView() }
+        case .failed(let message):
+            hrvMigrationBody(message) {
+                Button("Try again") { Task { await engine.migrateLegacyHRV() } }
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Daybreak.plum)
+            }
+        }
+    }
+
+    private func hrvMigrationBody(_ text: String, @ViewBuilder action: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Fitbit HRV")
+                .daybreakSectionLabel()
+            Text(text)
+                .font(Daybreak.bodyFont)
+                .foregroundStyle(Daybreak.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            action()
+            #if DEBUG
+            if let diagnostic = engine.hrvMigrationDiagnostic {
+                Text(diagnostic)
+                    .font(Daybreak.captionFont)
+                    .foregroundStyle(Daybreak.faint)
+                    .textSelection(.enabled)
+            }
+            #endif
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .daybreakCard()
     }
 
     // MARK: - Source priority

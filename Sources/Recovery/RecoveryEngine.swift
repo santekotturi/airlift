@@ -152,7 +152,11 @@ final class RecoveryEngine {
         raw.appleSleep = try await reader.sleepSegments(overlapping: span)
         raw.airliftedSleep = try await reader.importedSleepSamples(endingIn: span)
         raw.heartRate = try await reader.heartRate(in: span)
-        raw.appleHRV = try await reader.quantitySamples(.heartRateVariability, in: span)
+        // Named directly: Airlift's HRV kind moves to RMSSD on iOS 27, but
+        // Apple's spot checks stay SDNN.
+        raw.appleHRV = try await reader.quantitySamples(
+            MetricKind.legacyHRVIdentifier, unit: MetricKind.heartRateVariability.hkUnit, in: span
+        )
         raw.airliftedHRV = try await reader.importedQuantitySamples(.heartRateVariability, in: span)
         raw.rmssd = try await reader.rmssdSamples(in: span)
         return raw
