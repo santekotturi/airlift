@@ -43,6 +43,11 @@ struct QuantitySample: Equatable, Hashable, Identifiable {
     var algorithmVersion: Int? = nil
     var fromAppleDevice: Bool = true
     var sourceName: String? = nil
+    /// `HKDevice.hardwareVersion` — "Watch7,5" and the like.
+    var hardware: String? = nil
+
+    /// Which device this came from, as a person would name it.
+    var deviceLabel: String? { DeviceLabel.apple(hardware: hardware, sourceName: sourceName) }
 
     /// Apple's HRV algorithm version 3 (watchOS 27, Ultra 4 hardware) reads
     /// HRV continuously in ~5-minute windows. Version 2 and earlier is the
@@ -164,7 +169,8 @@ final class HealthKitReader: @unchecked Sendable {
             value: quantity.quantity.doubleValue(for: unit),
             algorithmVersion: (version as? NSNumber)?.intValue ?? (version as? String).flatMap { Int($0) },
             fromAppleDevice: isAppleDevice(quantity.sourceRevision.source),
-            sourceName: quantity.sourceRevision.source.name
+            sourceName: quantity.sourceRevision.source.name,
+            hardware: quantity.device?.hardwareVersion
         )
     }
 

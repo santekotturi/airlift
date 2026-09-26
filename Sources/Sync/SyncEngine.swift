@@ -77,6 +77,19 @@ struct StagedMetricBatch: Identifiable, Equatable, Hashable {
 
     var appleComparisonCaveat: String? { kind.appleComparisonCaveat(appleIsRMSSD: appleIsRMSSD) }
 
+    /// The device most of Apple's samples came from, or nil when none say.
+    var appleDeviceLabel: String? {
+        let counts = Dictionary(grouping: appleSamples.compactMap(\.deviceLabel), by: { $0 }).mapValues(\.count)
+        return counts.max { $0.value < $1.value || ($0.value == $1.value && $0.key > $1.key) }?.key
+    }
+
+    /// HRV only: the statistic each side reports, for labels.
+    var googleStatistic: String? { kind == .heartRateVariability ? "RMSSD" : nil }
+    var appleStatistic: String? {
+        guard kind == .heartRateVariability else { return nil }
+        return appleIsRMSSD ? "RMSSD" : "SDNN"
+    }
+
     var id: String { "\(kind.rawValue)|\(day.timeIntervalSinceReferenceDate)" }
     var worstSeverity: CheckResult.Severity { checks.worstSeverity }
 

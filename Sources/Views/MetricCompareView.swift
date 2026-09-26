@@ -22,8 +22,16 @@ struct MetricCompareView: View {
     /// via metric rather than snapping to a text style.
     @ScaledMetric(relativeTo: .title) private var statValueSize: CGFloat = 26
 
-    private var googleSeries: String { model.syncEngine.sourceDeviceName }
-    private static let appleSeries = "Apple Health"
+    /// "Google Fitbit Air · RMSSD" — the device, and for HRV the statistic,
+    /// since the two sides are not always the same one.
+    private var googleSeries: String {
+        [model.syncEngine.sourceDeviceName, batch.googleStatistic].compactMap { $0 }.joined(separator: " · ")
+    }
+    /// "Watch Ultra 2 · SDNN". Falls back to "Apple Health" when the samples
+    /// do not say which device wrote them.
+    private var appleSeries: String {
+        [batch.appleDeviceLabel ?? "Apple Health", batch.appleStatistic].compactMap { $0 }.joined(separator: " · ")
+    }
 
     var body: some View {
         ScrollView {
@@ -78,8 +86,8 @@ struct MetricCompareView: View {
                 statusChip
             }
             Text(batch.appleSamples.isEmpty
-                 ? "\(googleSeries)'s reading — Apple Health has nothing for this day yet."
-                 : "\(googleSeries)'s reading vs. what's already in Apple Health.")
+                 ? "\(model.syncEngine.sourceDeviceName)'s reading — Apple Health has nothing for this day yet."
+                 : "\(model.syncEngine.sourceDeviceName)'s reading vs. \(batch.appleDeviceLabel.map { "the \($0)'s" } ?? "what's already") in Apple Health.")
                 .font(Daybreak.bodyFont)
                 .foregroundStyle(Daybreak.mid)
         }
@@ -171,7 +179,7 @@ struct MetricCompareView: View {
                 legendEntry(color: Daybreak.sunDeep, label: googleSeries)
                 legendEntry(
                     color: batch.appleSamples.isEmpty ? Daybreak.faint : Daybreak.plum,
-                    label: Self.appleSeries
+                    label: appleSeries
                 )
                 Spacer(minLength: 0)
             }
@@ -198,7 +206,7 @@ struct MetricCompareView: View {
         comparisonChart
             .chartForegroundStyleScale([
                 googleSeries: Daybreak.sunDeep,
-                Self.appleSeries: Daybreak.plum,
+                appleSeries: Daybreak.plum,
             ])
             .chartLegend(.hidden)
             .chartXScale(domain: chartDomain)
@@ -264,9 +272,9 @@ struct MetricCompareView: View {
                     LineMark(
                         x: .value("Time", sample.start),
                         y: .value(batch.kind.displayName, sample.value),
-                        series: .value("Source", Self.appleSeries)
+                        series: .value("Source", appleSeries)
                     )
-                    .foregroundStyle(by: .value("Source", Self.appleSeries))
+                    .foregroundStyle(by: .value("Source", appleSeries))
                     .lineStyle(StrokeStyle(lineWidth: 1.6, lineCap: .round))
                     .interpolationMethod(.monotone)
                     .opacity(0.8)
@@ -288,7 +296,7 @@ struct MetricCompareView: View {
                         y: .value(batch.kind.displayName, sample.value)
                     )
                     .symbolSize(36)
-                    .foregroundStyle(by: .value("Source", Self.appleSeries))
+                    .foregroundStyle(by: .value("Source", appleSeries))
                     .opacity(0.85)
                 }
             }
@@ -309,8 +317,8 @@ struct MetricCompareView: View {
                         x: .value("Hour", bucket.start, unit: .hour),
                         y: .value(batch.kind.displayName, bucket.value)
                     )
-                    .foregroundStyle(by: .value("Source", Self.appleSeries))
-                    .position(by: .value("Source", Self.appleSeries))
+                    .foregroundStyle(by: .value("Source", appleSeries))
+                    .position(by: .value("Source", appleSeries))
                     .cornerRadius(2)
                 }
             }
@@ -332,7 +340,7 @@ struct MetricCompareView: View {
                         y: .value(batch.kind.displayName, sample.value)
                     )
                     .symbolSize(28)
-                    .foregroundStyle(by: .value("Source", Self.appleSeries))
+                    .foregroundStyle(by: .value("Source", appleSeries))
                 }
             }
         }
@@ -366,7 +374,7 @@ struct MetricCompareView: View {
                 )
                 Rectangle().fill(Daybreak.line).frame(width: 1)
                 statColumn(
-                    source: Self.appleSeries,
+                    source: appleSeries,
                     value: appleValue.map(batch.kind.format) ?? "—",
                     caption: appleCaption
                 )
@@ -414,7 +422,7 @@ struct MetricCompareView: View {
         guard !batch.appleSamples.isEmpty else { return "no data for this day" }
         if batch.kind.isCumulative { return "day total, deduplicated" }
         let count = batch.appleSamples.count
-        return "average of \(count) sample\(count == 1 ? "" : "s") already in Health"
+        return "average of \(count) sample\(count == 1 ? "" : "s") via Apple Health"
     }
 
     private struct Delta {
@@ -533,7 +541,7 @@ struct MetricCompareView: View {
 
     private var microcopy: String {
         let count = batch.samples.count
-        return "Adds \(count) \(sampleNoun(count: count)) to Apple Health, marked as \(googleSeries) data. Re-syncs never duplicate. Skipping writes nothing."
+        return "Adds \(count) \(sampleNoun(count: count)) to Apple Health, marked as \(model.syncEngine.sourceDeviceName) data. Re-syncs never duplicate. Skipping writes nothing."
     }
 
     private func sampleNoun(count: Int) -> String {
