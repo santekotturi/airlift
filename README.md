@@ -338,6 +338,12 @@ The reliable fix for both is one Shortcuts personal automation:
    runs invisibly in the background — no UI, and it respects your configured sync mode
    (automatic import vs. review-everything).
 
+When it finishes, Airlift posts a notification with last night's HRV as it landed —
+Fitbit's average and reading count beside the Watch's (e.g. "Google Fitbit Air: 53 ms across
+102 readings. Watch Ultra 4 RMSSD: 65 ms.") — or says it was held for review, or that Google
+had nothing new yet, which usually means the band hadn't uploaded. Turn it off with the
+action's **Notify with HRV summary** switch.
+
 If you'd rather not have Google Health open on wake, drop step "Open App" and accept
 that the band upload happens whenever Google's app gets around to it.
 
