@@ -96,6 +96,24 @@ final class HealthKitReader: @unchecked Sendable {
         try await quantitySamples(kind.hkIdentifier, unit: kind.hkUnit, in: interval)
     }
 
+    /// Apple's side of a sync comparison. For HRV that is the Watch's own
+    /// RMSSD on a night it wrote any — Fitbit's statistic — and its ~60 s SDNN
+    /// spot checks otherwise, so nights from watches without native RMSSD still
+    /// have something to compare against. The continuous 5-minute SDNN newer
+    /// watches write is never used: averaged in with the spot checks it is
+    /// neither one thing nor the other.
+    func appleComparisonSamples(
+        _ kind: MetricKind, in interval: DateInterval
+    ) async throws -> (samples: [QuantitySample], isRMSSD: Bool) {
+        guard kind == .heartRateVariability else {
+            return (try await quantitySamples(kind, in: interval), false)
+        }
+        let rmssd = try await rmssdSamples(in: interval).filter(\.fromAppleDevice)
+        if !rmssd.isEmpty { return (rmssd, true) }
+        let sdnn = try await quantitySamples(MetricKind.legacyHRVIdentifier, unit: kind.hkUnit, in: interval)
+        return (sdnn.filter { $0.fromAppleDevice && !$0.isContinuousHRV }, false)
+    }
+
     /// The same, for a type named directly — the Recovery screens need Apple's
     /// SDNN spot checks even once Airlift's own HRV kind has moved to RMSSD.
     func quantitySamples(
@@ -119,9 +137,9 @@ final class HealthKitReader: @unchecked Sendable {
     /// Other apps may write it too (Google Health might, for Fitbit), so each
     /// sample carries `fromAppleDevice` for the caller to split on.
     func rmssdSamples(in interval: DateInterval) async throws -> [QuantitySample] {
-        guard #available(iOS 27.0, *) else { return [] }
+        guard let rmssd = MetricKind.rmssdIdentifier else { return [] }
         let samples = try await querySamples(
-            type: HKQuantityType(.heartRateVariabilityRMSSD),
+            type: HKQuantityType(rmssd),
             interval: interval
         )
         let ownBundleID = Bundle.main.bundleIdentifier

@@ -80,8 +80,8 @@ final class HealthKitWriter: @unchecked Sendable {
         var read: Set<HKObjectType> = Set([sleepType, HeartbeatSeriesReader.seriesType] + quantityTypes)
         // Read-only: the Watch's own RMSSD, which the Recovery and HRV screens
         // compare with Fitbit's like for like.
-        if #available(iOS 27.0, *) {
-            read.insert(HKQuantityType(.heartRateVariabilityRMSSD))
+        if let rmssd = MetricKind.rmssdIdentifier {
+            read.insert(HKQuantityType(rmssd))
         }
         try await store.requestAuthorization(toShare: share, read: read)
     }
@@ -188,7 +188,8 @@ final class HealthKitWriter: @unchecked Sendable {
     @available(iOS 27.0, *)
     func migrateLegacyHRV() async throws -> HRVMigrationResult {
         let legacyType = HKQuantityType(MetricKind.legacyHRVIdentifier)
-        let rmssdType = HKQuantityType(.heartRateVariabilityRMSSD)
+        guard let rmssd = MetricKind.rmssdIdentifier else { return HRVMigrationResult(found: 0, written: 0, deleted: 0) }
+        let rmssdType = HKQuantityType(rmssd)
         let unit = MetricKind.heartRateVariability.hkUnit
 
         let legacy = try await ownSamples(of: legacyType).compactMap { $0 as? HKQuantitySample }

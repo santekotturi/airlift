@@ -6,8 +6,8 @@ import HealthKit
 /// sync identifiers that keep the two from ever colliding.
 final class HRVTypeTests: XCTestCase {
     func testHRVUsesRMSSDWhereTheTypeExists() {
-        if #available(iOS 27.0, *) {
-            XCTAssertEqual(MetricKind.heartRateVariability.hkIdentifier, .heartRateVariabilityRMSSD)
+        if let rmssd = MetricKind.rmssdIdentifier {
+            XCTAssertEqual(MetricKind.heartRateVariability.hkIdentifier, rmssd)
         } else {
             XCTAssertEqual(MetricKind.heartRateVariability.hkIdentifier, MetricKind.legacyHRVIdentifier)
         }
@@ -21,7 +21,7 @@ final class HRVTypeTests: XCTestCase {
     /// original, however HealthKit scopes them.
     func testRMSSDSyncIdentifiersAreDistinctFromLegacyOnes() {
         let id = HealthKitWriter.syncIdentifier(kind: .heartRateVariability, dataPointID: "p1")
-        if #available(iOS 27.0, *) {
+        if MetricKind.rmssdIdentifier != nil {
             XCTAssertEqual(id, "airlift-heart_rate_variability-rmssd-p1")
         } else {
             XCTAssertEqual(id, "airlift-heart_rate_variability-p1")
@@ -35,13 +35,12 @@ final class HRVTypeTests: XCTestCase {
         )
     }
 
+    /// The caveat follows what Apple's side actually is that night, not the OS:
+    /// an Ultra 2 night on iOS 27 is still SDNN.
     func testTheComparisonCaveatNamesTheStatistics() throws {
-        let caveat = try XCTUnwrap(MetricKind.heartRateVariability.appleComparisonCaveat)
-        if #available(iOS 27.0, *) {
-            XCTAssertTrue(caveat.contains("Watch RMSSD"))
-        } else {
-            XCTAssertTrue(caveat.contains("Apple SDNN"))
-        }
-        XCTAssertNil(MetricKind.heartRate.appleComparisonCaveat)
+        let hrv = MetricKind.heartRateVariability
+        XCTAssertTrue(try XCTUnwrap(hrv.appleComparisonCaveat(appleIsRMSSD: true)).contains("Watch RMSSD"))
+        XCTAssertTrue(try XCTUnwrap(hrv.appleComparisonCaveat(appleIsRMSSD: false)).contains("Apple SDNN"))
+        XCTAssertNil(MetricKind.heartRate.appleComparisonCaveat(appleIsRMSSD: false))
     }
 }

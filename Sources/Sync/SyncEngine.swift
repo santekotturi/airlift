@@ -71,6 +71,11 @@ struct StagedMetricBatch: Identifiable, Equatable, Hashable {
     /// Apple's deduplicated hourly sums for cumulative kinds — the honest
     /// chart series (raw `appleSamples` double-count). Empty otherwise.
     var appleHourly: [QuantitySample] = []
+    /// HRV only: whether `appleSamples` are the Watch's RMSSD rather than its
+    /// SDNN spot checks.
+    var appleIsRMSSD: Bool = false
+
+    var appleComparisonCaveat: String? { kind.appleComparisonCaveat(appleIsRMSSD: appleIsRMSSD) }
 
     var id: String { "\(kind.rawValue)|\(day.timeIntervalSinceReferenceDate)" }
     var worstSeverity: CheckResult.Severity { checks.worstSeverity }
@@ -718,7 +723,7 @@ final class SyncEngine {
                 if let total = try? await reader.cumulativeTotal(kind, in: interval), total > 0 {
                     otherSummary = "Other sources: \(kind.format(total))"
                 }
-            } else if let others = try? await reader.quantitySamples(kind, in: interval), !others.isEmpty {
+            } else if let others = try? await reader.appleComparisonSamples(kind, in: interval).samples, !others.isEmpty {
                 let avg = others.map(\.value).reduce(0, +) / Double(others.count)
                 otherSummary = "Other sources: avg \(kind.format(avg))"
             }
@@ -779,7 +784,9 @@ final class SyncEngine {
         let samples = own
             .map { MetricSample(id: $0.dataPointID ?? $0.id.uuidString, start: $0.start, end: $0.end, value: $0.value) }
             .sorted { $0.start < $1.start }
-        let apple = (try? await reader.quantitySamples(kind, in: interval)) ?? []
+        let comparison = try? await reader.appleComparisonSamples(kind, in: interval)
+        let apple = comparison?.samples ?? []
+        let appleIsRMSSD = comparison?.isRMSSD ?? false
         let appleTotal = kind.isCumulative ? try? await reader.cumulativeTotal(kind, in: interval) : nil
         let appleHourly = kind.isCumulative ? (try? await reader.hourlyTotals(kind, in: interval)) ?? [] : []
         return StagedMetricBatch(
@@ -787,9 +794,12 @@ final class SyncEngine {
             day: day,
             samples: samples,
             appleSamples: apple,
-            checks: SanityChecks.runMetric(kind: kind, samples: samples, apple: apple, appleTotal: appleTotal),
+            checks: SanityChecks.runMetric(
+                kind: kind, samples: samples, apple: apple, appleTotal: appleTotal, appleIsRMSSD: appleIsRMSSD
+            ),
             appleTotal: appleTotal,
-            appleHourly: appleHourly
+            appleHourly: appleHourly,
+            appleIsRMSSD: appleIsRMSSD
         )
     }
 
@@ -848,7 +858,7 @@ final class SyncEngine {
             return
         }
         #endif
-        guard #available(iOS 27.0, *) else { return }
+        guard #available(iOS 27.0, *), MetricKind.rmssdIdentifier != nil else { return }
         if case .running = hrvMigration { return }
         do {
             let count = try await writer.legacyHRVCount()
@@ -871,7 +881,7 @@ final class SyncEngine {
             return
         }
         #endif
-        guard #available(iOS 27.0, *) else { return }
+        guard #available(iOS 27.0, *), MetricKind.rmssdIdentifier != nil else { return }
         hrvMigration = .running
         do {
             let result = try await writer.migrateLegacyHRV()
@@ -1123,8 +1133,9 @@ final class SyncEngine {
             let interval = Self.metricDayInterval(kind: kind, day: day, calendar: calendar)
             var readFailure: Error?
             var apple: [QuantitySample] = []
+            var appleIsRMSSD = false
             do {
-                apple = try await reader.quantitySamples(kind, in: interval)
+                (apple, appleIsRMSSD) = try await reader.appleComparisonSamples(kind, in: interval)
             } catch {
                 readFailure = error
                 Log.sync.error("Apple Health read failed while staging \(kind.rawValue): \(error.localizedDescription)")
@@ -1136,7 +1147,9 @@ final class SyncEngine {
                 ? (try? await reader.hourlyTotals(kind, in: interval)) ?? []
                 : []
             let sorted = daySamples.sorted { $0.start < $1.start }
-            var checks = SanityChecks.runMetric(kind: kind, samples: sorted, apple: apple, appleTotal: appleTotal)
+            var checks = SanityChecks.runMetric(
+                kind: kind, samples: sorted, apple: apple, appleTotal: appleTotal, appleIsRMSSD: appleIsRMSSD
+            )
             if let readFailure {
                 checks.append(Self.readFailureCheck(readFailure))
             }
@@ -1147,7 +1160,8 @@ final class SyncEngine {
                 appleSamples: apple,
                 checks: checks,
                 appleTotal: appleTotal,
-                appleHourly: appleHourly
+                appleHourly: appleHourly,
+                appleIsRMSSD: appleIsRMSSD
             ))
         }
         return batches

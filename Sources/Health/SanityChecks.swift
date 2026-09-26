@@ -170,6 +170,7 @@ enum SanityChecks {
         samples: [MetricSample],
         apple: [QuantitySample],
         appleTotal: Double? = nil,
+        appleIsRMSSD: Bool = false,
         maxDeltaFraction: Double = 0.3
     ) -> [CheckResult] {
         var results: [CheckResult] = []
@@ -209,7 +210,7 @@ enum SanityChecks {
             comparison = "averages"
         }
         let detail = "Google \(kind.format(googleValue)) vs Apple \(kind.format(appleValue)) (\(comparison))"
-        if let caveat = kind.appleComparisonCaveat {
+        if let caveat = kind.appleComparisonCaveat(appleIsRMSSD: appleIsRMSSD) {
             results.append(CheckResult(name: "Apple comparison", severity: .info, detail: "\(detail) — \(caveat)"))
             return results
         }

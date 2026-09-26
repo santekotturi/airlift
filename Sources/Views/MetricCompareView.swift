@@ -377,7 +377,7 @@ struct MetricCompareView: View {
                     .font(.system(.caption, design: .rounded, weight: .bold))
                     .foregroundStyle(delta.tint)
             }
-            if let caveat = batch.kind.appleComparisonCaveat {
+            if let caveat = batch.appleComparisonCaveat {
                 Text(caveat)
                     .font(Daybreak.captionFont)
                     .foregroundStyle(Daybreak.faint)
@@ -427,8 +427,9 @@ struct MetricCompareView: View {
         guard let apple = appleValue, !batch.samples.isEmpty else { return nil }
         let diff = googleValue - apple
         let magnitude = batch.kind.format(abs(diff))
-        if batch.kind.appleComparisonCaveat != nil {
-            return Delta(text: "\(magnitude) apart — different statistics, an offset is expected", tint: Daybreak.mid)
+        if batch.appleComparisonCaveat != nil {
+            let why = batch.appleIsRMSSD ? "different sensors" : "different statistics"
+            return Delta(text: "\(magnitude) apart — \(why), an offset is expected", tint: Daybreak.mid)
         }
         let pct = abs(diff) / max(abs(apple), .ulpOfOne)
         if pct < 0.005 || magnitude == batch.kind.format(0) {
