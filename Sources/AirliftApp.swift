@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct AirliftApp: App {
     @State private var model: AppModel
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let model = AppModel()
@@ -13,6 +14,7 @@ struct AirliftApp: App {
         // crashes on a missing dependency (under the UI mock it just runs
         // against the fixtures).
         AppDependencyManager.shared.add(dependency: model.syncEngine)
+        MorningReminder.shared.install()
         // BGTaskScheduler requires handler registration *before* the app
         // finishes launching — doing this in a view's .task is too late and
         // the task would never fire. Skipped under the UI mock so no real
@@ -36,6 +38,10 @@ struct AirliftApp: App {
                     // refresh stays scheduled (best-effort) and is the path
                     // we'll revisit when we design unattended sync.
                     BackgroundScheduler.shared.scheduleNextRefresh()
+                    await MorningReminder.shared.reschedule()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active { MorningReminder.shared.runPendingShortcut() }
                 }
         }
     }
