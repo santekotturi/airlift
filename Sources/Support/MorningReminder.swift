@@ -103,16 +103,22 @@ final class MorningReminder: NSObject, UNUserNotificationCenterDelegate {
 
     // MARK: - UNUserNotificationCenterDelegate
 
+    // Completion-handler forms, not `async`: the async variants' bridging calls
+    // UIKit's completion off the main thread, which aborts the app on a tap.
+
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
-        guard response.notification.request.identifier == Self.identifier,
-              response.actionIdentifier == UNNotificationDefaultActionIdentifier
-        else { return }
-        await MainActor.run {
-            pendingShortcut = shortcutName
-            runPendingShortcut()
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping @Sendable () -> Void
+    ) {
+        let isReminderTap = response.notification.request.identifier == Self.identifier
+            && response.actionIdentifier == UNNotificationDefaultActionIdentifier
+        Task { @MainActor in
+            if isReminderTap {
+                pendingShortcut = shortcutName
+                runPendingShortcut()
+            }
+            completionHandler()
         }
     }
 
@@ -120,8 +126,9 @@ final class MorningReminder: NSObject, UNUserNotificationCenterDelegate {
     /// posted by a shortcut run can land while Airlift is in front.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .list]
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping @Sendable (UNNotificationPresentationOptions) -> Void
+    ) {
+        Task { @MainActor in completionHandler([.banner, .list]) }
     }
 }
