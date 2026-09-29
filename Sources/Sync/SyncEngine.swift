@@ -313,11 +313,16 @@ final class SyncEngine {
         }
     }
 
-    /// Forgets all credentials on the user's explicit request. Sets `.idle`,
-    /// not `.needsConnection` — that state (and its "sign-in expired" copy)
-    /// is reserved for Google rejecting us; here the user chose to leave, and
-    /// `isConnected == false` already drives the friendly connect card.
-    func disconnect() {
+    /// Forgets all credentials on the user's explicit request, then revokes
+    /// the grant at Google. Sets `.idle`, not `.needsConnection` — that state
+    /// (and its "sign-in expired" copy) is reserved for Google rejecting us;
+    /// here the user chose to leave, and `isConnected == false` already drives
+    /// the friendly connect card.
+    ///
+    /// The local clear happens first and unconditionally, so disconnecting
+    /// works offline. Revocation is best-effort: if it fails, the log tells
+    /// the user where to remove access by hand.
+    func disconnect() async {
         #if DEBUG
         if isUIMock {
             isConnected = false
@@ -325,10 +330,30 @@ final class SyncEngine {
             return
         }
         #endif
+        let stored = tokens.load()
+        forgetSignIn()
+
+        var revoked = stored == nil
+        if let stored {
+            do {
+                try await oauth.revoke(stored)
+                revoked = true
+            } catch {
+                Log.sync.error("Revoke on disconnect failed: \(error.localizedDescription)")
+            }
+        }
+        let detail = revoked
+            ? "Your Google sign-in was removed from this iPhone and Airlift's access was revoked at Google. Reconnect whenever you're ready."
+            : "Your Google sign-in was removed from this iPhone, but Google couldn't be reached to revoke access. Remove Airlift at myaccount.google.com/connections to finish."
+        log.record(.disconnected, title: "Disconnected from Google Health", detail: detail)
+    }
+
+    /// Clears the stored sign-in on this iPhone only, without contacting
+    /// Google. Used when the token is already gone or unusable.
+    private func forgetSignIn() {
         try? tokens.clear()
         isConnected = false
         status = .idle
-        log.record(.disconnected, title: "Disconnected from Google Health", detail: "Your Google sign-in was removed from this iPhone. Reconnect whenever you're ready.")
     }
 
     // MARK: - Review flow (fetch → stage → import/toss)
@@ -620,7 +645,7 @@ final class SyncEngine {
             Log.sync.info("Sync pass done — imported \(written), held \(heldCount) for review")
         } catch OAuthError.noRefreshToken {
             catchUpNotice = nil
-            disconnect()
+            forgetSignIn()
             log.record(.error, title: "Reconnect needed", detail: "Your weekly Google sign-in expired — reconnect to keep the bridge open.")
             await notifier.postReconnectNeeded()
         } catch let error as OAuthError {

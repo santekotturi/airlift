@@ -11,6 +11,7 @@ enum OAuthError: Error, LocalizedError {
     case tokenRequest(status: Int, body: String)
     case noRefreshToken
     case malformedResponse
+    case revokeRequest(status: Int, body: String)
 
     var errorDescription: String? {
         switch self {
@@ -32,6 +33,8 @@ enum OAuthError: Error, LocalizedError {
             return "No refresh token available — please reconnect your Google account."
         case .malformedResponse:
             return "The token response could not be decoded."
+        case .revokeRequest(let status, let body):
+            return "Revoking access failed (HTTP \(status)): \(body.prefix(200))"
         }
     }
 }
@@ -166,6 +169,35 @@ final class OAuthClient: NSObject {
         )
     }
 
+    // MARK: - Revocation
+
+    /// Revokes Airlift's grant at Google. Revoking the refresh token ends the
+    /// whole grant, so every access token issued from it stops working too.
+    /// A token Google no longer recognizes counts as revoked: the grant is
+    /// already gone, which is the outcome the caller wants.
+    func revoke(_ tokens: StoredTokens) async throws {
+        let (data, response) = try await session.data(for: Self.revokeRequest(token: tokens.refreshToken))
+        let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+        let body = String(data: data, encoding: .utf8) ?? ""
+        guard Self.isRevoked(status: status, body: body) else {
+            Log.auth.error("Revoke failed (HTTP \(status)): \(body)")
+            throw OAuthError.revokeRequest(status: status, body: body)
+        }
+    }
+
+    nonisolated static func revokeRequest(token: String) -> URLRequest {
+        var request = URLRequest(url: OAuthConfig.revocationEndpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = "token=\(formEncode(token))".data(using: .utf8)
+        return request
+    }
+
+    nonisolated static func isRevoked(status: Int, body: String) -> Bool {
+        if (200..<300).contains(status) { return true }
+        return status == 400 && body.contains("invalid_token")
+    }
+
     private func postToken(_ form: [String: String]) async throws -> TokenResponse {
         var request = URLRequest(url: OAuthConfig.tokenEndpoint)
         request.httpMethod = "POST"
@@ -188,7 +220,7 @@ final class OAuthClient: NSObject {
         return decoded
     }
 
-    private static func formEncode(_ value: String) -> String {
+    nonisolated private static func formEncode(_ value: String) -> String {
         var allowed = CharacterSet.alphanumerics
         allowed.insert(charactersIn: "-._~")
         return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value

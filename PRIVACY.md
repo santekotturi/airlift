@@ -105,8 +105,10 @@ builds, and nothing is uploaded anywhere.
 
 - **Stop syncing a data type:** turn it off in Settings → *What syncs*.
 - **Disconnect Google:** Settings → Disconnect removes the sign-in token from
-  your iPhone. To also revoke Airlift's access on Google's side, remove Airlift
-  at <https://myaccount.google.com/connections>.
+  your iPhone and revokes Airlift's access at Google. If your phone is offline
+  at that moment, the app tells you, and you can remove Airlift at
+  <https://myaccount.google.com/connections>. You can also revoke access there
+  at any time without opening Airlift.
 - **Remove data Airlift wrote to Apple Health:** in Airlift, open Calendar →
   a day → *Remove from Apple Health*, or delete it in the Health app.
 - **Delete everything Airlift stores:** delete the app. iOS removes its sign-in
