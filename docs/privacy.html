@@ -27,6 +27,11 @@
   a { color: var(--plum); }
   .highlight { background: #EDE9FF; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; }
   .highlight p:last-child { margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); color: var(--mid); }
+  th { color: var(--ink); font-weight: 600; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--ink); word-break: break-word; }
+  h3 { font-size: 17px; margin: 18px 0 6px; }
   footer { text-align: center; color: var(--faint); font-size: 14px; margin-top: 28px; }
 </style>
 </head>
@@ -34,36 +39,81 @@
 <div class="wrap">
   <a class="logo" href="index.html"><span class="box">&#128230;</span> Airlift</a>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated: 15 June 2026</p>
+  <p class="updated">Last updated: 29 September 2026</p>
 
   <div class="card">
     <div class="highlight">
-      <p><b>The short version.</b> Airlift runs entirely on your iPhone. There is no Airlift server and no Airlift account. Your data is never sent to the developer. The only network connections are directly between your phone and Google (to sign in and read your health data) and Apple Health on your device. No analytics, no advertising, no tracking.</p>
+      <p><b>The short version.</b> Airlift runs entirely on your iPhone. There is no Airlift server and no Airlift account. Your data is never sent to the developer. The app connects directly from your phone to Google to sign in and read your health data, and writes that data into Apple Health on your phone. No analytics, no advertising, no tracking, no third-party SDKs.</p>
     </div>
 
-    <h2>What data Airlift handles, and where it goes</h2>
-    <p><b>Google / Fitbit health data.</b> When you connect your Google account, Airlift reads your sleep sessions and the metrics you enable (heart rate, resting heart rate, HRV, blood oxygen, respiratory rate, steps, distance) directly from Google's Health API, processes them on your device, and writes them into Apple Health. They are never transmitted anywhere else.</p>
-    <p><b>Apple Health (HealthKit).</b> Airlift writes the above into Apple Health, and reads your existing Apple Health samples <b>only</b> to compare against the Fitbit data so it can avoid duplicates and flag discrepancies. HealthKit data is never used for advertising, never sent off your device by Airlift, never shared with third parties, and never stored in iCloud by Airlift.</p>
-    <p><b>Your Google sign-in.</b> The token that keeps you signed in lives in the iOS Keychain, marked device-only (excluded from backups and transfers). It leaves your phone only when your phone sends it to Google for a fresh access token.</p>
+    <h2>Google user data</h2>
+
+    <h3>What Airlift accesses</h3>
+    <p>When you connect your Google account, Airlift asks Google for three <b>read-only</b> permissions:</p>
+    <table>
+      <tr><th>Permission (OAuth scope)</th><th>What Airlift reads with it</th></tr>
+      <tr><td><code>googlehealth.sleep.readonly</code></td><td>Sleep sessions and sleep stages (awake, light, deep, REM)</td></tr>
+      <tr><td><code>googlehealth.health_metrics_and_measurements.readonly</code></td><td>Heart rate, resting heart rate, heart-rate variability, blood oxygen, respiratory rate</td></tr>
+      <tr><td><code>googlehealth.activity_and_fitness.readonly</code></td><td>Steps and distance</td></tr>
+    </table>
+    <p>Airlift cannot write, change, or delete anything in your Google account. It does not request your name, email address, contacts, location, or any other Google data.</p>
+
+    <h3>How Airlift uses it</h3>
+    <p>Airlift uses this data for one purpose: to write it into Apple Health on your iPhone, and to show it to you in the app so you can compare it with what is already in Apple Health before it is saved. You choose which data types sync in Settings. Data is never used for advertising, never sold, and never used for any purpose other than this one.</p>
+    <p>No person reads your data. The developer has no way to see it, because it never leaves your phone.</p>
+
+    <h3>Who it is shared with</h3>
+    <p>Airlift shares your Google health data with exactly one party: <b>Apple Health</b>, on your own iPhone, at your direction. Apple Health is governed by <a href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a>. Airlift does not share, sell, or transfer Google user data to anyone else.</p>
+
+    <h3>Limited Use</h3>
+    <p>Airlift's use of information received from the Google Health API adheres to the <a href="https://developers.google.com/health/policies/health-api-developer-user-data-policy">Google Health API Developer and User Data Policy</a>, including the Limited Use requirements. Airlift's use and transfer of information received from Google APIs also adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+    <h2>Apple Health (HealthKit) data</h2>
+    <p>Airlift writes the data above into Apple Health. It also reads your existing Apple Health samples of the same types <b>only</b> to compare them with the Fitbit data, so it can avoid duplicates and flag discrepancies before writing. HealthKit data is never used for advertising or marketing, never sent off your device by Airlift, never shared with third parties, and never stored in iCloud by Airlift.</p>
+
+    <h2>What Airlift stores on your iPhone</h2>
+    <p>Airlift does not keep its own copy of your health readings. Once data is in Apple Health, Apple Health is where it lives. On your iPhone, Airlift keeps only:</p>
+    <ul>
+      <li><b>Your Google sign-in token</b>, in the iOS Keychain, marked device-only. It is excluded from backups and device transfers, and is only ever sent to Google to get a fresh access token.</li>
+      <li><b>Sync bookkeeping</b>: the IDs of Google data points already written or discarded, so nothing is written twice; which days have synced; and your settings.</li>
+      <li><b>A short activity log</b> of recent syncs, which can include summaries such as a night's total sleep time. It is capped at the most recent entries.</li>
+    </ul>
+    <p>All of this stays in the app's private storage on your iPhone and is never uploaded.</p>
+    <p><b>Diagnostic dumps (developers only).</b> Debug builds launched with an explicit <code>-AirliftDumps</code> flag can save raw API responses to the app's local Documents folder for debugging. This is off by default, impossible to enable in App Store builds, and nothing is uploaded anywhere.</p>
+
+    <h2>How Airlift protects your data</h2>
+    <ul>
+      <li>All connections to Google use HTTPS. Airlift makes no exceptions to Apple's App Transport Security.</li>
+      <li>The sign-in token lives in the iOS Keychain, locked to this device, rather than in ordinary app storage.</li>
+      <li>With no server, there is no remote database that could be breached.</li>
+      <li>The source code is public at <a href="https://github.com/santekotturi/airlift">github.com/santekotturi/airlift</a>, so anyone can check these claims.</li>
+    </ul>
+
+    <h2>Managing and deleting your data</h2>
+    <ul>
+      <li><b>Stop syncing a data type:</b> turn it off in Settings &rarr; <i>What syncs</i>.</li>
+      <li><b>Disconnect Google:</b> Settings &rarr; Disconnect removes the sign-in token from your iPhone. To also revoke Airlift's access on Google's side, remove Airlift at <a href="https://myaccount.google.com/connections">myaccount.google.com/connections</a>.</li>
+      <li><b>Remove data Airlift wrote to Apple Health:</b> in Airlift, open Calendar &rarr; a day &rarr; <i>Remove from Apple Health</i>, or delete it in the Health app.</li>
+      <li><b>Delete everything Airlift stores:</b> delete the app. iOS removes its sign-in token, bookkeeping, and activity log. Data already written to Apple Health stays there until you remove it, because it is now yours in Apple Health.</li>
+    </ul>
+    <p>Airlift has no account, so there is no account to deactivate or delete, and the developer holds no copy of your data to delete.</p>
 
     <h2>Bug reports</h2>
-    <p>If you choose to report a bug from inside the app, Airlift opens a pre-filled <b>GitHub</b> issue in your browser for you to review and submit. It includes the app version and your device model plus any text you type — <b>no health data and no sign-in information.</b> Nothing is sent until you submit it yourself, subject to <a href="https://docs.github.com/site-policy">GitHub's privacy policy</a>. This is entirely optional.</p>
+    <p>If you choose to report a bug from inside the app, Airlift opens a pre-filled <b>GitHub</b> issue in your browser for you to review and submit. It includes the app version and your device model, such as "iPhone16,2", plus any text you type. <b>No health data and no sign-in information are included.</b> Nothing is sent until you submit the issue yourself on GitHub, which is governed by <a href="https://docs.github.com/site-policy">GitHub's privacy policy</a>. Filing a bug report is optional.</p>
 
     <h2>What Airlift does <i>not</i> do</h2>
     <ul>
       <li>It does not collect, sell, rent, or share your personal data.</li>
       <li>It does not use advertising or analytics SDKs.</li>
-      <li>It does not track you across apps or websites, or build a profile about you.</li>
+      <li>It does not track you across apps or websites.</li>
+      <li>It does not build a profile about you.</li>
     </ul>
 
     <h2>Children</h2>
     <p>Airlift is not directed at children and does not knowingly collect data from children.</p>
 
-    <h2>Your control</h2>
-    <p>Disconnect your Google account any time in Settings (this removes the sign-in from the Keychain). Remove anything Airlift wrote to Apple Health from within the app or from the Health app directly. Deleting the app removes its local data and the stored sign-in.</p>
-
     <h2>Changes</h2>
-    <p>If this policy changes, the updated version will be posted here with a new date above.</p>
+    <p>If this policy changes, the updated version is posted here and in the app's repository with a new date at the top. If Airlift ever starts using data in a new way, the app will ask for your consent first.</p>
 
     <h2>Contact</h2>
     <p>Questions: <a href="mailto:airlift@santekotturi.com">airlift@santekotturi.com</a>, or open an issue at <a href="https://github.com/santekotturi/airlift/issues">github.com/santekotturi/airlift</a>.</p>

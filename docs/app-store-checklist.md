@@ -54,8 +54,7 @@ release `Config.xcconfig` (kept out of git).
 ## App Store Connect fields
 
 - [ ] **Privacy Policy URL** — required for HealthKit apps. Use
-      `https://github.com/santekotturi/airlift/blob/main/PRIVACY.md` or a GitHub
-      Pages URL.
+      `https://santekotturi.github.io/airlift/privacy.html`.
 - [ ] **Support URL** — the GitHub repo.
 - [ ] **App Privacy ("nutrition labels")** — suggested answers:
   - Health & Fitness data: the app **reads/writes HealthKit on-device only** and
@@ -98,10 +97,13 @@ release `Config.xcconfig` (kept out of git).
 - [ ] Archive a **Release** build (`xcodebuild archive`) and validate in the
       Organizer before uploading.
 
-## Privacy policy hosting (nice-to-have)
+## Privacy policy hosting
 
-- [ ] Enable **GitHub Pages** for a rendered policy page instead of the raw
-      markdown URL.
+- [x] **GitHub Pages** serves `docs/` from `main`; the policy lives at
+      `https://santekotturi.github.io/airlift/privacy.html`.
+- [ ] Google OAuth verification requires the privacy policy domain to be an
+      authorized domain verified in Google Search Console. Verify
+      `santekotturi.github.io`, or point a custom domain you own at Pages.
 
 ---
 
