@@ -18,6 +18,9 @@ enum DayStatus: Equatable, Codable {
     case noData
     /// The user discarded this day's data; tossed IDs never re-stage.
     case tossed
+    /// Google Health's own Apple Health sync already wrote this day, so
+    /// Airlift left it alone rather than write a second copy.
+    case alreadyInHealth
 }
 
 struct LedgerEntry: Equatable, Codable, Identifiable {
@@ -37,6 +40,8 @@ let sleepLedgerKind = "sleep"
 protocol SyncLedgerStoring: Sendable {
     func status(kind: String, day: String) -> DayStatus?
     func set(_ status: DayStatus, kind: String, day: String)
+    /// Forgets a cell entirely, as if no sync had ever reached it.
+    func remove(kind: String, day: String)
     var all: [LedgerEntry] { get }
 }
 
@@ -131,6 +136,13 @@ final class FileSyncLedger: SyncLedgerStoring, @unchecked Sendable {
         }
     }
 
+    func remove(kind: String, day: String) {
+        lock.withLock {
+            entries["\(kind)|\(day)"] = nil
+            persist()
+        }
+    }
+
     /// Caller must hold `lock`.
     private func persist() {
         do {
@@ -163,5 +175,9 @@ final class InMemorySyncLedger: SyncLedgerStoring, @unchecked Sendable {
 
     func set(_ status: DayStatus, kind: String, day: String) {
         lock.withLock { entries["\(kind)|\(day)"] = LedgerEntry(kind: kind, day: day, status: status) }
+    }
+
+    func remove(kind: String, day: String) {
+        lock.withLock { entries["\(kind)|\(day)"] = nil }
     }
 }

@@ -16,6 +16,8 @@ struct HomeView: View {
     @State private var showPager = false
     @State private var showRecovery = false
     @State private var showHRV = false
+    @State private var showSleep = false
+    @State private var confirmingClearQueue = false
     @State private var browseTarget: BrowseTarget?
 
     // Banner numerals keep their exact Daybreak proportions but still track
@@ -67,6 +69,7 @@ struct HomeView: View {
         .navigationDestination(isPresented: $showPager) { ReviewPagerView() }
         .navigationDestination(isPresented: $showRecovery) { RecoveryView() }
         .navigationDestination(isPresented: $showHRV) { HRVView() }
+        .navigationDestination(isPresented: $showSleep) { SleepCompareView() }
         .navigationDestination(item: $browseTarget) {
             MetricHistoryPagerView(kind: $0.kind, startDay: $0.startDay)
         }
@@ -237,6 +240,21 @@ struct HomeView: View {
                 .buttonStyle(.daybreakPrimary)
             }
             fetchMenu
+            Button("Clear queue", role: .destructive) {
+                confirmingClearQueue = true
+            }
+            .font(.system(.footnote, design: .rounded, weight: .semibold))
+            .foregroundStyle(Daybreak.fail)
+            .disabled(isSyncing)
+            .confirmationDialog(
+                "Clear all \(waitingCount) held item\(waitingCount == 1 ? "" : "s")?",
+                isPresented: $confirmingClearQueue,
+                titleVisibility: .visible
+            ) {
+                Button("Clear queue", role: .destructive) { engine.clearReviewQueue() }
+            } message: {
+                Text("Nothing is written to Apple Health and nothing already there changes. Fetching those days again brings them back.")
+            }
         }
     }
 
@@ -620,6 +638,12 @@ struct HomeView: View {
                 title: "HRV",
                 detail: "Apple's number, your own recomputation, and Fitbit — reading by reading."
             ) { showHRV = true }
+            Divider().overlay(Daybreak.line)
+            analysisRow(
+                icon: "moon.zzz.fill",
+                title: "Sleep",
+                detail: "Watch and Fitbit night by night — total sleep and every stage."
+            ) { showSleep = true }
             Divider().overlay(Daybreak.line)
             analysisRow(
                 icon: "bed.double.fill",

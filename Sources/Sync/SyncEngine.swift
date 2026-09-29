@@ -48,6 +48,10 @@ struct StagedSession: Identifiable, Equatable, Hashable {
     let appleSleep: [AppleSleepSegment]
     let heartRate: [HRSample]
     let checks: [CheckResult]
+    /// Google Health already wrote this night into Health (its own Apple
+    /// Health sync). Such a night is never staged — importing it would put
+    /// Fitbit's sleep in Health twice.
+    var googleHealthWrote: Bool = false
 
     var id: String { session.id }
 
@@ -460,11 +464,17 @@ final class SyncEngine {
             }
             var heldSessions: [StagedSession] = []
             var sleepImported = 0
+            var sleepAlreadyInHealth = 0
             for (index, session) in freshCandidates.enumerated() {
                 status = .syncing(phase: "Comparing sleep night \(index + 1) of \(freshCandidates.count) with Apple Health…")
                 let item = await stage(session)
                 dump.writeStagedSession(item)
                 let day = CivilDay.string(from: item.session.end)
+                if item.googleHealthWrote {
+                    ledger.set(.alreadyInHealth, kind: sleepLedgerKind, day: day)
+                    sleepAlreadyInHealth += 1
+                    continue
+                }
                 switch SyncGate.action(for: item.worstSeverity, mode: mode) {
                 case .autoImport:
                     do {
@@ -503,6 +513,13 @@ final class SyncEngine {
             }
             staged = (heldSessions + carriedSessions).sorted { $0.session.start > $1.session.start }
             written += sleepImported
+            if sleepAlreadyInHealth > 0 {
+                log.record(
+                    .nothingNew,
+                    title: "Sleep already in Apple Health",
+                    detail: "Google Health had already written \(sleepAlreadyInHealth) of these nights itself, so Airlift left them alone rather than add a second copy."
+                )
+            }
             setPipelineStep("sleep", .done(imported: sleepImported, held: heldSessions.count))
 
             // Quantity metrics — best-effort per kind.
@@ -521,7 +538,18 @@ final class SyncEngine {
                     var imported = 0
                     var importedSamples = 0
                     var held = 0
-                    for batch in await stageMetric(kind, samples: samples, seenIDs: seenIDs, now: now) {
+                    let staging = await stageMetric(kind, samples: samples, seenIDs: seenIDs, now: now)
+                    for day in staging.alreadyInHealth {
+                        ledger.set(.alreadyInHealth, kind: kind.rawValue, day: CivilDay.string(from: day))
+                    }
+                    if !staging.alreadyInHealth.isEmpty {
+                        log.record(
+                            .nothingNew,
+                            title: "\(kind.displayName) already in Apple Health",
+                            detail: "Google Health had already written \(staging.alreadyInHealth.count) day(s) of it itself, so Airlift left them alone rather than add a second copy."
+                        )
+                    }
+                    for batch in staging.batches {
                         dump.writeStagedBatch(batch)
                         let day = CivilDay.string(from: batch.day)
                         switch SyncGate.action(for: batch.worstSeverity, mode: mode) {
@@ -646,7 +674,7 @@ final class SyncEngine {
         let entries = ledger.all.filter { $0.kind == ledgerKind }
         let resolved = entries.compactMap { entry -> Date? in
             switch entry.status {
-            case .synced, .noData, .tossed: return CivilDay.date(from: entry.day)
+            case .synced, .noData, .tossed, .alreadyInHealth: return CivilDay.date(from: entry.day)
             case .pendingReview, .quarantined: return nil
             }
         }
@@ -655,7 +683,7 @@ final class SyncEngine {
         let unresolved = entries.compactMap { entry -> Date? in
             switch entry.status {
             case .pendingReview, .quarantined: return CivilDay.date(from: entry.day)
-            case .synced, .noData, .tossed: return nil
+            case .synced, .noData, .tossed, .alreadyInHealth: return nil
             }
         }
         if let oldestUnresolved = unresolved.min() {
@@ -708,9 +736,14 @@ final class SyncEngine {
             let asleep = own
                 .filter { HKCategoryValueSleepAnalysis(rawValue: Int($0.value)) != .inBed }
                 .reduce(0.0) { $0 + $1.end.timeIntervalSince($1.start) }
-            let others = (try? await reader.sleepSegments(
-                overlapping: DateInterval(start: day.addingTimeInterval(-43_200), duration: 129_600)
-            )) ?? []
+            let ownStart = own.map(\.start).min() ?? day
+            let ownNight = DateInterval(start: ownStart, end: max(own.map(\.end).max() ?? ownStart, ownStart))
+            let others = SleepNightMatcher.appleNight(
+                (try? await reader.sleepSegments(
+                    overlapping: DateInterval(start: day.addingTimeInterval(-43_200), duration: 129_600)
+                )) ?? [],
+                matching: ownNight
+            )
             let otherAsleep = others.filter(\.isAsleep).reduce(0.0) { $0 + $1.duration }
             snapshots.append(DayKindSnapshot(
                 kind: nil,
@@ -777,8 +810,12 @@ final class SyncEngine {
             start: start.addingTimeInterval(-6 * 3600),
             end: end.addingTimeInterval(6 * 3600)
         )
-        let appleSleep = (try? await reader.sleepSegments(overlapping: window)) ?? []
-        let heartRate = (try? await reader.heartRate(in: DateInterval(start: start, end: end))) ?? []
+        let appleSleep = SleepNightMatcher.appleNight(
+            (try? await reader.sleepSegments(overlapping: window)) ?? [],
+            matching: DateInterval(start: start, end: end)
+        )
+        let heartRate = ((try? await reader.heartRate(in: DateInterval(start: start, end: end))) ?? [])
+            .filter(\.fromAppleDevice)
         return StagedSession(
             session: session,
             appleSleep: appleSleep,
@@ -831,15 +868,31 @@ final class SyncEngine {
 
     /// Inverse of the import mapping: HealthKit sleep stage → wire stage.
     private static func sleepStage(from value: HKCategoryValueSleepAnalysis) -> SleepStage? {
-        switch value {
-        case .awake: return .wake
-        case .asleepCore: return .light
-        case .asleepDeep: return .deep
-        case .asleepREM: return .rem
-        case .asleepUnspecified: return .asleep
-        case .inBed: return nil
-        @unknown default: return nil
+        StageMapper.stage(for: value)
+    }
+
+    // MARK: - Google Health's own Apple Health sync
+
+    /// Data types Google Health has written into Apple Health itself in the
+    /// last two weeks, as ledger kinds (`"sleep"` or a `MetricKind` raw
+    /// value). Where it does, Airlift skips each day it already wrote.
+    private(set) var googleHealthWrites: Set<String> = []
+
+    func refreshGoogleHealthWrites(now: Date = Date()) async {
+        #if DEBUG
+        if isUIMock { return }
+        #endif
+        do { try await ensureHealthAuthorized() } catch { return }
+        let recent = DateInterval(start: now.addingTimeInterval(-14 * 86_400), end: now)
+        var found = Set<String>()
+        if (try? await reader.googleHealthWrote(HKCategoryType(.sleepAnalysis), in: recent)) == true {
+            found.insert(sleepLedgerKind)
         }
+        for kind in MetricKind.allCases
+        where (try? await reader.googleHealthWrote(HKQuantityType(kind.hkIdentifier), in: recent)) == true {
+            found.insert(kind.rawValue)
+        }
+        googleHealthWrites = found
     }
 
     // MARK: - HRV migration
@@ -1131,19 +1184,25 @@ final class SyncEngine {
         samples: [MetricSample],
         seenIDs: Set<String>,
         now: Date
-    ) async -> [StagedMetricBatch] {
+    ) async -> (batches: [StagedMetricBatch], alreadyInHealth: [Date]) {
         var samples = samples
         if let bucket = kind.downsampleBucketSeconds {
             samples = samples.downsampled(bucket: bucket, kind: kind)
         }
         let fresh = samples.filter { !seenIDs.contains($0.id) && $0.end <= now }
-        guard !fresh.isEmpty else { return [] }
+        guard !fresh.isEmpty else { return ([], []) }
 
         let calendar = Calendar.current
         let byDay = Dictionary(grouping: fresh) { Self.metricDayKey(kind: kind, start: $0.start, calendar: calendar) }
         var batches: [StagedMetricBatch] = []
+        var alreadyInHealth: [Date] = []
         for (day, daySamples) in byDay {
             let interval = Self.metricDayInterval(kind: kind, day: day, calendar: calendar)
+            // Google Health's own Apple Health sync already carried this day.
+            if (try? await reader.googleHealthWrote(HKQuantityType(kind.hkIdentifier), in: interval)) == true {
+                alreadyInHealth.append(day)
+                continue
+            }
             var readFailure: Error?
             var apple: [QuantitySample] = []
             var appleIsRMSSD = false
@@ -1177,7 +1236,7 @@ final class SyncEngine {
                 appleIsRMSSD: appleIsRMSSD
             ))
         }
-        return batches
+        return (batches, alreadyInHealth)
     }
 
     /// Loads the Apple-side reference data for a session and runs sanity
@@ -1189,15 +1248,19 @@ final class SyncEngine {
             end: session.end.addingTimeInterval(6 * 3600)
         )
         var readFailure: Error?
-        var appleSleep: [AppleSleepSegment] = []
+        var nearby: [AppleSleepSegment] = []
         do {
-            appleSleep = try await reader.sleepSegments(overlapping: window)
+            nearby = try await reader.sleepSegments(overlapping: window)
         } catch {
             readFailure = error
             Log.sync.error("Apple Health read failed while staging sleep: \(error.localizedDescription)")
         }
         let sessionInterval = DateInterval(start: session.start, end: session.end)
-        let heartRate = (try? await reader.heartRate(in: sessionInterval)) ?? []
+        // The comparison is against the Watch alone: Google Health's copy of
+        // this same Fitbit night, other trackers, and naps in the window
+        // would otherwise be summed into "Apple's" night.
+        let appleSleep = SleepNightMatcher.appleNight(nearby, matching: sessionInterval)
+        let heartRate = ((try? await reader.heartRate(in: sessionInterval)) ?? []).filter(\.fromAppleDevice)
         var checks = SanityChecks.run(google: session, appleSleep: appleSleep, heartRate: heartRate)
         if let readFailure {
             checks.append(Self.readFailureCheck(readFailure))
@@ -1206,7 +1269,10 @@ final class SyncEngine {
             session: session,
             appleSleep: appleSleep,
             heartRate: heartRate,
-            checks: checks
+            checks: checks,
+            googleHealthWrote: SleepNightMatcher.googleHealthWrote(
+                sessionID: session.id, session: sessionInterval, in: nearby
+            )
         )
     }
 
@@ -1352,6 +1418,45 @@ final class SyncEngine {
         tossed.insert(id)
         staged.removeAll { $0.id == id }
         Log.sync.info("Tossed session \(id)")
+    }
+
+    /// Empties the review queue without writing or tossing anything.
+    ///
+    /// Held days are forgotten rather than skipped: their ledger cells are
+    /// cleared so the next incremental fetch stops reaching back for them, but
+    /// no ID is marked tossed — an explicit "last N days" fetch stages them
+    /// again, under whatever rules the app has by then.
+    func clearReviewQueue() {
+        let nights = staged.count
+        let metricDays = stagedMetrics.count
+        guard nights + metricDays > 0 else { return }
+        #if DEBUG
+        if isUIMock {
+            staged = []
+            stagedMetrics = []
+            return
+        }
+        #endif
+        for entry in ledger.all {
+            switch entry.status {
+            case .pendingReview, .quarantined: ledger.remove(kind: entry.kind, day: entry.day)
+            case .synced, .noData, .tossed, .alreadyInHealth: break
+            }
+        }
+        staged = []
+        stagedMetrics = []
+        if case .fetched = status { status = .idle }
+        if case .autoSynced = status { status = .idle }
+        let parts = [
+            nights > 0 ? "\(nights) night\(nights == 1 ? "" : "s")" : nil,
+            metricDays > 0 ? "\(metricDays) metric day\(metricDays == 1 ? "" : "s")" : nil,
+        ].compactMap { $0 }
+        log.record(
+            .tossed,
+            title: "Review queue cleared",
+            detail: "\(parts.joined(separator: " and ")) set aside — nothing was written. Fetch those days again to bring them back."
+        )
+        Log.sync.info("Cleared review queue: \(nights) nights, \(metricDays) metric days")
     }
 
     /// Writes one reviewed metric batch to HealthKit and retires it.

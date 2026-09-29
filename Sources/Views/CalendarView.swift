@@ -189,7 +189,7 @@ struct CalendarView: View {
         var colors: [Color] = []
         for entry in entries.sorted(by: { $0.kind < $1.kind }) {
             switch entry.status {
-            case .synced: colors.append(Daybreak.ok)
+            case .synced, .alreadyInHealth: colors.append(Daybreak.ok)
             case .pendingReview, .quarantined: colors.append(Daybreak.warn)
             case .tossed: colors.append(Daybreak.faint)
             case .noData: continue
