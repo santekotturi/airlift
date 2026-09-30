@@ -111,6 +111,51 @@ final class RecoveryEngine {
         }
     }
 
+    /// Everything Today shows beside sleep for one night: whole-night HRV from
+    /// the cached read, plus vitals and the day before's steps read fresh —
+    /// a handful of small queries over one night.
+    func vitals(for night: Date) async -> NightVitals {
+        let window = SyncEngine.metricDayInterval(kind: .heartRateVariability, day: night, calendar: calendar)
+        let wakeDay = DateInterval(
+            start: calendar.startOfDay(for: night),
+            end: calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: night)) ?? night
+        )
+        let dayBefore = DateInterval(
+            start: calendar.date(byAdding: .day, value: -1, to: wakeDay.start) ?? wakeDay.start,
+            end: wakeDay.start
+        )
+        let samples = cached.first { $0.night == night }
+        let hrv = samples?.recovery(selection: .allSleep, staging: .apple)
+        let watchNight = SleepNightMatcher.mainNight(samples?.appleSleep ?? []).filter(\.isAsleep)
+        let asleep = watchNight.isEmpty ? nil : DateInterval(
+            start: watchNight.map(\.start).min()!, end: watchNight.map(\.end).max()!
+        )
+
+        async let heartRate = try? reader.heartRate(in: window)
+        async let resting = try? reader.quantitySamples(.restingHeartRate, in: wakeDay)
+        async let breathing = try? reader.quantitySamples(.respiratoryRate, in: window)
+        async let oxygen = try? reader.quantitySamples(.oxygenSaturation, in: window)
+        async let watchSteps = try? reader.cumulativeTotal(.steps, in: dayBefore)
+        async let fitbitSteps = try? reader.quantitySamples(.steps, in: dayBefore)
+        let googleSteps = (await fitbitSteps ?? []).filter(\.fromGoogleHealth)
+        let appleSteps = await watchSteps
+
+        return NightVitals.build(
+            hrv: hrv,
+            heartRate: await heartRate ?? [],
+            restingHR: await resting ?? [],
+            respiratoryRate: await breathing ?? [],
+            oxygen: await oxygen ?? [],
+            steps: (
+                appleSteps.flatMap { $0 > 0 ? $0 : nil },
+                googleSteps.isEmpty ? nil : googleSteps.reduce(0) { $0 + $1.value }
+            ),
+            asleep: asleep,
+            night: window,
+            wakeDay: wakeDay
+        )
+    }
+
     /// Recomputes the report from cached nights — no HealthKit, no waiting.
     private func rebuild() {
         guard !cached.isEmpty else {

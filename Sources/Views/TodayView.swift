@@ -36,6 +36,10 @@ struct TodayView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await recovery.load() }
+        .task(id: latest?.night) {
+            guard let night = latest?.night else { return }
+            vitals = await recovery.vitals(for: night)
+        }
         .task {
             if case .idle = recovery.state { await recovery.load() }
         }
@@ -132,6 +136,10 @@ struct TodayView: View {
 
     private var latest: SleepNightComparison? { recovery.sleep.nights.last }
 
+    /// HRV, heart rate, breathing, oxygen and steps for `latest`, read once
+    /// the nights are in.
+    @State private var vitals = NightVitals.empty
+
     private var nightLabel: String {
         guard let night = latest?.night else { return "Last night" }
         if Calendar.current.isDateInToday(night) { return "Last night" }
@@ -187,25 +195,27 @@ struct TodayView: View {
             .font(.system(.caption2, design: .rounded, weight: .semibold))
             .foregroundStyle(Daybreak.faint)
             .lineLimit(1)
+            groupLabel("Sleep")
             ForEach([SleepMeasure.total, .deep, .rem]) { measure in
                 let watch = night.watch.map(measure.minutes)
                 let fitbit = night.fitbit.map(measure.minutes)
-                HStack {
-                    Text(measure.displayName)
-                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                        .foregroundStyle(Daybreak.ink)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(watch.map(SleepCompareView.duration) ?? "—")
-                        .frame(width: 84, alignment: .trailing)
-                        .foregroundStyle(Daybreak.teal)
-                    Text(fitbit.map(SleepCompareView.duration) ?? "—")
-                        .frame(width: 64, alignment: .trailing)
-                        .foregroundStyle(Daybreak.sunDeep)
-                    Text(watch.flatMap { w in fitbit.map { SleepCompareView.signed($0 - w) } } ?? "")
-                        .frame(width: 56, alignment: .trailing)
-                        .foregroundStyle(Daybreak.mid)
+                statRow(
+                    measure.displayName,
+                    watch: watch.map(SleepCompareView.duration),
+                    fitbit: fitbit.map(SleepCompareView.duration),
+                    delta: watch.flatMap { w in fitbit.map { SleepCompareView.signed($0 - w) } }
+                )
+            }
+            if !vitals.rows.isEmpty {
+                groupLabel("Heart, breathing & the day before")
+                ForEach(vitals.rows) { row in
+                    statRow(
+                        row.name,
+                        watch: row.watch.map(row.format),
+                        fitbit: row.fitbit.map(row.format),
+                        delta: row.difference
+                    )
                 }
-                .font(.system(.subheadline, design: .rounded).monospacedDigit())
             }
             Divider().overlay(Daybreak.line)
             Text(nightFootnote(night))
@@ -221,6 +231,35 @@ struct TodayView: View {
             NightLogCard(night: night.night, embedded: true)
         }
         .daybreakCard()
+    }
+
+    private func groupLabel(_ text: String) -> some View {
+        Text(text)
+            .daybreakSectionLabel()
+            .padding(.top, 2)
+    }
+
+    private func statRow(_ name: String, watch: String?, fitbit: String?, delta: String?) -> some View {
+        HStack {
+            Text(name)
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(Daybreak.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(watch ?? "—")
+                .frame(width: 84, alignment: .trailing)
+                .foregroundStyle(Daybreak.teal)
+            Text(fitbit ?? "—")
+                .frame(width: 64, alignment: .trailing)
+                .foregroundStyle(Daybreak.sunDeep)
+            Text(delta ?? "")
+                .frame(width: 56, alignment: .trailing)
+                .foregroundStyle(Daybreak.mid)
+        }
+        .font(.system(.subheadline, design: .rounded).monospacedDigit())
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
     }
 
     private func nightFootnote(_ night: SleepNightComparison) -> String {

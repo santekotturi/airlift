@@ -36,6 +36,7 @@ struct HRSample: Equatable, Hashable, Identifiable {
     let date: Date
     let bpm: Double
     var fromAppleDevice: Bool = true
+    var fromGoogleHealth: Bool = false
 }
 
 /// A generic quantity reading from HealthKit (Apple-side comparison data),
@@ -467,7 +468,8 @@ final class HealthKitReader: @unchecked Sendable {
                 id: quantity.uuid,
                 date: quantity.startDate,
                 bpm: quantity.quantity.doubleValue(for: bpmUnit),
-                fromAppleDevice: Self.isAppleDevice(quantity.sourceRevision.source)
+                fromAppleDevice: Self.isAppleDevice(quantity.sourceRevision.source),
+                fromGoogleHealth: Self.isGoogleHealth(quantity.sourceRevision.source)
             )
         }
     }

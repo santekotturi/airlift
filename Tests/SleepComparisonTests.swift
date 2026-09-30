@@ -68,3 +68,43 @@ final class SleepComparisonTests: XCTestCase {
         XCTAssertNil(report.summary(.total))
     }
 }
+
+final class NightVitalsTests: XCTestCase {
+    private let base = Date(timeIntervalSince1970: 1_790_000_000)
+    private func at(_ hours: Double) -> Date { base.addingTimeInterval(hours * 3600) }
+
+    private func sample(_ value: Double, _ hour: Double, apple: Bool) -> QuantitySample {
+        QuantitySample(id: UUID(), start: at(hour), end: at(hour), value: value,
+                       fromAppleDevice: apple, fromGoogleHealth: !apple)
+    }
+
+    func testEachSideIsOnlyItsOwnDevice() {
+        let asleep = DateInterval(start: at(0), end: at(8))
+        let vitals = NightVitals.build(
+            hrv: nil,
+            heartRate: [
+                HRSample(id: UUID(), date: at(2), bpm: 50),
+                HRSample(id: UUID(), date: at(3), bpm: 54),
+                HRSample(id: UUID(), date: at(12), bpm: 90),   // awake, outside sleep
+                HRSample(id: UUID(), date: at(2), bpm: 58, fromAppleDevice: false, fromGoogleHealth: true),
+                HRSample(id: UUID(), date: at(2), bpm: 70, fromAppleDevice: false),  // another app
+            ],
+            restingHR: [],
+            respiratoryRate: [sample(14, 3, apple: true), sample(15, 10, apple: false), sample(99, 20, apple: false)],
+            oxygen: [],
+            steps: (9_000, 8_200),
+            asleep: asleep,
+            night: DateInterval(start: at(-6), end: at(18)),
+            wakeDay: DateInterval(start: at(-1), end: at(23))
+        )
+        let heart = vitals.rows.first { $0.kind == .sleepingHR }
+        XCTAssertEqual(heart?.watch, 52)
+        XCTAssertEqual(heart?.fitbit, 58)
+        XCTAssertEqual(heart?.difference, "+6")
+        let breathing = vitals.rows.first { $0.kind == .respiratoryRate }
+        XCTAssertEqual(breathing?.watch, 14)
+        XCTAssertEqual(breathing?.fitbit, 15)
+        XCTAssertEqual(vitals.rows.first { $0.kind == .steps }?.difference, "−800")
+        XCTAssertNil(vitals.rows.first { $0.kind == .oxygen }, "No data on either side, no row")
+    }
+}
