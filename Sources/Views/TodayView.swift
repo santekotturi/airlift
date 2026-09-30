@@ -10,9 +10,6 @@ struct TodayView: View {
     let openCompare: () -> Void
     let openSync: () -> Void
 
-    /// Which night the log card is on — tonight from noon, last night before.
-    @State private var logNight = JournalNight.current()
-
     private var recovery: RecoveryEngine { model.recovery }
     private var sync: SyncEngine { model.syncEngine }
     private var fitbitName: String { sync.sourceDeviceName }
@@ -22,9 +19,15 @@ struct TodayView: View {
             VStack(alignment: .leading, spacing: 18) {
                 header
                 syncLine
-                logSection
-                Text(nightLabel).daybreakSectionLabel()
-                lastNightCard
+                // Evening leads with what's about to be slept on; the rest of
+                // the day leads with how last night went.
+                if isEvening {
+                    tonightCard
+                    lastNightSection
+                } else {
+                    lastNightSection
+                    tonightCard
+                }
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 28)
@@ -61,20 +64,15 @@ struct TodayView: View {
         }
     }
 
-    // MARK: - Log
+    // MARK: - Tonight
 
-    private var logSection: some View {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
-        return VStack(alignment: .leading, spacing: 10) {
-            Picker("Night", selection: $logNight) {
-                Text("Last night").tag(today)
-                Text("Tonight").tag(tomorrow)
-            }
-            .pickerStyle(.segmented)
-            NightLogCard(night: logNight, title: logNight == tomorrow ? "Tonight's log" : "Last night's log")
-        }
+    private var isEvening: Bool {
+        let hour = Calendar.current.component(.hour, from: Date())
+        return hour >= 17 || hour < JournalNight.smallHoursEnd
+    }
+
+    private var tonightCard: some View {
+        NightLogCard(night: JournalNight.tonight(), title: "Tonight's log")
     }
 
     // MARK: - Sync line
@@ -138,6 +136,13 @@ struct TodayView: View {
         guard let night = latest?.night else { return "Last night" }
         if Calendar.current.isDateInToday(night) { return "Last night" }
         return night.formatted(.dateTime.weekday(.wide)) + " night"
+    }
+
+    private var lastNightSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(nightLabel).daybreakSectionLabel()
+            lastNightCard
+        }
     }
 
     @ViewBuilder
@@ -210,6 +215,10 @@ struct TodayView: View {
             Button("Compare every night →", action: openCompare)
                 .font(.system(.footnote, design: .rounded, weight: .semibold))
                 .foregroundStyle(Daybreak.plum)
+            Divider().overlay(Daybreak.line)
+            // The night's tags sit beside its numbers — "magnesium · deep
+            // +38m" is the thing worth seeing first thing in the morning.
+            NightLogCard(night: night.night, embedded: true)
         }
         .daybreakCard()
     }

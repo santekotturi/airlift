@@ -2,13 +2,17 @@ import SwiftUI
 
 /// One night's tags and note: what's logged (tap to edit), one-tap chips for
 /// the user's usual things, "Add" into the full search, and a free-text note.
-/// Used on Today (for last night or tonight) and on each Journal day.
+/// Used on Today (tonight's log, and embedded in the last-night card) and on
+/// each Journal day.
 struct NightLogCard: View {
     @Environment(AppModel.self) private var model
 
     /// Wake day of the night being logged.
     let night: Date
     var title: String? = nil
+    /// Inside another card: no card chrome of its own, a section-label title,
+    /// and no quick picks — it's for adding what happened, after the fact.
+    var embedded = false
 
     @State private var adding = false
     @State private var editing: JournalEntry?
@@ -22,9 +26,13 @@ struct NightLogCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(title ?? JournalNight.label(night))
-                    .font(.system(.headline, design: .rounded, weight: .bold))
-                    .foregroundStyle(Daybreak.ink)
+                if embedded {
+                    Text(title ?? "Tags & note").daybreakSectionLabel()
+                } else {
+                    Text(title ?? JournalNight.label(night))
+                        .font(.system(.headline, design: .rounded, weight: .bold))
+                        .foregroundStyle(Daybreak.ink)
+                }
                 Spacer()
                 Button {
                     adding = true
@@ -38,7 +46,9 @@ struct NightLogCard: View {
             }
 
             if logged.isEmpty {
-                Text("Nothing logged yet — add what you took or did, and Compare can line it up against your sleep.")
+                Text(embedded
+                     ? "Nothing logged for this night."
+                     : "Nothing logged yet — add what you took or did, and Compare can line it up against your sleep.")
                     .font(Daybreak.captionFont)
                     .foregroundStyle(Daybreak.mid)
                     .fixedSize(horizontal: false, vertical: true)
@@ -53,7 +63,7 @@ struct NightLogCard: View {
                 }
             }
 
-            let quick = quickPicks
+            let quick = embedded ? [] : quickPicks
             if !quick.isEmpty {
                 Text("Your usual").daybreakSectionLabel()
                 FlowLayout(spacing: 8) {
@@ -82,13 +92,13 @@ struct NightLogCard: View {
                 .onSubmit { journal.setNote(noteDraft, night: key) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .daybreakCard()
+        .modifier(CardUnlessEmbedded(embedded: embedded))
         .sensoryFeedback(.success, trigger: logged.count)
         .onAppear {
             noteDraft = journal.note(night: key)
             #if DEBUG
             // `-AirliftUIMockScreen addtag` opens the add sheet for screenshots.
-            if model.isUIMock, UIMock.screen == "addtag", title != nil { adding = true }
+            if model.isUIMock, UIMock.screen == "addtag", !embedded, title != nil { adding = true }
             #endif
         }
         .onChange(of: key) { _, newKey in noteDraft = journal.note(night: newKey) }
@@ -107,6 +117,14 @@ struct NightLogCard: View {
     private var quickPicks: [TagItem] {
         let already = Set(logged.map(\.itemID))
         return journal.frequentItems(limit: 10).filter { !already.contains($0.id) }.prefix(6).map { $0 }
+    }
+}
+
+private struct CardUnlessEmbedded: ViewModifier {
+    let embedded: Bool
+
+    func body(content: Content) -> some View {
+        if embedded { content } else { content.daybreakCard() }
     }
 }
 

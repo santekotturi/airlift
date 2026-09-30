@@ -8,19 +8,23 @@ enum JournalNight {
     /// "yyyy-MM-dd" of the wake day.
     static func key(_ wakeDay: Date) -> String { CivilDay.string(from: wakeDay) }
 
-    /// The night someone most likely means right now: before noon it's the
-    /// night just slept ("I took magnesium last night"); from noon on it's the
-    /// one coming ("taking it tonight").
-    static func current(now: Date = Date(), calendar: Calendar = .current) -> Date {
+    /// The night about to be slept — or, in the small hours, the one still
+    /// under way: taking melatonin at 1am belongs to the night that started
+    /// yesterday evening, not to tomorrow's.
+    static func tonight(now: Date = Date(), calendar: Calendar = .current) -> Date {
         let today = calendar.startOfDay(for: now)
-        guard calendar.component(.hour, from: now) >= 12 else { return today }
+        guard calendar.component(.hour, from: now) >= smallHoursEnd else { return today }
         return calendar.date(byAdding: .day, value: 1, to: today) ?? today
     }
+
+    /// Before this hour it's still last night.
+    static let smallHoursEnd = 5
 
     /// "Tonight", "Last night", or "Monday night" (the evening it started).
     static func label(_ wakeDay: Date, now: Date = Date(), calendar: Calendar = .current) -> String {
         let today = calendar.startOfDay(for: now)
         let day = calendar.startOfDay(for: wakeDay)
+        if day == tonight(now: now, calendar: calendar) { return "Tonight" }
         if let tomorrow = calendar.date(byAdding: .day, value: 1, to: today), day == tomorrow { return "Tonight" }
         if day == today { return "Last night" }
         let evening = calendar.date(byAdding: .day, value: -1, to: day) ?? day

@@ -51,9 +51,12 @@ final class JournalTests: XCTestCase {
         Calendar.current.date(from: DateComponents(year: 2026, month: 9, day: day, hour: hour))!
     }
 
-    func testCurrentNightSwitchesAtNoon() {
-        XCTAssertEqual(JournalNight.key(JournalNight.current(now: date(30, 7))), "2026-09-30")
-        XCTAssertEqual(JournalNight.key(JournalNight.current(now: date(30, 22))), "2026-10-01")
+    func testTonightIsTheComingNightExceptInTheSmallHours() {
+        XCTAssertEqual(JournalNight.key(JournalNight.tonight(now: date(30, 7))), "2026-10-01")
+        XCTAssertEqual(JournalNight.key(JournalNight.tonight(now: date(30, 22))), "2026-10-01")
+        // 1am Oct 1 is still the night that started Sep 30.
+        XCTAssertEqual(JournalNight.key(JournalNight.tonight(now: date(1 + 30, 1))), "2026-10-01")
+        XCTAssertEqual(JournalNight.label(date(1 + 30, 0), now: date(1 + 30, 1)), "Tonight")
     }
 
     func testLabels() {
