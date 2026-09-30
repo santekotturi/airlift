@@ -231,7 +231,9 @@ struct SleepCompareView: View {
                 }
             }
             .frame(height: 210)
-            .padding(.top, selected == nil ? 0 : 36)
+            // The callout draws above the plot, over the picker, rather than
+            // reserving room — so pressing never resizes the card.
+            .zIndex(1)
             .onChange(of: selectedDay) { _, day in
                 // A tapped night opens in the card below, so the stick and its
                 // hypnograms are one tap apart.
@@ -244,12 +246,58 @@ struct SleepCompareView: View {
                 legendMarker(Daybreak.teal, "circle.fill", report.nights.lazy.compactMap(\.watchDevice).first ?? "Watch")
                 legendMarker(Daybreak.sunDeep, "diamond.fill", fitbitName)
             }
+            if let summary = report.summary(measure) {
+                Divider().overlay(Daybreak.line)
+                statsRow(summary)
+            }
             Text("Each stick is one night: its length is how far apart the two devices were. Touch a night to see it below.")
                 .font(Daybreak.captionFont)
                 .foregroundStyle(Daybreak.faint)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .daybreakCard(padding: 18)
+    }
+
+    /// Averages for the measure on screen, over nights both devices scored —
+    /// a Watch-only night would pull one average and not the other.
+    private func statsRow(_ summary: SleepComparisonReport.Summary) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 0) {
+                stat(Self.duration(summary.watchMean), "Watch avg", tint: Daybreak.teal)
+                stat(Self.duration(summary.fitbitMean), "Fitbit avg", tint: Daybreak.sunDeep)
+                stat(Self.signed(summary.meanDifference), "Fitbit − Watch", tint: Daybreak.ink)
+            }
+            Text(statsCaption(summary))
+                .font(Daybreak.captionFont)
+                .foregroundStyle(Daybreak.mid)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func stat(_ value: String, _ label: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(Daybreak.numberFont(size: statValueSize))
+                .foregroundStyle(tint)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(label)
+                .font(.system(.caption2, design: .rounded, weight: .semibold))
+                .foregroundStyle(Daybreak.faint)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func statsCaption(_ summary: SleepComparisonReport.Summary) -> String {
+        var parts = ["\(measure.displayName), \(summary.nights) night\(summary.nights == 1 ? "" : "s") both devices scored"]
+        if let sd = summary.differenceSD, summary.nights >= 3 {
+            parts.append("the gap varies ±\(Int(sd.rounded()))m night to night")
+        }
+        if let rho = summary.spearman, summary.nights >= 5 {
+            parts.append(String(format: "they rank nights alike at ρ %.2f", rho))
+        }
+        return parts.joined(separator: " · ") + "."
     }
 
     /// A marker with a card-colored ring, so a Watch dot and a Fitbit diamond
