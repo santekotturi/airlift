@@ -241,8 +241,9 @@ struct TodayView: View {
             .padding(.top, 2)
     }
 
-    /// Delta column stacks the raw difference over its percent of the
-    /// Watch's value, so both fit the same narrow column.
+    /// Delta column leads with the percent of the Watch's value — comparable
+    /// across rows in a way minutes and bpm aren't — with the raw difference
+    /// beneath. Rows without a percent (blood oxygen) show the raw value.
     private func statRow(_ name: String, watch: String?, fitbit: String?, delta: String?, percent: String? = nil) -> some View {
         HStack {
             Text(name)
@@ -258,10 +259,10 @@ struct TodayView: View {
                 .frame(width: 64, alignment: .trailing)
                 .foregroundStyle(Daybreak.sunDeep)
             VStack(alignment: .trailing, spacing: 0) {
-                Text(delta ?? "")
+                Text(percent ?? delta ?? "")
                     .foregroundStyle(Daybreak.mid)
-                if let percent {
-                    Text(percent)
+                if percent != nil, let delta {
+                    Text(delta)
                         .font(.system(.caption2, design: .rounded).monospacedDigit())
                         .foregroundStyle(Daybreak.faint)
                 }
