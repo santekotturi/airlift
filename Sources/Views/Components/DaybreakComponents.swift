@@ -660,3 +660,50 @@ struct DaybreakDestructiveGhostButtonStyle: ButtonStyle {
 extension ButtonStyle where Self == DaybreakDestructiveGhostButtonStyle {
     static var daybreakDestructiveGhost: DaybreakDestructiveGhostButtonStyle { .init() }
 }
+
+// MARK: - Navigation row
+
+/// Icon disc, title, one-line detail, chevron — the tappable row that leads
+/// into a screen from a hub card (Compare, Your metrics).
+struct DaybreakNavRow: View {
+    let icon: String
+    let title: String
+    let detail: String
+    var footnote: String? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(Daybreak.newChipBackground)
+                    .frame(width: 34, height: 34)
+                    .overlay {
+                        Image(systemName: icon)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(Daybreak.plum)
+                    }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                        .foregroundStyle(Daybreak.ink)
+                    Text(detail)
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(Daybreak.mid)
+                        .multilineTextAlignment(.leading)
+                    if let footnote {
+                        Text(footnote)
+                            .font(.system(.caption2, design: .rounded))
+                            .foregroundStyle(Daybreak.faint)
+                    }
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Daybreak.faint)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}

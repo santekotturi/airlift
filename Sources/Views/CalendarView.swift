@@ -25,7 +25,7 @@ enum MonthGrid {
     }
 }
 
-/// Month calendar of everything that has crossed the bridge: a dot per data
+/// The Journal tab: a month calendar of everything that has crossed the bridge: a dot per data
 /// kind on each day (colored by status), tap-through to the day's detail
 /// where Airlift-written data can be compared with other sources and removed.
 struct CalendarView: View {
@@ -33,6 +33,7 @@ struct CalendarView: View {
 
     @State private var month = Calendar.current.startOfDay(for: Date())
     @State private var pushedDay: Date?
+    @State private var browseTarget: BrowseTarget?
 
     /// Day cells hold scaling text, so their height scales with it — fixed
     /// rows would clip large type sizes.
@@ -51,6 +52,8 @@ struct CalendarView: View {
                 header
                 monthCard
                 legendCard
+                YourMetricsCard { browseTarget = $0 }
+                    .padding(.top, 8)
             }
             .padding(.horizontal, 18)
             .padding(.bottom, 28)
@@ -59,6 +62,9 @@ struct CalendarView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $pushedDay) { CalendarDayView(day: $0) }
+        .navigationDestination(item: $browseTarget) {
+            MetricHistoryPagerView(kind: $0.kind, startDay: $0.startDay)
+        }
         #if DEBUG
         .onAppear {
             // `-AirliftUIMockScreen day` deep-links straight into today's
@@ -72,10 +78,10 @@ struct CalendarView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Calendar")
+            Text("Journal")
                 .font(Daybreak.titleFont)
                 .foregroundStyle(Daybreak.ink)
-            Text("Every day the airlift has carried data — tap one to inspect it.")
+            Text("Every night on record — tap a day to see what landed in Apple Health.")
                 .font(Daybreak.bodyFont)
                 .foregroundStyle(Daybreak.mid)
         }
