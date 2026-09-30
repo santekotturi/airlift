@@ -46,6 +46,28 @@ API into Apple Health, entirely on-device.
   (Airlift's own samples only). Airlift's Fitbit HRV is read from both types in
   the meantime, and the sync comparison on iOS 27 sets Fitbit RMSSD beside the
   Watch's RMSSD.
+- **Four tabs: Today, Compare, Journal, Sync.** Today leads with last night on
+  both devices and a one-line sync status; Compare holds Sleep, HRV and
+  Recovery; Journal is the calendar record; Sync is the bridge, review queue
+  and history that used to be Home.
+- **Sleep comparison screen** — Watch vs Fitbit total sleep and every stage:
+  averages, a night-by-night dumbbell chart (one stick per night, no lines
+  across nights a device wasn't worn) with per-stage stats, and a single-night
+  view with both hypnograms.
+- **Per-night tags and notes** — log what you took or did before bed from a
+  649-item catalog (supplements, medications, caffeine/alcohol, food timing,
+  exercise, light, heat and cold, environment, mind-body, devices, recovery,
+  schedule, health) with type-ahead that matches word starts and aliases and
+  forgives a typo, or your own tags. Tags attach to the night by its wake day.
+  Stored on the phone only (never written to Apple Health); Journal exports a
+  CSV with one row per night, both devices' sleep stages, and a column per
+  thing logged.
+- **Clear queue** on the review queue — sets held items aside without writing
+  or tossing anything; fetching those days again brings them back.
+- **Google Health detection.** Nights and metric days Google Health's own Apple
+  Health sync already wrote are skipped rather than imported a second time
+  (sleep matched exactly on `HKExternalUUID`, the Google dataPoint ID), and
+  Settings marks each type Google Health already writes.
 - Documentation: README setup walkthrough, privacy policy, security policy,
   contributing guide, App Store prep checklist, and a GitHub Pages site.
 
@@ -58,6 +80,18 @@ API into Apple Health, entirely on-device.
   "Apple heart rate" included Fitbit heart rate Airlift or Google Health wrote.
   Fitbit sleep and RMSSD written by another app (Google Health) are used as the
   Fitbit side on nights Airlift has none.
+
+- **Sleep review compared Fitbit against itself.** The "Apple Health" side of a
+  night summed every non-Airlift sample in a widened window, so Google
+  Health's copy of the same Fitbit night was counted as the Watch's and nights
+  read as 14–16 h (and every night was held). It is now the Watch's own night
+  alone, with naps split off; the Calendar day view had the same bug.
+- **Metric comparisons** (heart rate, steps and the rest) counted Google
+  Health's Fitbit copies on the Apple side; they now use Apple devices only.
+- **Recovery/HRV treated any non-Apple sleep as Fitbit's** — WHOOP or Garmin
+  Connect sleep could stand in for it. Only Google Health's writes do now.
+- **Tapping the morning reminder crashed Airlift.** The async notification
+  delegate completed UIKit's handler off the main thread.
 
 ### Changed
 
