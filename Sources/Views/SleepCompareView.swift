@@ -13,6 +13,8 @@ struct SleepCompareView: View {
     /// Opens on the most recent night; the clamp turns `Int.max` into "last".
     @State private var nightIndex = Int.max
     @State private var measure: SleepMeasure = .deep
+    /// The night under the finger in the trend chart.
+    @State private var selectedDay: Date?
 
     @ScaledMetric(relativeTo: .title) private var statValueSize: CGFloat = 22
 
@@ -118,7 +120,7 @@ struct SleepCompareView: View {
                 Text("Stage").frame(maxWidth: .infinity, alignment: .leading)
                 Text("Watch").frame(width: 62, alignment: .trailing)
                 Text("Fitbit").frame(width: 62, alignment: .trailing)
-                Text("Fitbit Δ").frame(width: 62, alignment: .trailing)
+                Text("Fitbit Δ").frame(width: 70, alignment: .trailing)
             }
             .font(.system(.caption2, design: .rounded, weight: .semibold))
             .foregroundStyle(Daybreak.faint)
@@ -133,7 +135,7 @@ struct SleepCompareView: View {
                             .foregroundStyle(Daybreak.teal)
                         Text(Self.duration(summary.fitbitMean)).frame(width: 62, alignment: .trailing)
                             .foregroundStyle(Daybreak.sunDeep)
-                        Text(Self.signed(summary.meanDifference)).frame(width: 62, alignment: .trailing)
+                        Text(Self.signed(summary.meanDifference)).frame(width: 70, alignment: .trailing)
                             .foregroundStyle(Daybreak.mid)
                     }
                     .font(.system(.subheadline, design: .rounded).monospacedDigit())
@@ -162,8 +164,15 @@ struct SleepCompareView: View {
 
     // MARK: - Trend
 
+    /// One stick per night: the Watch's value and Fitbit's joined by a rule
+    /// whose length is the gap. Nights are separate measurements, so nothing
+    /// connects one night to the next — a line would draw values across nights
+    /// that were never worn. A night only one device scored is a lone marker.
     private func trendCard(_ report: SleepComparisonReport) -> some View {
         let nights = report.nights
+        let selected = selectedDay.flatMap { day in
+            nights.first { Calendar.current.isDate($0.night, inSameDayAs: day) }
+        }
         return VStack(alignment: .leading, spacing: 12) {
             Picker("Measure", selection: $measure) {
                 ForEach(SleepMeasure.allCases) { measure in
@@ -173,51 +182,134 @@ struct SleepCompareView: View {
             .pickerStyle(.segmented)
             Chart {
                 ForEach(nights) { night in
-                    if let watch = night.watch {
-                        LineMark(
+                    let watch = night.watch.map(measure.minutes)
+                    let fitbit = night.fitbit.map(measure.minutes)
+                    let dimmed = selected != nil && selected?.night != night.night
+                    if let watch, let fitbit {
+                        RuleMark(
                             x: .value("Night", night.night, unit: .day),
-                            y: .value("Minutes", measure.minutes(watch)),
-                            series: .value("Device", "Watch")
+                            yStart: .value("Minutes", min(watch, fitbit)),
+                            yEnd: .value("Minutes", max(watch, fitbit))
                         )
-                        .foregroundStyle(Daybreak.teal)
-                        PointMark(
-                            x: .value("Night", night.night, unit: .day),
-                            y: .value("Minutes", measure.minutes(watch))
-                        )
-                        .foregroundStyle(Daybreak.teal)
-                        .symbolSize(18)
+                        .foregroundStyle(Daybreak.faint)
+                        .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
+                        .opacity(dimmed ? 0.3 : 1)
                     }
-                    if let fitbit = night.fitbit {
-                        LineMark(
-                            x: .value("Night", night.night, unit: .day),
-                            y: .value("Minutes", measure.minutes(fitbit)),
-                            series: .value("Device", "Fitbit")
-                        )
-                        .foregroundStyle(Daybreak.sunDeep)
-                        PointMark(
-                            x: .value("Night", night.night, unit: .day),
-                            y: .value("Minutes", measure.minutes(fitbit))
-                        )
-                        .foregroundStyle(Daybreak.sunDeep)
-                        .symbolSize(18)
+                    if let watch {
+                        marker(night.night, watch, color: Daybreak.teal, shape: .circle, device: "Watch", dimmed: dimmed)
+                    }
+                    if let fitbit {
+                        marker(night.night, fitbit, color: Daybreak.sunDeep, shape: .diamond, device: "Fitbit", dimmed: dimmed)
                     }
                 }
+                if let selected {
+                    RuleMark(x: .value("Night", selected.night, unit: .day))
+                        .foregroundStyle(Daybreak.line)
+                        .zIndex(-1)
+                        .annotation(
+                            position: .top, spacing: 4,
+                            overflowResolution: .init(x: .fit(to: .chart), y: .disabled)
+                        ) {
+                            selectionCallout(selected)
+                        }
+                }
             }
+            .chartXSelection(value: $selectedDay)
+            .chartYScale(domain: .automatic(includesZero: true))
             .chartYAxis {
-                AxisMarks { value in
+                AxisMarks(values: .stride(by: Self.tickMinutes(nights, measure))) { value in
                     AxisGridLine().foregroundStyle(Daybreak.line)
                     AxisValueLabel {
                         if let minutes = value.as(Double.self) { Text(Self.duration(minutes)) }
                     }
                 }
             }
-            .frame(height: 190)
-            HStack(spacing: 14) {
-                legendDot(Daybreak.teal, report.nights.lazy.compactMap(\.watchDevice).first ?? "Watch")
-                legendDot(Daybreak.sunDeep, fitbitName)
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day, count: 14)) { _ in
+                    AxisGridLine().foregroundStyle(Daybreak.line)
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                }
             }
+            .frame(height: 210)
+            .padding(.top, selected == nil ? 0 : 36)
+            .onChange(of: selectedDay) { _, day in
+                // A tapped night opens in the card below, so the stick and its
+                // hypnograms are one tap apart.
+                guard let day, let index = nights.firstIndex(where: {
+                    Calendar.current.isDate($0.night, inSameDayAs: day)
+                }) else { return }
+                nightIndex = index
+            }
+            HStack(spacing: 14) {
+                legendMarker(Daybreak.teal, "circle.fill", report.nights.lazy.compactMap(\.watchDevice).first ?? "Watch")
+                legendMarker(Daybreak.sunDeep, "diamond.fill", fitbitName)
+            }
+            Text("Each stick is one night: its length is how far apart the two devices were. Touch a night to see it below.")
+                .font(Daybreak.captionFont)
+                .foregroundStyle(Daybreak.faint)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .daybreakCard(padding: 18)
+    }
+
+    /// A marker with a card-colored ring, so a Watch dot and a Fitbit diamond
+    /// on the same night stay separable where they overlap.
+    @ChartContentBuilder
+    private func marker(
+        _ night: Date, _ minutes: Double, color: Color,
+        shape: BasicChartSymbolShape, device: String, dimmed: Bool
+    ) -> some ChartContent {
+        PointMark(
+            x: .value("Night", night, unit: .day),
+            y: .value("Minutes", minutes)
+        )
+        .symbol(shape)
+        .symbolSize(56)
+        .foregroundStyle(Daybreak.card)
+        PointMark(
+            x: .value("Night", night, unit: .day),
+            y: .value("Minutes", minutes)
+        )
+        .symbol(shape)
+        .symbolSize(26)
+        .foregroundStyle(color)
+        .opacity(dimmed ? 0.3 : 1)
+        .accessibilityLabel("\(device), \(night.formatted(date: .abbreviated, time: .omitted))")
+        .accessibilityValue(Self.duration(minutes))
+    }
+
+    private func selectionCallout(_ night: SleepNightComparison) -> some View {
+        let watch = night.watch.map(measure.minutes)
+        let fitbit = night.fitbit.map(measure.minutes)
+        return VStack(alignment: .leading, spacing: 2) {
+            Text(night.night.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                .font(.system(.caption2, design: .rounded, weight: .bold))
+                .foregroundStyle(Daybreak.ink)
+            HStack(spacing: 8) {
+                Text("Watch \(watch.map(Self.duration) ?? "—")")
+                Text("Fitbit \(fitbit.map(Self.duration) ?? "—")")
+                if let watch, let fitbit {
+                    Text(Self.signed(fitbit - watch)).fontWeight(.bold)
+                }
+            }
+            .font(.system(.caption2, design: .rounded).monospacedDigit())
+            .foregroundStyle(Daybreak.mid)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(Daybreak.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Daybreak.line))
+    }
+
+    private func legendMarker(_ color: Color, _ symbol: String, _ label: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: symbol)
+                .font(.system(size: 8))
+                .foregroundStyle(color)
+            Text(label)
+                .font(.system(.caption2, design: .rounded, weight: .semibold))
+                .foregroundStyle(Daybreak.mid)
+        }
     }
 
     private func legendDot(_ color: Color, _ label: String) -> some View {
@@ -320,13 +412,25 @@ struct SleepCompareView: View {
                 .foregroundStyle(Daybreak.teal)
             Text(fitbit.map(Self.duration) ?? "—").frame(width: 62, alignment: .trailing)
                 .foregroundStyle(Daybreak.sunDeep)
-            Text(watch.flatMap { w in fitbit.map { Self.signed($0 - w) } } ?? "").frame(width: 62, alignment: .trailing)
+            Text(watch.flatMap { w in fitbit.map { Self.signed($0 - w) } } ?? "").frame(width: 70, alignment: .trailing)
                 .foregroundStyle(Daybreak.mid)
         }
         .font(.system(.footnote, design: .rounded).monospacedDigit())
     }
 
     // MARK: - Formatting
+
+    /// Ticks on whole hours or half hours — Charts' own picks land on
+    /// minute counts like 1h 40m that nobody reads a clock in.
+    private static func tickMinutes(_ nights: [SleepNightComparison], _ measure: SleepMeasure) -> Double {
+        let peak = nights.flatMap { [$0.watch, $0.fitbit].compactMap { $0.map(measure.minutes) } }.max() ?? 0
+        switch peak {
+        case ..<90: return 15
+        case ..<200: return 30
+        case ..<420: return 60
+        default: return 120
+        }
+    }
 
     private static func shortName(_ measure: SleepMeasure) -> String {
         switch measure {
@@ -344,10 +448,14 @@ struct SleepCompareView: View {
         return total >= 60 ? "\(total / 60)h \(String(format: "%02d", total % 60))m" : "\(total)m"
     }
 
-    /// "+23m" / "−1h 05m".
+    /// "+23m" / "−1h5m" — compact, since a difference column must stay one line.
     static func signed(_ minutes: Double) -> String {
         let rounded = Int(minutes.rounded())
         if rounded == 0 { return "±0m" }
-        return (rounded > 0 ? "+" : "−") + duration(Double(abs(rounded)))
+        let size = abs(rounded)
+        let body = size >= 60 ? "\(size / 60)h\(size % 60)m" : "\(size)m"
+        return (rounded > 0 ? "+" : "−") + body
     }
 }
+
+struct SleepRoute: Hashable {}

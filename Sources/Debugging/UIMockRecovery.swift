@@ -67,14 +67,19 @@ extension UIMock {
         )
         // Lights out around 11pm, five cycles, up around 6:30.
         let bedtime = window.start.addingTimeInterval(5 * 3600 + noise(index, salt: 1) * 1800)
-        let cycles = 5
+        // Four to six cycles, so nights differ in length and stage totals.
+        let cycles = 4 + index % 3
 
         /// How recovered this night was, roughly −1 to +1. Everything below is
         /// a noisy view of this one number.
         let latent = sin(Double(index) * 0.7) * 0.6 + noise(index, salt: 2) * 0.7
 
         let appleSleep = segments(from: bedtime, cycle: appleCycle, cycles: cycles)
-        let fitbitSleep = segments(from: bedtime, cycle: fitbitCycle, cycles: cycles)
+        // The band is off some nights, and on others scores a cycle fewer —
+        // the gaps and spread the Sleep screen has to draw honestly.
+        let fitbitSleep = index % 6 == 4
+            ? []
+            : segments(from: bedtime, cycle: fitbitCycle, cycles: cycles - (index % 4 == 1 ? 1 : 0))
         let appleIndex = StageIndex(apple: appleSleep)
         let sleepEnd = appleSleep.last?.end ?? bedtime.addingTimeInterval(7.5 * 3600)
 
