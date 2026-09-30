@@ -10,6 +10,9 @@ struct TodayView: View {
     let openCompare: () -> Void
     let openSync: () -> Void
 
+    /// Which night the log card is on — tonight from noon, last night before.
+    @State private var logNight = JournalNight.current()
+
     private var recovery: RecoveryEngine { model.recovery }
     private var sync: SyncEngine { model.syncEngine }
     private var fitbitName: String { sync.sourceDeviceName }
@@ -19,6 +22,7 @@ struct TodayView: View {
             VStack(alignment: .leading, spacing: 18) {
                 header
                 syncLine
+                logSection
                 Text(nightLabel).daybreakSectionLabel()
                 lastNightCard
             }
@@ -54,6 +58,22 @@ struct TodayView: View {
         case 5..<12: "Good morning ☀️"
         case 12..<17: "Good afternoon 🌤️"
         default: "Good evening 🌙"
+        }
+    }
+
+    // MARK: - Log
+
+    private var logSection: some View {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+        return VStack(alignment: .leading, spacing: 10) {
+            Picker("Night", selection: $logNight) {
+                Text("Last night").tag(today)
+                Text("Tonight").tag(tomorrow)
+            }
+            .pickerStyle(.segmented)
+            NightLogCard(night: logNight, title: logNight == tomorrow ? "Tonight's log" : "Last night's log")
         }
     }
 

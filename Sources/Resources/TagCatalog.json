@@ -1,0 +1,7710 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "magnesium-glycinate",
+      "name": "Magnesium glycinate",
+      "category": "supplement",
+      "aliases": [
+        "magnesium bisglycinate",
+        "mag glycinate",
+        "magnesium glycenate",
+        "magnesium glycinte",
+        "mag gly",
+        "mag",
+        "magnesium"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "magnesium-citrate",
+      "name": "Magnesium citrate",
+      "category": "supplement",
+      "aliases": [
+        "mag citrate",
+        "natural calm",
+        "magnesium citrat"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "magnesium-l-threonate",
+      "name": "Magnesium L-threonate",
+      "category": "supplement",
+      "aliases": [
+        "magnesium threonate",
+        "magtein",
+        "mag threonate",
+        "l-threonate",
+        "magnesium l threonate",
+        "magnesium theronate"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "magnesium-oxide",
+      "name": "Magnesium oxide",
+      "category": "supplement",
+      "aliases": [
+        "mag oxide"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "magnesium-malate",
+      "name": "Magnesium malate",
+      "category": "supplement",
+      "aliases": [
+        "mag malate"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "magnesium-taurate",
+      "name": "Magnesium taurate",
+      "category": "supplement",
+      "aliases": [
+        "mag taurate"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "magnesium-chloride",
+      "name": "Magnesium chloride",
+      "category": "supplement",
+      "aliases": [
+        "mag chloride",
+        "magnesium oil",
+        "magnesium spray"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "magnesium-blend",
+      "name": "Magnesium blend",
+      "category": "supplement",
+      "aliases": [
+        "magnesium complex",
+        "mag blend",
+        "magnesium breakthrough"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "glycine",
+      "name": "Glycine",
+      "category": "supplement",
+      "aliases": [
+        "glycine powder",
+        "glycene"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "l-theanine",
+      "name": "L-theanine",
+      "category": "supplement",
+      "aliases": [
+        "theanine",
+        "l theanine",
+        "suntheanine",
+        "l-theanie",
+        "ltheanine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "taurine",
+      "name": "Taurine",
+      "category": "supplement",
+      "aliases": [
+        "tauine"
+      ],
+      "units": [
+        "mg",
+        "g"
+      ]
+    },
+    {
+      "id": "gaba",
+      "name": "GABA",
+      "category": "supplement",
+      "aliases": [
+        "gamma-aminobutyric acid",
+        "pharmagaba"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "5-htp",
+      "name": "5-HTP",
+      "category": "supplement",
+      "aliases": [
+        "5htp",
+        "5-hydroxytryptophan",
+        "griffonia"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "l-tryptophan",
+      "name": "L-tryptophan",
+      "category": "supplement",
+      "aliases": [
+        "tryptophan",
+        "l tryptophan",
+        "tryptophane"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "l-tyrosine",
+      "name": "L-tyrosine",
+      "category": "supplement",
+      "aliases": [
+        "tyrosine",
+        "n-acetyl l-tyrosine",
+        "nalt"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "nac",
+      "name": "NAC",
+      "category": "supplement",
+      "aliases": [
+        "n-acetyl cysteine",
+        "n-acetylcysteine",
+        "n acetyl cysteine",
+        "acetylcysteine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "glynac",
+      "name": "GlyNAC",
+      "category": "supplement",
+      "aliases": [
+        "glycine and nac",
+        "gly-nac"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "l-glutamine",
+      "name": "L-glutamine",
+      "category": "supplement",
+      "aliases": [
+        "glutamine"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "l-arginine",
+      "name": "L-arginine",
+      "category": "supplement",
+      "aliases": [
+        "arginine"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "l-citrulline",
+      "name": "L-citrulline",
+      "category": "supplement",
+      "aliases": [
+        "citrulline",
+        "citrulline malate"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "l-ornithine",
+      "name": "L-ornithine",
+      "category": "supplement",
+      "aliases": [
+        "ornithine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "l-lysine",
+      "name": "L-lysine",
+      "category": "supplement",
+      "aliases": [
+        "lysine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "l-serine",
+      "name": "L-serine",
+      "category": "supplement",
+      "aliases": [
+        "serine"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "beta-alanine",
+      "name": "Beta-alanine",
+      "category": "supplement",
+      "aliases": [
+        "beta alanine"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "bcaas",
+      "name": "BCAAs",
+      "category": "supplement",
+      "aliases": [
+        "bcaa",
+        "branched chain amino acids",
+        "branched-chain amino acids"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "eaas",
+      "name": "EAAs",
+      "category": "supplement",
+      "aliases": [
+        "eaa",
+        "essential amino acids"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "hmb",
+      "name": "HMB",
+      "category": "supplement",
+      "aliases": [
+        "beta-hydroxy beta-methylbutyrate"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "betaine-tmg",
+      "name": "Betaine (TMG)",
+      "category": "supplement",
+      "aliases": [
+        "tmg",
+        "trimethylglycine",
+        "betaine"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "agmatine",
+      "name": "Agmatine",
+      "category": "supplement",
+      "aliases": [
+        "agmatine sulfate"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ashwagandha",
+      "name": "Ashwagandha",
+      "category": "supplement",
+      "aliases": [
+        "ashwa",
+        "ashwaganda",
+        "ashwagandah",
+        "aswagandha",
+        "withania somnifera",
+        "indian ginseng"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ashwagandha-ksm-66",
+      "name": "Ashwagandha KSM-66",
+      "category": "supplement",
+      "aliases": [
+        "ksm-66",
+        "ksm66",
+        "ksm 66"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ashwagandha-sensoril",
+      "name": "Ashwagandha Sensoril",
+      "category": "supplement",
+      "aliases": [
+        "sensoril"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ashwagandha-shoden",
+      "name": "Ashwagandha Shoden",
+      "category": "supplement",
+      "aliases": [
+        "shoden"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "valerian-root",
+      "name": "Valerian root",
+      "category": "supplement",
+      "aliases": [
+        "valerian",
+        "valerian root extract",
+        "valarian"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "chamomile-extract",
+      "name": "Chamomile extract",
+      "category": "supplement",
+      "aliases": [
+        "chamomile capsule",
+        "chamomile supplement",
+        "camomile extract"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lemon-balm",
+      "name": "Lemon balm",
+      "category": "supplement",
+      "aliases": [
+        "melissa officinalis",
+        "melissa",
+        "lemonbalm"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "passionflower",
+      "name": "Passionflower",
+      "category": "supplement",
+      "aliases": [
+        "passion flower",
+        "passiflora"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "magnolia-bark",
+      "name": "Magnolia bark",
+      "category": "supplement",
+      "aliases": [
+        "magnolia",
+        "honokiol",
+        "magnolia officinalis"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "relora",
+      "name": "Relora",
+      "category": "supplement",
+      "aliases": [
+        "magnolia and phellodendron",
+        "phellodendron"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "reishi",
+      "name": "Reishi",
+      "category": "supplement",
+      "aliases": [
+        "reishi mushroom",
+        "ganoderma",
+        "lingzhi",
+        "rieshi"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "rhodiola-rosea",
+      "name": "Rhodiola rosea",
+      "category": "supplement",
+      "aliases": [
+        "rhodiola",
+        "golden root",
+        "rodiola"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "holy-basil",
+      "name": "Holy basil",
+      "category": "supplement",
+      "aliases": [
+        "tulsi"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lavender-oil-capsules",
+      "name": "Lavender oil capsules",
+      "category": "supplement",
+      "aliases": [
+        "silexan",
+        "lavela",
+        "lavender capsule"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "hops-extract",
+      "name": "Hops extract",
+      "category": "supplement",
+      "aliases": [
+        "hops",
+        "hop extract"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "skullcap",
+      "name": "Skullcap",
+      "category": "supplement",
+      "aliases": [
+        "scutellaria",
+        "scullcap"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "california-poppy",
+      "name": "California poppy",
+      "category": "supplement",
+      "aliases": [
+        "eschscholzia"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "saffron",
+      "name": "Saffron",
+      "category": "supplement",
+      "aliases": [
+        "affron",
+        "saffron extract"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "jujube-seed",
+      "name": "Jujube seed",
+      "category": "supplement",
+      "aliases": [
+        "ziziphus",
+        "suan zao ren"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "kanna",
+      "name": "Kanna",
+      "category": "supplement",
+      "aliases": [
+        "sceletium",
+        "zembrin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cordyceps",
+      "name": "Cordyceps",
+      "category": "supplement",
+      "aliases": [
+        "cordyceps militaris"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lions-mane",
+      "name": "Lion's mane",
+      "category": "supplement",
+      "aliases": [
+        "lions mane",
+        "lion's mane mushroom",
+        "hericium",
+        "lionsmane",
+        "lion mane"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "chaga",
+      "name": "Chaga",
+      "category": "supplement",
+      "aliases": [
+        "chaga mushroom"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "turkey-tail",
+      "name": "Turkey tail",
+      "category": "supplement",
+      "aliases": [
+        "turkey tail mushroom"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "mushroom-blend",
+      "name": "Mushroom blend",
+      "category": "supplement",
+      "aliases": [
+        "mushroom complex",
+        "functional mushrooms"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "bacopa-monnieri",
+      "name": "Bacopa monnieri",
+      "category": "supplement",
+      "aliases": [
+        "bacopa",
+        "brahmi",
+        "bacopa monniera"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ginkgo-biloba",
+      "name": "Ginkgo biloba",
+      "category": "supplement",
+      "aliases": [
+        "ginkgo",
+        "gingko"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "panax-ginseng",
+      "name": "Panax ginseng",
+      "category": "supplement",
+      "aliases": [
+        "ginseng",
+        "korean ginseng",
+        "red ginseng"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "american-ginseng",
+      "name": "American ginseng",
+      "category": "supplement",
+      "aliases": [
+        "panax quinquefolius"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "eleuthero",
+      "name": "Eleuthero",
+      "category": "supplement",
+      "aliases": [
+        "siberian ginseng"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "maca",
+      "name": "Maca",
+      "category": "supplement",
+      "aliases": [
+        "maca root"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "tongkat-ali",
+      "name": "Tongkat ali",
+      "category": "supplement",
+      "aliases": [
+        "longjack",
+        "eurycoma",
+        "tongkat"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "fadogia-agrestis",
+      "name": "Fadogia agrestis",
+      "category": "supplement",
+      "aliases": [
+        "fadogia"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "shilajit",
+      "name": "Shilajit",
+      "category": "supplement",
+      "aliases": [
+        "shilajeet"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "schisandra",
+      "name": "Schisandra",
+      "category": "supplement",
+      "aliases": [
+        "schizandra"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "gotu-kola",
+      "name": "Gotu kola",
+      "category": "supplement",
+      "aliases": [
+        "centella"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "curcumin",
+      "name": "Curcumin",
+      "category": "supplement",
+      "aliases": [
+        "turmeric",
+        "curcumin extract",
+        "meriva",
+        "theracurmin",
+        "tumeric"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ginger-extract",
+      "name": "Ginger extract",
+      "category": "supplement",
+      "aliases": [
+        "ginger capsule"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "boswellia",
+      "name": "Boswellia",
+      "category": "supplement",
+      "aliases": [
+        "frankincense extract"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "berberine",
+      "name": "Berberine",
+      "category": "supplement",
+      "aliases": [
+        "berberin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "milk-thistle",
+      "name": "Milk thistle",
+      "category": "supplement",
+      "aliases": [
+        "silymarin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "black-seed-oil",
+      "name": "Black seed oil",
+      "category": "supplement",
+      "aliases": [
+        "nigella sativa",
+        "black cumin"
+      ],
+      "units": [
+        "ml"
+      ]
+    },
+    {
+      "id": "elderberry",
+      "name": "Elderberry",
+      "category": "supplement",
+      "aliases": [
+        "sambucus"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "echinacea",
+      "name": "Echinacea",
+      "category": "supplement",
+      "aliases": [
+        "echinecea"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "garlic-extract",
+      "name": "Garlic extract",
+      "category": "supplement",
+      "aliases": [
+        "aged garlic",
+        "kyolic"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "beetroot-powder",
+      "name": "Beetroot powder",
+      "category": "supplement",
+      "aliases": [
+        "beet root",
+        "beet powder",
+        "nitrates",
+        "nitric oxide booster"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "green-tea-extract",
+      "name": "Green tea extract",
+      "category": "supplement",
+      "aliases": [
+        "egcg"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cinnamon-extract",
+      "name": "Cinnamon extract",
+      "category": "supplement",
+      "aliases": [
+        "ceylon cinnamon"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "deglycyrrhizinated-licorice",
+      "name": "Deglycyrrhizinated licorice",
+      "category": "supplement",
+      "aliases": [
+        "dgl",
+        "licorice"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "peppermint-oil-capsules",
+      "name": "Peppermint oil capsules",
+      "category": "supplement",
+      "aliases": [
+        "ibgard",
+        "peppermint oil"
+      ],
+      "units": [
+        "capsules"
+      ]
+    },
+    {
+      "id": "oregano-oil",
+      "name": "Oregano oil",
+      "category": "supplement",
+      "aliases": [
+        "oil of oregano"
+      ],
+      "units": [
+        "drops"
+      ]
+    },
+    {
+      "id": "evening-primrose-oil",
+      "name": "Evening primrose oil",
+      "category": "supplement",
+      "aliases": [
+        "epo"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "melatonin",
+      "name": "Melatonin",
+      "category": "supplement",
+      "aliases": [
+        "melatonine",
+        "melatonin gummy",
+        "mel",
+        "melatonon",
+        "melotonin",
+        "melatonin tablet"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "melatonin-extended-release",
+      "name": "Melatonin extended-release",
+      "category": "supplement",
+      "aliases": [
+        "melatonin er",
+        "time release melatonin",
+        "slow release melatonin",
+        "prolonged release melatonin",
+        "circadin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "apigenin",
+      "name": "Apigenin",
+      "category": "supplement",
+      "aliases": [
+        "apigenine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "inositol",
+      "name": "Inositol",
+      "category": "supplement",
+      "aliases": [
+        "myo-inositol",
+        "myo inositol"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "phosphatidylserine",
+      "name": "Phosphatidylserine",
+      "category": "supplement",
+      "aliases": [
+        "ps",
+        "phosphatydilserine",
+        "phosphatidyl serine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cbd",
+      "name": "CBD",
+      "category": "supplement",
+      "aliases": [
+        "cannabidiol",
+        "cbd oil",
+        "cbd gummy",
+        "hemp extract"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cbn",
+      "name": "CBN",
+      "category": "supplement",
+      "aliases": [
+        "cannabinol",
+        "cbn gummy"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lactium",
+      "name": "Lactium",
+      "category": "supplement",
+      "aliases": [
+        "casein hydrolysate",
+        "alpha-s1 casein"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "palmitoylethanolamide",
+      "name": "Palmitoylethanolamide",
+      "category": "supplement",
+      "aliases": [
+        "pea",
+        "levagen"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "sleep-blend",
+      "name": "Sleep blend",
+      "category": "supplement",
+      "aliases": [
+        "sleep formula",
+        "sleep stack",
+        "sleep supplement",
+        "sleep gummies",
+        "sleep cocktail",
+        "olly sleep"
+      ],
+      "units": [
+        "capsules"
+      ]
+    },
+    {
+      "id": "nmn",
+      "name": "NMN",
+      "category": "supplement",
+      "aliases": [
+        "nicotinamide mononucleotide",
+        "nmn powder"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "nr",
+      "name": "NR",
+      "category": "supplement",
+      "aliases": [
+        "nicotinamide riboside",
+        "tru niagen",
+        "niagen"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "nad",
+      "name": "NAD+",
+      "category": "supplement",
+      "aliases": [
+        "nad",
+        "nad supplement",
+        "liposomal nad"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "niacin",
+      "name": "Niacin",
+      "category": "supplement",
+      "aliases": [
+        "vitamin b3",
+        "nicotinic acid",
+        "b3"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "nicotinamide",
+      "name": "Nicotinamide",
+      "category": "supplement",
+      "aliases": [
+        "niacinamide"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "resveratrol",
+      "name": "Resveratrol",
+      "category": "supplement",
+      "aliases": [
+        "trans-resveratrol",
+        "resveratol"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "pterostilbene",
+      "name": "Pterostilbene",
+      "category": "supplement",
+      "aliases": [
+        "pterostilbine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "spermidine",
+      "name": "Spermidine",
+      "category": "supplement",
+      "aliases": [
+        "spermidinelife"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "fisetin",
+      "name": "Fisetin",
+      "category": "supplement",
+      "aliases": [
+        "fisitin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "quercetin",
+      "name": "Quercetin",
+      "category": "supplement",
+      "aliases": [
+        "quercitin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "luteolin",
+      "name": "Luteolin",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "coq10",
+      "name": "CoQ10",
+      "category": "supplement",
+      "aliases": [
+        "coenzyme q10",
+        "coq 10",
+        "coq-10"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ubiquinol",
+      "name": "Ubiquinol",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "pqq",
+      "name": "PQQ",
+      "category": "supplement",
+      "aliases": [
+        "pyrroloquinoline quinone"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "creatine-monohydrate",
+      "name": "Creatine monohydrate",
+      "category": "supplement",
+      "aliases": [
+        "creatine",
+        "creatin",
+        "creatine mono",
+        "creatine hcl"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "alpha-lipoic-acid",
+      "name": "Alpha-lipoic acid",
+      "category": "supplement",
+      "aliases": [
+        "ala",
+        "lipoic acid",
+        "r-lipoic acid"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "urolithin-a",
+      "name": "Urolithin A",
+      "category": "supplement",
+      "aliases": [
+        "mitopure",
+        "urolithin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "calcium-akg",
+      "name": "Calcium AKG",
+      "category": "supplement",
+      "aliases": [
+        "ca-akg",
+        "alpha-ketoglutarate",
+        "akg",
+        "rejuvant"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "glutathione",
+      "name": "Glutathione",
+      "category": "supplement",
+      "aliases": [
+        "liposomal glutathione"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "sulforaphane",
+      "name": "Sulforaphane",
+      "category": "supplement",
+      "aliases": [
+        "broccoli sprout extract",
+        "broccomax"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "astaxanthin",
+      "name": "Astaxanthin",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lutein-and-zeaxanthin",
+      "name": "Lutein and zeaxanthin",
+      "category": "supplement",
+      "aliases": [
+        "lutein",
+        "zeaxanthin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ergothioneine",
+      "name": "Ergothioneine",
+      "category": "supplement",
+      "aliases": [
+        "ergo"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "glucosamine-chondroitin",
+      "name": "Glucosamine chondroitin",
+      "category": "supplement",
+      "aliases": [
+        "glucosamine",
+        "chondroitin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "msm",
+      "name": "MSM",
+      "category": "supplement",
+      "aliases": [
+        "methylsulfonylmethane"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "nattokinase",
+      "name": "Nattokinase",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "d-ribose",
+      "name": "D-ribose",
+      "category": "supplement",
+      "aliases": [
+        "ribose"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "omega-3-fish-oil",
+      "name": "Omega-3 fish oil",
+      "category": "supplement",
+      "aliases": [
+        "fish oil",
+        "omega 3",
+        "omega3",
+        "omega-3",
+        "epa",
+        "dha",
+        "epa/dha",
+        "omega 3s"
+      ],
+      "units": [
+        "mg",
+        "g",
+        "capsules"
+      ]
+    },
+    {
+      "id": "krill-oil",
+      "name": "Krill oil",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "algae-omega-3",
+      "name": "Algae omega-3",
+      "category": "supplement",
+      "aliases": [
+        "algal oil",
+        "vegan omega-3",
+        "algae oil"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cod-liver-oil",
+      "name": "Cod liver oil",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "ml"
+      ]
+    },
+    {
+      "id": "vitamin-d3",
+      "name": "Vitamin D3",
+      "category": "supplement",
+      "aliases": [
+        "d3",
+        "vitamin d",
+        "vit d",
+        "cholecalciferol",
+        "vitamin d 3",
+        "vit d3"
+      ],
+      "units": [
+        "IU",
+        "mcg"
+      ]
+    },
+    {
+      "id": "vitamin-d3-k2",
+      "name": "Vitamin D3 + K2",
+      "category": "supplement",
+      "aliases": [
+        "d3 k2",
+        "d3/k2",
+        "d3+k2"
+      ],
+      "units": [
+        "IU"
+      ]
+    },
+    {
+      "id": "vitamin-k2",
+      "name": "Vitamin K2",
+      "category": "supplement",
+      "aliases": [
+        "k2",
+        "mk-7",
+        "mk7",
+        "menaquinone"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "vitamin-a",
+      "name": "Vitamin A",
+      "category": "supplement",
+      "aliases": [
+        "retinol"
+      ],
+      "units": [
+        "IU"
+      ]
+    },
+    {
+      "id": "vitamin-c",
+      "name": "Vitamin C",
+      "category": "supplement",
+      "aliases": [
+        "ascorbic acid",
+        "vit c",
+        "liposomal vitamin c"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "vitamin-e",
+      "name": "Vitamin E",
+      "category": "supplement",
+      "aliases": [
+        "tocopherol"
+      ],
+      "units": [
+        "IU"
+      ]
+    },
+    {
+      "id": "b-complex",
+      "name": "B-complex",
+      "category": "supplement",
+      "aliases": [
+        "b complex",
+        "vitamin b complex",
+        "b vitamins",
+        "b-50",
+        "b 50"
+      ],
+      "units": [
+        "capsules"
+      ]
+    },
+    {
+      "id": "vitamin-b12",
+      "name": "Vitamin B12",
+      "category": "supplement",
+      "aliases": [
+        "b12",
+        "methylcobalamin",
+        "cyanocobalamin",
+        "vit b12",
+        "methyl b12"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "vitamin-b6",
+      "name": "Vitamin B6",
+      "category": "supplement",
+      "aliases": [
+        "b6",
+        "pyridoxine",
+        "p5p",
+        "pyridoxal-5-phosphate"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "methylfolate",
+      "name": "Methylfolate",
+      "category": "supplement",
+      "aliases": [
+        "folate",
+        "folic acid",
+        "l-methylfolate",
+        "5-mthf",
+        "b9"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "thiamine",
+      "name": "Thiamine",
+      "category": "supplement",
+      "aliases": [
+        "vitamin b1",
+        "b1",
+        "benfotiamine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "riboflavin",
+      "name": "Riboflavin",
+      "category": "supplement",
+      "aliases": [
+        "vitamin b2",
+        "b2"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "biotin",
+      "name": "Biotin",
+      "category": "supplement",
+      "aliases": [
+        "vitamin b7",
+        "b7"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "pantothenic-acid",
+      "name": "Pantothenic acid",
+      "category": "supplement",
+      "aliases": [
+        "vitamin b5",
+        "b5"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "multivitamin",
+      "name": "Multivitamin",
+      "category": "supplement",
+      "aliases": [
+        "multi",
+        "multi vitamin",
+        "daily multi"
+      ],
+      "units": [
+        "capsules"
+      ]
+    },
+    {
+      "id": "prenatal-vitamin",
+      "name": "Prenatal vitamin",
+      "category": "supplement",
+      "aliases": [
+        "prenatal",
+        "prenatals"
+      ],
+      "units": [
+        "capsules"
+      ]
+    },
+    {
+      "id": "greens-powder",
+      "name": "Greens powder",
+      "category": "supplement",
+      "aliases": [
+        "ag1",
+        "athletic greens",
+        "greens",
+        "super greens"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "zinc",
+      "name": "Zinc",
+      "category": "supplement",
+      "aliases": [
+        "zinc picolinate",
+        "zinc gluconate",
+        "zinc citrate",
+        "zink"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "zma",
+      "name": "ZMA",
+      "category": "supplement",
+      "aliases": [
+        "zinc magnesium aspartate"
+      ],
+      "units": [
+        "capsules"
+      ]
+    },
+    {
+      "id": "iron",
+      "name": "Iron",
+      "category": "supplement",
+      "aliases": [
+        "ferrous sulfate",
+        "iron bisglycinate",
+        "iron supplement"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "potassium",
+      "name": "Potassium",
+      "category": "supplement",
+      "aliases": [
+        "potassium citrate",
+        "potassium chloride"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "calcium",
+      "name": "Calcium",
+      "category": "supplement",
+      "aliases": [
+        "calcium citrate",
+        "calcium carbonate"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "selenium",
+      "name": "Selenium",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "iodine",
+      "name": "Iodine",
+      "category": "supplement",
+      "aliases": [
+        "kelp",
+        "potassium iodide"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "boron",
+      "name": "Boron",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "copper",
+      "name": "Copper",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "chromium",
+      "name": "Chromium",
+      "category": "supplement",
+      "aliases": [
+        "chromium picolinate"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "lithium-orotate",
+      "name": "Lithium orotate",
+      "category": "supplement",
+      "aliases": [
+        "low dose lithium"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "electrolytes",
+      "name": "Electrolytes",
+      "category": "supplement",
+      "aliases": [
+        "lmnt",
+        "element",
+        "liquid iv",
+        "liquid i.v.",
+        "nuun",
+        "electrolyte mix",
+        "salt tabs",
+        "electrolyte drink",
+        "lytes"
+      ],
+      "units": [
+        "pieces",
+        "mg"
+      ]
+    },
+    {
+      "id": "trace-minerals",
+      "name": "Trace minerals",
+      "category": "supplement",
+      "aliases": [
+        "concentrace",
+        "trace mineral drops"
+      ],
+      "units": [
+        "drops"
+      ]
+    },
+    {
+      "id": "sodium-bicarbonate",
+      "name": "Sodium bicarbonate",
+      "category": "supplement",
+      "aliases": [
+        "baking soda"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "collagen-peptides",
+      "name": "Collagen peptides",
+      "category": "supplement",
+      "aliases": [
+        "collagen",
+        "vital proteins",
+        "colagen",
+        "collagen powder"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "gelatin",
+      "name": "Gelatin",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "whey-protein",
+      "name": "Whey protein",
+      "category": "supplement",
+      "aliases": [
+        "protein shake",
+        "whey",
+        "protein powder",
+        "whey isolate"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "casein-protein",
+      "name": "Casein protein",
+      "category": "supplement",
+      "aliases": [
+        "casein",
+        "casein shake",
+        "slow protein",
+        "micellar casein"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "plant-protein",
+      "name": "Plant protein",
+      "category": "supplement",
+      "aliases": [
+        "pea protein",
+        "vegan protein"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "tart-cherry-extract",
+      "name": "Tart cherry extract",
+      "category": "supplement",
+      "aliases": [
+        "tart cherry capsule",
+        "montmorency cherry",
+        "cherry extract"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "probiotic",
+      "name": "Probiotic",
+      "category": "supplement",
+      "aliases": [
+        "probiotics",
+        "lactobacillus",
+        "bifidobacterium",
+        "seed ds-01",
+        "culturelle",
+        "probiotic capsule"
+      ],
+      "units": [
+        "capsules"
+      ]
+    },
+    {
+      "id": "saccharomyces-boulardii",
+      "name": "Saccharomyces boulardii",
+      "category": "supplement",
+      "aliases": [
+        "s boulardii",
+        "s. boulardii"
+      ],
+      "units": [
+        "capsules"
+      ]
+    },
+    {
+      "id": "prebiotic-fiber",
+      "name": "Prebiotic fiber",
+      "category": "supplement",
+      "aliases": [
+        "inulin",
+        "prebiotic",
+        "fos",
+        "gos",
+        "prebiotics"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "psyllium-husk",
+      "name": "Psyllium husk",
+      "category": "supplement",
+      "aliases": [
+        "psyllium",
+        "metamucil",
+        "fiber supplement"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "digestive-enzymes",
+      "name": "Digestive enzymes",
+      "category": "supplement",
+      "aliases": [
+        "enzymes",
+        "digestive enzyme"
+      ],
+      "units": [
+        "capsules"
+      ]
+    },
+    {
+      "id": "apple-cider-vinegar",
+      "name": "Apple cider vinegar",
+      "category": "supplement",
+      "aliases": [
+        "acv",
+        "acv gummies"
+      ],
+      "units": [
+        "ml"
+      ]
+    },
+    {
+      "id": "colostrum",
+      "name": "Colostrum",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "chlorella",
+      "name": "Chlorella",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "spirulina",
+      "name": "Spirulina",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "moringa",
+      "name": "Moringa",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "sea-moss",
+      "name": "Sea moss",
+      "category": "supplement",
+      "aliases": [
+        "seamoss",
+        "irish moss"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "royal-jelly",
+      "name": "Royal jelly",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "choline-bitartrate",
+      "name": "Choline bitartrate",
+      "category": "supplement",
+      "aliases": [
+        "choline"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "alpha-gpc",
+      "name": "Alpha-GPC",
+      "category": "supplement",
+      "aliases": [
+        "alpha gpc",
+        "agpc",
+        "choline alfoscerate",
+        "alphagpc"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "citicoline",
+      "name": "Citicoline",
+      "category": "supplement",
+      "aliases": [
+        "cdp-choline",
+        "cognizin",
+        "cdp choline"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "phosphatidylcholine",
+      "name": "Phosphatidylcholine",
+      "category": "supplement",
+      "aliases": [
+        "lecithin",
+        "sunflower lecithin"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "l-carnitine",
+      "name": "L-carnitine",
+      "category": "supplement",
+      "aliases": [
+        "carnitine",
+        "l carnitine",
+        "l-carnitine tartrate"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "acetyl-l-carnitine",
+      "name": "Acetyl-L-carnitine",
+      "category": "supplement",
+      "aliases": [
+        "alcar",
+        "acetyl l carnitine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "huperzine-a",
+      "name": "Huperzine A",
+      "category": "supplement",
+      "aliases": [
+        "huperzine"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "uridine-monophosphate",
+      "name": "Uridine monophosphate",
+      "category": "supplement",
+      "aliases": [
+        "uridine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "noopept",
+      "name": "Noopept",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "piracetam",
+      "name": "Piracetam",
+      "category": "supplement",
+      "aliases": [
+        "racetam"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "sulbutiamine",
+      "name": "Sulbutiamine",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "dmae",
+      "name": "DMAE",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "mucuna-pruriens",
+      "name": "Mucuna pruriens",
+      "category": "supplement",
+      "aliases": [
+        "mucuna",
+        "l-dopa"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "theacrine",
+      "name": "Theacrine",
+      "category": "supplement",
+      "aliases": [
+        "teacrine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "paraxanthine",
+      "name": "Paraxanthine",
+      "category": "supplement",
+      "aliases": [
+        "enfinity"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "methylene-blue",
+      "name": "Methylene blue",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "dhea",
+      "name": "DHEA",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "pregnenolone",
+      "name": "Pregnenolone",
+      "category": "supplement",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "mct-oil",
+      "name": "MCT oil",
+      "category": "supplement",
+      "aliases": [
+        "mct",
+        "c8",
+        "c8 mct",
+        "brain octane"
+      ],
+      "units": [
+        "ml"
+      ]
+    },
+    {
+      "id": "ketone-ester",
+      "name": "Ketone ester",
+      "category": "supplement",
+      "aliases": [
+        "ketone drink",
+        "ketone-iq",
+        "ketone iq",
+        "hvmn",
+        "deltag",
+        "exogenous ketones",
+        "ketone salts"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "diphenhydramine",
+      "name": "Diphenhydramine",
+      "category": "medication",
+      "aliases": [
+        "benadryl",
+        "zzzquil",
+        "unisom sleepgels",
+        "tylenol pm",
+        "advil pm",
+        "dph",
+        "diphenhydramin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "doxylamine",
+      "name": "Doxylamine",
+      "category": "medication",
+      "aliases": [
+        "unisom",
+        "unisom sleeptabs",
+        "doxylamine succinate"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cetirizine",
+      "name": "Cetirizine",
+      "category": "medication",
+      "aliases": [
+        "zyrtec",
+        "reactine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "levocetirizine",
+      "name": "Levocetirizine",
+      "category": "medication",
+      "aliases": [
+        "xyzal"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "loratadine",
+      "name": "Loratadine",
+      "category": "medication",
+      "aliases": [
+        "claritin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "fexofenadine",
+      "name": "Fexofenadine",
+      "category": "medication",
+      "aliases": [
+        "allegra",
+        "telfast"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "chlorpheniramine",
+      "name": "Chlorpheniramine",
+      "category": "medication",
+      "aliases": [
+        "chlor-trimeton",
+        "piriton"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ibuprofen",
+      "name": "Ibuprofen",
+      "category": "medication",
+      "aliases": [
+        "advil",
+        "motrin",
+        "nurofen",
+        "ibuprophen",
+        "ibuprofin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "acetaminophen",
+      "name": "Acetaminophen",
+      "category": "medication",
+      "aliases": [
+        "tylenol",
+        "paracetamol",
+        "panadol",
+        "acetominophen"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "naproxen",
+      "name": "Naproxen",
+      "category": "medication",
+      "aliases": [
+        "aleve",
+        "naprosyn"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "aspirin",
+      "name": "Aspirin",
+      "category": "medication",
+      "aliases": [
+        "bayer",
+        "acetylsalicylic acid",
+        "baby aspirin",
+        "asa"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "zolpidem",
+      "name": "Zolpidem",
+      "category": "medication",
+      "aliases": [
+        "ambien",
+        "ambien cr",
+        "zolpidam",
+        "stilnox"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "eszopiclone",
+      "name": "Eszopiclone",
+      "category": "medication",
+      "aliases": [
+        "lunesta"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "zopiclone",
+      "name": "Zopiclone",
+      "category": "medication",
+      "aliases": [
+        "imovane",
+        "zimovane"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "zaleplon",
+      "name": "Zaleplon",
+      "category": "medication",
+      "aliases": [
+        "sonata"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "suvorexant",
+      "name": "Suvorexant",
+      "category": "medication",
+      "aliases": [
+        "belsomra"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lemborexant",
+      "name": "Lemborexant",
+      "category": "medication",
+      "aliases": [
+        "dayvigo"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "daridorexant",
+      "name": "Daridorexant",
+      "category": "medication",
+      "aliases": [
+        "quviviq"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ramelteon",
+      "name": "Ramelteon",
+      "category": "medication",
+      "aliases": [
+        "rozerem"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "trazodone",
+      "name": "Trazodone",
+      "category": "medication",
+      "aliases": [
+        "desyrel",
+        "trazadone"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "mirtazapine",
+      "name": "Mirtazapine",
+      "category": "medication",
+      "aliases": [
+        "remeron"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "doxepin",
+      "name": "Doxepin",
+      "category": "medication",
+      "aliases": [
+        "silenor"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "amitriptyline",
+      "name": "Amitriptyline",
+      "category": "medication",
+      "aliases": [
+        "elavil"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "gabapentin",
+      "name": "Gabapentin",
+      "category": "medication",
+      "aliases": [
+        "neurontin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "pregabalin",
+      "name": "Pregabalin",
+      "category": "medication",
+      "aliases": [
+        "lyrica"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "clonidine",
+      "name": "Clonidine",
+      "category": "medication",
+      "aliases": [
+        "catapres",
+        "kapvay"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "guanfacine",
+      "name": "Guanfacine",
+      "category": "medication",
+      "aliases": [
+        "intuniv",
+        "tenex"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "prazosin",
+      "name": "Prazosin",
+      "category": "medication",
+      "aliases": [
+        "minipress"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "hydroxyzine",
+      "name": "Hydroxyzine",
+      "category": "medication",
+      "aliases": [
+        "atarax",
+        "vistaril"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "quetiapine",
+      "name": "Quetiapine",
+      "category": "medication",
+      "aliases": [
+        "seroquel"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "sertraline",
+      "name": "Sertraline",
+      "category": "medication",
+      "aliases": [
+        "zoloft"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "fluoxetine",
+      "name": "Fluoxetine",
+      "category": "medication",
+      "aliases": [
+        "prozac"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "escitalopram",
+      "name": "Escitalopram",
+      "category": "medication",
+      "aliases": [
+        "lexapro",
+        "cipralex"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "citalopram",
+      "name": "Citalopram",
+      "category": "medication",
+      "aliases": [
+        "celexa"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "paroxetine",
+      "name": "Paroxetine",
+      "category": "medication",
+      "aliases": [
+        "paxil"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "venlafaxine",
+      "name": "Venlafaxine",
+      "category": "medication",
+      "aliases": [
+        "effexor"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "duloxetine",
+      "name": "Duloxetine",
+      "category": "medication",
+      "aliases": [
+        "cymbalta"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "vortioxetine",
+      "name": "Vortioxetine",
+      "category": "medication",
+      "aliases": [
+        "trintellix"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "bupropion",
+      "name": "Bupropion",
+      "category": "medication",
+      "aliases": [
+        "wellbutrin",
+        "zyban"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "buspirone",
+      "name": "Buspirone",
+      "category": "medication",
+      "aliases": [
+        "buspar"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lamotrigine",
+      "name": "Lamotrigine",
+      "category": "medication",
+      "aliases": [
+        "lamictal"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lithium-carbonate",
+      "name": "Lithium carbonate",
+      "category": "medication",
+      "aliases": [
+        "lithobid"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "alprazolam",
+      "name": "Alprazolam",
+      "category": "medication",
+      "aliases": [
+        "xanax"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lorazepam",
+      "name": "Lorazepam",
+      "category": "medication",
+      "aliases": [
+        "ativan"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "clonazepam",
+      "name": "Clonazepam",
+      "category": "medication",
+      "aliases": [
+        "klonopin",
+        "rivotril"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "diazepam",
+      "name": "Diazepam",
+      "category": "medication",
+      "aliases": [
+        "valium"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "temazepam",
+      "name": "Temazepam",
+      "category": "medication",
+      "aliases": [
+        "restoril"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "sodium-oxybate",
+      "name": "Sodium oxybate",
+      "category": "medication",
+      "aliases": [
+        "xyrem",
+        "xywav",
+        "lumryz"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "methylphenidate",
+      "name": "Methylphenidate",
+      "category": "medication",
+      "aliases": [
+        "ritalin",
+        "concerta",
+        "metadate"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "dexmethylphenidate",
+      "name": "Dexmethylphenidate",
+      "category": "medication",
+      "aliases": [
+        "focalin"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "amphetamine-salts",
+      "name": "Amphetamine salts",
+      "category": "medication",
+      "aliases": [
+        "adderall",
+        "adderal",
+        "amphetamine",
+        "mixed amphetamine salts"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lisdexamfetamine",
+      "name": "Lisdexamfetamine",
+      "category": "medication",
+      "aliases": [
+        "vyvanse",
+        "elvanse"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "modafinil",
+      "name": "Modafinil",
+      "category": "medication",
+      "aliases": [
+        "provigil"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "armodafinil",
+      "name": "Armodafinil",
+      "category": "medication",
+      "aliases": [
+        "nuvigil"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "solriamfetol",
+      "name": "Solriamfetol",
+      "category": "medication",
+      "aliases": [
+        "sunosi"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "atomoxetine",
+      "name": "Atomoxetine",
+      "category": "medication",
+      "aliases": [
+        "strattera"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "propranolol",
+      "name": "Propranolol",
+      "category": "medication",
+      "aliases": [
+        "inderal"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "metoprolol",
+      "name": "Metoprolol",
+      "category": "medication",
+      "aliases": [
+        "lopressor",
+        "toprol"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lisinopril",
+      "name": "Lisinopril",
+      "category": "medication",
+      "aliases": [
+        "zestril",
+        "prinivil"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "amlodipine",
+      "name": "Amlodipine",
+      "category": "medication",
+      "aliases": [
+        "norvasc"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "losartan",
+      "name": "Losartan",
+      "category": "medication",
+      "aliases": [
+        "cozaar"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "semaglutide",
+      "name": "Semaglutide",
+      "category": "medication",
+      "aliases": [
+        "ozempic",
+        "wegovy",
+        "rybelsus",
+        "sema"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "tirzepatide",
+      "name": "Tirzepatide",
+      "category": "medication",
+      "aliases": [
+        "mounjaro",
+        "zepbound",
+        "tirz"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "atorvastatin",
+      "name": "Atorvastatin",
+      "category": "medication",
+      "aliases": [
+        "lipitor"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "rosuvastatin",
+      "name": "Rosuvastatin",
+      "category": "medication",
+      "aliases": [
+        "crestor"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "metformin",
+      "name": "Metformin",
+      "category": "medication",
+      "aliases": [
+        "glucophage"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "levothyroxine",
+      "name": "Levothyroxine",
+      "category": "medication",
+      "aliases": [
+        "synthroid",
+        "levoxyl",
+        "euthyrox",
+        "t4"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "liothyronine",
+      "name": "Liothyronine",
+      "category": "medication",
+      "aliases": [
+        "cytomel",
+        "t3"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "omeprazole",
+      "name": "Omeprazole",
+      "category": "medication",
+      "aliases": [
+        "prilosec",
+        "losec"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "pantoprazole",
+      "name": "Pantoprazole",
+      "category": "medication",
+      "aliases": [
+        "protonix"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "esomeprazole",
+      "name": "Esomeprazole",
+      "category": "medication",
+      "aliases": [
+        "nexium"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "famotidine",
+      "name": "Famotidine",
+      "category": "medication",
+      "aliases": [
+        "pepcid"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "pseudoephedrine",
+      "name": "Pseudoephedrine",
+      "category": "medication",
+      "aliases": [
+        "sudafed"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "phenylephrine",
+      "name": "Phenylephrine",
+      "category": "medication",
+      "aliases": [
+        "sudafed pe"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "oxymetazoline-nasal-spray",
+      "name": "Oxymetazoline nasal spray",
+      "category": "medication",
+      "aliases": [
+        "afrin"
+      ],
+      "units": [
+        "puffs"
+      ]
+    },
+    {
+      "id": "fluticasone-nasal-spray",
+      "name": "Fluticasone nasal spray",
+      "category": "medication",
+      "aliases": [
+        "flonase"
+      ],
+      "units": [
+        "puffs"
+      ]
+    },
+    {
+      "id": "dextromethorphan",
+      "name": "Dextromethorphan",
+      "category": "medication",
+      "aliases": [
+        "robitussin",
+        "delsym",
+        "dxm"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cold-and-flu-combination",
+      "name": "Cold and flu combination",
+      "category": "medication",
+      "aliases": [
+        "nyquil",
+        "dayquil",
+        "theraflu",
+        "cold medicine",
+        "flu medicine",
+        "lemsip"
+      ],
+      "units": [
+        "ml"
+      ]
+    },
+    {
+      "id": "nicotine-patch",
+      "name": "Nicotine patch",
+      "category": "medication",
+      "aliases": [
+        "nicoderm",
+        "nicotine patches"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "nicotine-gum",
+      "name": "Nicotine gum",
+      "category": "medication",
+      "aliases": [
+        "nicorette",
+        "nicotine lozenge"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "montelukast",
+      "name": "Montelukast",
+      "category": "medication",
+      "aliases": [
+        "singulair"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "albuterol-inhaler",
+      "name": "Albuterol inhaler",
+      "category": "medication",
+      "aliases": [
+        "ventolin",
+        "proair",
+        "salbutamol",
+        "rescue inhaler"
+      ],
+      "units": [
+        "puffs"
+      ]
+    },
+    {
+      "id": "prednisone",
+      "name": "Prednisone",
+      "category": "medication",
+      "aliases": [
+        "prednisolone",
+        "steroids"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "sumatriptan",
+      "name": "Sumatriptan",
+      "category": "medication",
+      "aliases": [
+        "imitrex"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cyclobenzaprine",
+      "name": "Cyclobenzaprine",
+      "category": "medication",
+      "aliases": [
+        "flexeril"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "tramadol",
+      "name": "Tramadol",
+      "category": "medication",
+      "aliases": [
+        "ultram"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "oxycodone",
+      "name": "Oxycodone",
+      "category": "medication",
+      "aliases": [
+        "oxycontin",
+        "percocet"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "ondansetron",
+      "name": "Ondansetron",
+      "category": "medication",
+      "aliases": [
+        "zofran"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "loperamide",
+      "name": "Loperamide",
+      "category": "medication",
+      "aliases": [
+        "imodium"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "dimenhydrinate",
+      "name": "Dimenhydrinate",
+      "category": "medication",
+      "aliases": [
+        "dramamine",
+        "gravol"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "meclizine",
+      "name": "Meclizine",
+      "category": "medication",
+      "aliases": [
+        "antivert",
+        "bonine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "oseltamivir",
+      "name": "Oseltamivir",
+      "category": "medication",
+      "aliases": [
+        "tamiflu"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "nirmatrelvir-ritonavir",
+      "name": "Nirmatrelvir/ritonavir",
+      "category": "medication",
+      "aliases": [
+        "paxlovid"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "antibiotic",
+      "name": "Antibiotic",
+      "category": "medication",
+      "aliases": [
+        "antibiotics",
+        "amoxicillin",
+        "azithromycin",
+        "z-pack",
+        "doxycycline"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "sildenafil",
+      "name": "Sildenafil",
+      "category": "medication",
+      "aliases": [
+        "viagra"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "tadalafil",
+      "name": "Tadalafil",
+      "category": "medication",
+      "aliases": [
+        "cialis"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "tamsulosin",
+      "name": "Tamsulosin",
+      "category": "medication",
+      "aliases": [
+        "flomax"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "finasteride",
+      "name": "Finasteride",
+      "category": "medication",
+      "aliases": [
+        "propecia"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "low-dose-naltrexone",
+      "name": "Low-dose naltrexone",
+      "category": "medication",
+      "aliases": [
+        "ldn",
+        "naltrexone"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "rapamycin",
+      "name": "Rapamycin",
+      "category": "medication",
+      "aliases": [
+        "sirolimus"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "oral-contraceptive",
+      "name": "Oral contraceptive",
+      "category": "medication",
+      "aliases": [
+        "birth control pill",
+        "the pill",
+        "birth control"
+      ],
+      "units": []
+    },
+    {
+      "id": "progesterone",
+      "name": "Progesterone",
+      "category": "medication",
+      "aliases": [
+        "prometrium",
+        "micronized progesterone"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "estradiol",
+      "name": "Estradiol",
+      "category": "medication",
+      "aliases": [
+        "estrogen",
+        "hrt",
+        "estrogen patch"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "testosterone",
+      "name": "Testosterone",
+      "category": "medication",
+      "aliases": [
+        "trt",
+        "testosterone cypionate",
+        "test cyp"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "coffee",
+      "name": "Coffee",
+      "category": "substance",
+      "aliases": [
+        "drip coffee",
+        "cup of coffee",
+        "cofee",
+        "cold brew",
+        "filter coffee"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "espresso",
+      "name": "Espresso",
+      "category": "substance",
+      "aliases": [
+        "shot of espresso",
+        "latte",
+        "cappuccino",
+        "americano",
+        "flat white",
+        "expresso"
+      ],
+      "units": [
+        "shots"
+      ]
+    },
+    {
+      "id": "decaf-coffee",
+      "name": "Decaf coffee",
+      "category": "substance",
+      "aliases": [
+        "decaf"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "black-tea",
+      "name": "Black tea",
+      "category": "substance",
+      "aliases": [
+        "english breakfast",
+        "earl grey",
+        "chai"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "green-tea",
+      "name": "Green tea",
+      "category": "substance",
+      "aliases": [
+        "sencha"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "matcha",
+      "name": "Matcha",
+      "category": "substance",
+      "aliases": [
+        "matcha latte"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "yerba-mate",
+      "name": "Yerba mate",
+      "category": "substance",
+      "aliases": [
+        "mate",
+        "yerba"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "energy-drink",
+      "name": "Energy drink",
+      "category": "substance",
+      "aliases": [
+        "red bull",
+        "monster",
+        "celsius",
+        "rockstar",
+        "bang",
+        "ghost energy",
+        "redbull"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "pre-workout",
+      "name": "Pre-workout",
+      "category": "substance",
+      "aliases": [
+        "preworkout",
+        "pre workout",
+        "c4"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "caffeine-pill",
+      "name": "Caffeine pill",
+      "category": "substance",
+      "aliases": [
+        "caffeine tablet",
+        "no-doz",
+        "vivarin",
+        "caffeine gum"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "caffeinated-soda",
+      "name": "Caffeinated soda",
+      "category": "substance",
+      "aliases": [
+        "cola",
+        "coke",
+        "diet coke",
+        "pepsi",
+        "coke zero",
+        "mountain dew"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "beer",
+      "name": "Beer",
+      "category": "substance",
+      "aliases": [
+        "ipa",
+        "lager",
+        "stout",
+        "pint"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "wine",
+      "name": "Wine",
+      "category": "substance",
+      "aliases": [
+        "red wine",
+        "white wine",
+        "rosé",
+        "rose",
+        "glass of wine"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "champagne",
+      "name": "Champagne",
+      "category": "substance",
+      "aliases": [
+        "prosecco",
+        "sparkling wine",
+        "cava"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "spirits",
+      "name": "Spirits",
+      "category": "substance",
+      "aliases": [
+        "liquor",
+        "whiskey",
+        "whisky",
+        "vodka",
+        "tequila",
+        "gin",
+        "rum",
+        "bourbon",
+        "shot",
+        "mezcal"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "cocktail",
+      "name": "Cocktail",
+      "category": "substance",
+      "aliases": [
+        "mixed drink",
+        "margarita",
+        "martini",
+        "old fashioned",
+        "negroni"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "hard-seltzer",
+      "name": "Hard seltzer",
+      "category": "substance",
+      "aliases": [
+        "white claw",
+        "truly",
+        "spiked seltzer"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "cider",
+      "name": "Cider",
+      "category": "substance",
+      "aliases": [
+        "hard cider"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "sake",
+      "name": "Sake",
+      "category": "substance",
+      "aliases": [],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "non-alcoholic-beer",
+      "name": "Non-alcoholic beer",
+      "category": "substance",
+      "aliases": [
+        "na beer",
+        "athletic brewing",
+        "alcohol-free beer",
+        "heineken 0.0"
+      ],
+      "units": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "cannabis-flower",
+      "name": "Cannabis flower",
+      "category": "substance",
+      "aliases": [
+        "weed",
+        "marijuana",
+        "joint",
+        "thc flower",
+        "bong",
+        "pot",
+        "smoked cannabis",
+        "blunt"
+      ],
+      "units": [
+        "puffs",
+        "g"
+      ]
+    },
+    {
+      "id": "cannabis-edible",
+      "name": "Cannabis edible",
+      "category": "substance",
+      "aliases": [
+        "edible",
+        "edibles",
+        "thc gummy",
+        "weed gummy",
+        "pot brownie"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cannabis-vape",
+      "name": "Cannabis vape",
+      "category": "substance",
+      "aliases": [
+        "thc vape",
+        "weed pen",
+        "dab pen",
+        "cart"
+      ],
+      "units": [
+        "puffs"
+      ]
+    },
+    {
+      "id": "cannabis-tincture",
+      "name": "Cannabis tincture",
+      "category": "substance",
+      "aliases": [
+        "thc oil",
+        "thc drops"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "cigarette",
+      "name": "Cigarette",
+      "category": "substance",
+      "aliases": [
+        "smoking",
+        "cig",
+        "cigs"
+      ],
+      "units": [
+        "pieces"
+      ]
+    },
+    {
+      "id": "cigar",
+      "name": "Cigar",
+      "category": "substance",
+      "aliases": [
+        "cigarillo"
+      ],
+      "units": [
+        "pieces"
+      ]
+    },
+    {
+      "id": "hookah",
+      "name": "Hookah",
+      "category": "substance",
+      "aliases": [
+        "shisha",
+        "hooka"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "nicotine-vape",
+      "name": "Nicotine vape",
+      "category": "substance",
+      "aliases": [
+        "vape",
+        "e-cig",
+        "juul",
+        "elf bar",
+        "vaping",
+        "ecig"
+      ],
+      "units": [
+        "puffs"
+      ]
+    },
+    {
+      "id": "nicotine-pouch",
+      "name": "Nicotine pouch",
+      "category": "substance",
+      "aliases": [
+        "zyn",
+        "zyns",
+        "on!",
+        "velo",
+        "nicotine pouches",
+        "snus"
+      ],
+      "units": [
+        "pieces",
+        "mg"
+      ]
+    },
+    {
+      "id": "kava",
+      "name": "Kava",
+      "category": "substance",
+      "aliases": [
+        "kava kava",
+        "kava drink",
+        "kava shell"
+      ],
+      "units": [
+        "cups",
+        "g"
+      ]
+    },
+    {
+      "id": "kratom",
+      "name": "Kratom",
+      "category": "substance",
+      "aliases": [],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "phenibut",
+      "name": "Phenibut",
+      "category": "substance",
+      "aliases": [],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "psilocybin-microdose",
+      "name": "Psilocybin microdose",
+      "category": "substance",
+      "aliases": [
+        "microdose",
+        "shroom microdose",
+        "mushroom microdose",
+        "psilocybin",
+        "micro dose"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "lsd-microdose",
+      "name": "LSD microdose",
+      "category": "substance",
+      "aliases": [
+        "lsd micro",
+        "acid microdose"
+      ],
+      "units": [
+        "mcg"
+      ]
+    },
+    {
+      "id": "psychedelic-experience",
+      "name": "Psychedelic experience",
+      "category": "substance",
+      "aliases": [
+        "trip",
+        "mushroom trip",
+        "shrooms",
+        "lsd",
+        "acid",
+        "psychedelics"
+      ],
+      "units": []
+    },
+    {
+      "id": "ketamine",
+      "name": "Ketamine",
+      "category": "substance",
+      "aliases": [
+        "ketamine therapy",
+        "spravato",
+        "esketamine"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "mdma",
+      "name": "MDMA",
+      "category": "substance",
+      "aliases": [
+        "molly",
+        "ecstasy"
+      ],
+      "units": [
+        "mg"
+      ]
+    },
+    {
+      "id": "late-dinner",
+      "name": "Late dinner",
+      "category": "food",
+      "aliases": [
+        "late meal",
+        "ate late",
+        "dinner after 9",
+        "dinner close to bed",
+        "meal before bed"
+      ],
+      "units": []
+    },
+    {
+      "id": "early-dinner",
+      "name": "Early dinner",
+      "category": "food",
+      "aliases": [
+        "ate early",
+        "early supper"
+      ],
+      "units": []
+    },
+    {
+      "id": "large-dinner",
+      "name": "Large dinner",
+      "category": "food",
+      "aliases": [
+        "big meal",
+        "heavy dinner",
+        "feast",
+        "overate",
+        "big dinner"
+      ],
+      "units": []
+    },
+    {
+      "id": "light-dinner",
+      "name": "Light dinner",
+      "category": "food",
+      "aliases": [
+        "small dinner",
+        "light meal"
+      ],
+      "units": []
+    },
+    {
+      "id": "skipped-dinner",
+      "name": "Skipped dinner",
+      "category": "food",
+      "aliases": [
+        "no dinner"
+      ],
+      "units": []
+    },
+    {
+      "id": "late-night-snack",
+      "name": "Late-night snack",
+      "category": "food",
+      "aliases": [
+        "midnight snack",
+        "bedtime snack",
+        "snack before bed"
+      ],
+      "units": []
+    },
+    {
+      "id": "fasting-day",
+      "name": "Fasting day",
+      "category": "food",
+      "aliases": [
+        "fast",
+        "water fast",
+        "fasted",
+        "extended fast"
+      ],
+      "units": []
+    },
+    {
+      "id": "one-meal-a-day",
+      "name": "One meal a day",
+      "category": "food",
+      "aliases": [
+        "omad"
+      ],
+      "units": []
+    },
+    {
+      "id": "time-restricted-eating",
+      "name": "Time-restricted eating",
+      "category": "food",
+      "aliases": [
+        "tre",
+        "intermittent fasting",
+        "16:8",
+        "16/8",
+        "eating window"
+      ],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "high-carb-dinner",
+      "name": "High-carb dinner",
+      "category": "food",
+      "aliases": [
+        "carbs",
+        "pasta dinner",
+        "carb heavy",
+        "carb load"
+      ],
+      "units": []
+    },
+    {
+      "id": "low-carb-day",
+      "name": "Low-carb day",
+      "category": "food",
+      "aliases": [
+        "low carb"
+      ],
+      "units": []
+    },
+    {
+      "id": "keto-day",
+      "name": "Keto day",
+      "category": "food",
+      "aliases": [
+        "keto",
+        "ketogenic"
+      ],
+      "units": []
+    },
+    {
+      "id": "high-protein-dinner",
+      "name": "High-protein dinner",
+      "category": "food",
+      "aliases": [
+        "protein heavy",
+        "high protein"
+      ],
+      "units": []
+    },
+    {
+      "id": "carnivore-day",
+      "name": "Carnivore day",
+      "category": "food",
+      "aliases": [
+        "carnivore"
+      ],
+      "units": []
+    },
+    {
+      "id": "plant-based-day",
+      "name": "Plant-based day",
+      "category": "food",
+      "aliases": [
+        "vegan",
+        "vegetarian"
+      ],
+      "units": []
+    },
+    {
+      "id": "spicy-food",
+      "name": "Spicy food",
+      "category": "food",
+      "aliases": [
+        "spicy",
+        "hot sauce",
+        "curry",
+        "chili"
+      ],
+      "units": []
+    },
+    {
+      "id": "dessert-late",
+      "name": "Dessert late",
+      "category": "food",
+      "aliases": [
+        "sugar",
+        "sweets",
+        "ice cream",
+        "candy",
+        "late dessert",
+        "cake"
+      ],
+      "units": []
+    },
+    {
+      "id": "sugary-drink",
+      "name": "Sugary drink",
+      "category": "food",
+      "aliases": [
+        "juice",
+        "sweet drink",
+        "lemonade"
+      ],
+      "units": []
+    },
+    {
+      "id": "dairy",
+      "name": "Dairy",
+      "category": "food",
+      "aliases": [
+        "cheese",
+        "milk products"
+      ],
+      "units": []
+    },
+    {
+      "id": "warm-milk",
+      "name": "Warm milk",
+      "category": "food",
+      "aliases": [
+        "hot milk",
+        "golden milk",
+        "turmeric latte"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "kiwi",
+      "name": "Kiwi",
+      "category": "food",
+      "aliases": [
+        "kiwifruit",
+        "kiwis",
+        "kiwi fruit"
+      ],
+      "units": [
+        "pieces"
+      ]
+    },
+    {
+      "id": "tart-cherry-juice",
+      "name": "Tart cherry juice",
+      "category": "food",
+      "aliases": [
+        "cherry juice",
+        "montmorency cherry juice",
+        "cherry concentrate"
+      ],
+      "units": [
+        "ml"
+      ]
+    },
+    {
+      "id": "chamomile-tea",
+      "name": "Chamomile tea",
+      "category": "food",
+      "aliases": [
+        "camomile tea",
+        "chamomille tea"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "herbal-tea",
+      "name": "Herbal tea",
+      "category": "food",
+      "aliases": [
+        "sleepytime tea",
+        "peppermint tea",
+        "rooibos",
+        "caffeine-free tea",
+        "tisane",
+        "sleep tea"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "heavy-fat-meal",
+      "name": "Heavy fat meal",
+      "category": "food",
+      "aliases": [
+        "fatty meal",
+        "greasy food",
+        "fried food",
+        "fast food"
+      ],
+      "units": []
+    },
+    {
+      "id": "salty-meal",
+      "name": "Salty meal",
+      "category": "food",
+      "aliases": [
+        "salty food",
+        "high sodium",
+        "salty snacks"
+      ],
+      "units": []
+    },
+    {
+      "id": "processed-food",
+      "name": "Processed food",
+      "category": "food",
+      "aliases": [
+        "junk food",
+        "ultra processed",
+        "ultra-processed"
+      ],
+      "units": []
+    },
+    {
+      "id": "red-meat",
+      "name": "Red meat",
+      "category": "food",
+      "aliases": [
+        "steak",
+        "beef",
+        "burger"
+      ],
+      "units": []
+    },
+    {
+      "id": "fish-dinner",
+      "name": "Fish dinner",
+      "category": "food",
+      "aliases": [
+        "salmon",
+        "seafood",
+        "sushi"
+      ],
+      "units": []
+    },
+    {
+      "id": "white-rice",
+      "name": "White rice",
+      "category": "food",
+      "aliases": [
+        "rice",
+        "jasmine rice"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "banana",
+      "name": "Banana",
+      "category": "food",
+      "aliases": [
+        "bananas"
+      ],
+      "units": [
+        "pieces"
+      ]
+    },
+    {
+      "id": "nuts",
+      "name": "Nuts",
+      "category": "food",
+      "aliases": [
+        "almonds",
+        "walnuts",
+        "pistachios"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "honey",
+      "name": "Honey",
+      "category": "food",
+      "aliases": [
+        "spoon of honey",
+        "raw honey"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "dark-chocolate",
+      "name": "Dark chocolate",
+      "category": "food",
+      "aliases": [
+        "cacao",
+        "chocolate"
+      ],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "fermented-foods",
+      "name": "Fermented foods",
+      "category": "food",
+      "aliases": [
+        "kimchi",
+        "sauerkraut",
+        "kefir",
+        "yogurt"
+      ],
+      "units": []
+    },
+    {
+      "id": "kombucha",
+      "name": "Kombucha",
+      "category": "food",
+      "aliases": [
+        "booch"
+      ],
+      "units": [
+        "ml"
+      ]
+    },
+    {
+      "id": "gluten",
+      "name": "Gluten",
+      "category": "food",
+      "aliases": [
+        "bread",
+        "wheat"
+      ],
+      "units": []
+    },
+    {
+      "id": "bone-broth",
+      "name": "Bone broth",
+      "category": "food",
+      "aliases": [
+        "broth"
+      ],
+      "units": [
+        "cups"
+      ]
+    },
+    {
+      "id": "cottage-cheese",
+      "name": "Cottage cheese",
+      "category": "food",
+      "aliases": [],
+      "units": [
+        "g"
+      ]
+    },
+    {
+      "id": "ate-out",
+      "name": "Ate out",
+      "category": "food",
+      "aliases": [
+        "restaurant meal",
+        "takeout",
+        "eating out",
+        "dinner out"
+      ],
+      "units": []
+    },
+    {
+      "id": "high-hydration",
+      "name": "High hydration",
+      "category": "food",
+      "aliases": [
+        "lots of water",
+        "drank a lot of water",
+        "well hydrated"
+      ],
+      "units": [
+        "ml"
+      ]
+    },
+    {
+      "id": "low-hydration",
+      "name": "Low hydration",
+      "category": "food",
+      "aliases": [
+        "dehydrated",
+        "didn't drink water",
+        "little water"
+      ],
+      "units": []
+    },
+    {
+      "id": "water-before-bed",
+      "name": "Water before bed",
+      "category": "food",
+      "aliases": [
+        "drank before bed",
+        "fluids before bed"
+      ],
+      "units": [
+        "ml"
+      ]
+    },
+    {
+      "id": "running",
+      "name": "Running",
+      "category": "exercise",
+      "aliases": [
+        "run",
+        "jog",
+        "jogging",
+        "treadmill run"
+      ],
+      "units": [
+        "km",
+        "mi",
+        "min"
+      ]
+    },
+    {
+      "id": "trail-running",
+      "name": "Trail running",
+      "category": "exercise",
+      "aliases": [
+        "trail run"
+      ],
+      "units": [
+        "km",
+        "mi",
+        "min"
+      ]
+    },
+    {
+      "id": "sprints",
+      "name": "Sprints",
+      "category": "exercise",
+      "aliases": [
+        "sprint session",
+        "sprinting"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "cycling",
+      "name": "Cycling",
+      "category": "exercise",
+      "aliases": [
+        "bike",
+        "biking",
+        "road bike",
+        "cycle",
+        "bike ride"
+      ],
+      "units": [
+        "km",
+        "mi",
+        "min"
+      ]
+    },
+    {
+      "id": "indoor-cycling",
+      "name": "Indoor cycling",
+      "category": "exercise",
+      "aliases": [
+        "peloton",
+        "spin class",
+        "zwift",
+        "stationary bike",
+        "spinning"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "strength-training",
+      "name": "Strength training",
+      "category": "exercise",
+      "aliases": [
+        "weights",
+        "lifting",
+        "weightlifting",
+        "gym",
+        "resistance training",
+        "strenght training",
+        "weight training"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "leg-day",
+      "name": "Leg day",
+      "category": "exercise",
+      "aliases": [
+        "legs",
+        "squats",
+        "deadlifts"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "upper-body-workout",
+      "name": "Upper body workout",
+      "category": "exercise",
+      "aliases": [
+        "push day",
+        "pull day",
+        "upper body",
+        "bench"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "kettlebell-workout",
+      "name": "Kettlebell workout",
+      "category": "exercise",
+      "aliases": [
+        "kettlebell",
+        "kb swings"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "calisthenics",
+      "name": "Calisthenics",
+      "category": "exercise",
+      "aliases": [
+        "bodyweight workout",
+        "pushups",
+        "pull ups"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "plyometrics",
+      "name": "Plyometrics",
+      "category": "exercise",
+      "aliases": [
+        "jump training",
+        "box jumps"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "hiit",
+      "name": "HIIT",
+      "category": "exercise",
+      "aliases": [
+        "high intensity interval training",
+        "intervals",
+        "tabata",
+        "interval training"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "crossfit",
+      "name": "CrossFit",
+      "category": "exercise",
+      "aliases": [
+        "wod"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "zone-2-cardio",
+      "name": "Zone 2 cardio",
+      "category": "exercise",
+      "aliases": [
+        "zone 2",
+        "z2",
+        "zone two",
+        "easy cardio",
+        "low intensity cardio"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "vo2-max-intervals",
+      "name": "VO2 max intervals",
+      "category": "exercise",
+      "aliases": [
+        "vo2 max",
+        "norwegian 4x4",
+        "4x4 intervals",
+        "vo2max"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "yoga",
+      "name": "Yoga",
+      "category": "exercise",
+      "aliases": [
+        "vinyasa",
+        "hatha",
+        "ashtanga"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "hot-yoga",
+      "name": "Hot yoga",
+      "category": "exercise",
+      "aliases": [
+        "bikram"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "pilates",
+      "name": "Pilates",
+      "category": "exercise",
+      "aliases": [
+        "reformer",
+        "reformer pilates"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "swimming",
+      "name": "Swimming",
+      "category": "exercise",
+      "aliases": [
+        "swim",
+        "laps",
+        "pool"
+      ],
+      "units": [
+        "min",
+        "km"
+      ]
+    },
+    {
+      "id": "hiking",
+      "name": "Hiking",
+      "category": "exercise",
+      "aliases": [
+        "hike"
+      ],
+      "units": [
+        "km",
+        "mi",
+        "min"
+      ]
+    },
+    {
+      "id": "walking",
+      "name": "Walking",
+      "category": "exercise",
+      "aliases": [
+        "walk",
+        "steps"
+      ],
+      "units": [
+        "km",
+        "mi",
+        "min"
+      ]
+    },
+    {
+      "id": "walk-after-dinner",
+      "name": "Walk after dinner",
+      "category": "exercise",
+      "aliases": [
+        "post-dinner walk",
+        "evening walk",
+        "after meal walk",
+        "post meal walk"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "rucking",
+      "name": "Rucking",
+      "category": "exercise",
+      "aliases": [
+        "ruck",
+        "weighted vest walk"
+      ],
+      "units": [
+        "km",
+        "mi",
+        "min"
+      ]
+    },
+    {
+      "id": "rock-climbing",
+      "name": "Rock climbing",
+      "category": "exercise",
+      "aliases": [
+        "climbing",
+        "bouldering",
+        "top rope"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "rowing",
+      "name": "Rowing",
+      "category": "exercise",
+      "aliases": [
+        "row",
+        "erg",
+        "rowing machine",
+        "concept2"
+      ],
+      "units": [
+        "min",
+        "km"
+      ]
+    },
+    {
+      "id": "elliptical",
+      "name": "Elliptical",
+      "category": "exercise",
+      "aliases": [
+        "cross trainer"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "stair-climber",
+      "name": "Stair climber",
+      "category": "exercise",
+      "aliases": [
+        "stairmaster",
+        "stairs"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "team-sports",
+      "name": "Team sports",
+      "category": "exercise",
+      "aliases": [
+        "basketball",
+        "soccer",
+        "football",
+        "volleyball",
+        "hockey",
+        "rugby"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "racket-sports",
+      "name": "Racket sports",
+      "category": "exercise",
+      "aliases": [
+        "tennis",
+        "pickleball",
+        "padel",
+        "squash",
+        "badminton"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "golf",
+      "name": "Golf",
+      "category": "exercise",
+      "aliases": [],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "martial-arts",
+      "name": "Martial arts",
+      "category": "exercise",
+      "aliases": [
+        "bjj",
+        "jiu jitsu",
+        "jiujitsu",
+        "boxing",
+        "mma",
+        "muay thai",
+        "karate",
+        "judo",
+        "kickboxing"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "dance",
+      "name": "Dance",
+      "category": "exercise",
+      "aliases": [
+        "dancing",
+        "zumba",
+        "dance class"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "skiing",
+      "name": "Skiing",
+      "category": "exercise",
+      "aliases": [
+        "ski",
+        "snowboarding",
+        "snowboard"
+      ],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "surfing",
+      "name": "Surfing",
+      "category": "exercise",
+      "aliases": [
+        "surf"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "evening-workout",
+      "name": "Evening workout",
+      "category": "exercise",
+      "aliases": [
+        "late workout",
+        "night workout",
+        "workout after 8pm",
+        "trained late"
+      ],
+      "units": []
+    },
+    {
+      "id": "morning-workout",
+      "name": "Morning workout",
+      "category": "exercise",
+      "aliases": [
+        "am workout",
+        "early workout",
+        "fasted workout"
+      ],
+      "units": []
+    },
+    {
+      "id": "long-endurance-session",
+      "name": "Long endurance session",
+      "category": "exercise",
+      "aliases": [
+        "long run",
+        "long ride",
+        "century ride",
+        "endurance"
+      ],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "race",
+      "name": "Race",
+      "category": "exercise",
+      "aliases": [
+        "marathon",
+        "half marathon",
+        "5k",
+        "10k",
+        "triathlon",
+        "competition",
+        "race day"
+      ],
+      "units": []
+    },
+    {
+      "id": "very-hard-workout",
+      "name": "Very hard workout",
+      "category": "exercise",
+      "aliases": [
+        "max effort",
+        "brutal workout",
+        "pr day",
+        "all out"
+      ],
+      "units": []
+    },
+    {
+      "id": "two-workouts-in-one-day",
+      "name": "Two workouts in one day",
+      "category": "exercise",
+      "aliases": [
+        "two-a-day",
+        "double day"
+      ],
+      "units": []
+    },
+    {
+      "id": "rest-day",
+      "name": "Rest day",
+      "category": "exercise",
+      "aliases": [
+        "no workout",
+        "off day",
+        "recovery day"
+      ],
+      "units": []
+    },
+    {
+      "id": "morning-sunlight",
+      "name": "Morning sunlight",
+      "category": "light",
+      "aliases": [
+        "morning sun",
+        "sunlight",
+        "morning light",
+        "sunlight viewing",
+        "am sunlight"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "time-outdoors",
+      "name": "Time outdoors",
+      "category": "light",
+      "aliases": [
+        "outside",
+        "outdoors",
+        "daylight"
+      ],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "sunset-viewing",
+      "name": "Sunset viewing",
+      "category": "light",
+      "aliases": [
+        "sunset",
+        "evening sun"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "overcast-day",
+      "name": "Overcast day",
+      "category": "light",
+      "aliases": [
+        "cloudy",
+        "gray day",
+        "no sun"
+      ],
+      "units": []
+    },
+    {
+      "id": "light-therapy-box",
+      "name": "Light therapy box",
+      "category": "light",
+      "aliases": [
+        "sad lamp",
+        "light box",
+        "bright light therapy",
+        "10000 lux",
+        "happylight",
+        "lightbox"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "light-therapy-glasses",
+      "name": "Light therapy glasses",
+      "category": "light",
+      "aliases": [
+        "luminette",
+        "re-timer",
+        "pegasi"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "blue-light-blocking-glasses",
+      "name": "Blue-light blocking glasses",
+      "category": "light",
+      "aliases": [
+        "blue blockers",
+        "blue light glasses",
+        "amber glasses",
+        "orange glasses",
+        "ra optics",
+        "blublockers",
+        "blue blocking glasses"
+      ],
+      "units": []
+    },
+    {
+      "id": "screens-in-bed",
+      "name": "Screens in bed",
+      "category": "light",
+      "aliases": [
+        "phone in bed",
+        "doomscrolling",
+        "scrolling in bed",
+        "laptop in bed",
+        "ipad in bed",
+        "screen time"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "late-tv",
+      "name": "Late TV",
+      "category": "light",
+      "aliases": [
+        "tv before bed",
+        "netflix",
+        "tv in bed",
+        "watched tv late",
+        "television"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "late-video-games",
+      "name": "Late video games",
+      "category": "light",
+      "aliases": [
+        "gaming late",
+        "video games",
+        "gaming"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "screen-free-evening",
+      "name": "Screen-free evening",
+      "category": "light",
+      "aliases": [
+        "no screens",
+        "digital sunset",
+        "phone off"
+      ],
+      "units": []
+    },
+    {
+      "id": "dim-lights-evening",
+      "name": "Dim lights evening",
+      "category": "light",
+      "aliases": [
+        "dim lights",
+        "low lighting",
+        "candlelight",
+        "candles"
+      ],
+      "units": []
+    },
+    {
+      "id": "red-light-bulbs",
+      "name": "Red light bulbs",
+      "category": "light",
+      "aliases": [
+        "red lights",
+        "amber bulbs",
+        "red bulbs"
+      ],
+      "units": []
+    },
+    {
+      "id": "bright-lights-late",
+      "name": "Bright lights late",
+      "category": "light",
+      "aliases": [
+        "overhead lights",
+        "bright lights at night",
+        "bright room"
+      ],
+      "units": []
+    },
+    {
+      "id": "red-light-therapy",
+      "name": "Red light therapy",
+      "category": "light",
+      "aliases": [
+        "rlt",
+        "joovv",
+        "red light panel",
+        "near infrared",
+        "photobiomodulation",
+        "mito red"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "blackout-curtains",
+      "name": "Blackout curtains",
+      "category": "light",
+      "aliases": [
+        "blackout blinds",
+        "dark room"
+      ],
+      "units": []
+    },
+    {
+      "id": "light-in-bedroom",
+      "name": "Light in bedroom",
+      "category": "light",
+      "aliases": [
+        "streetlight",
+        "light leak",
+        "bright bedroom"
+      ],
+      "units": []
+    },
+    {
+      "id": "night-light",
+      "name": "Night light",
+      "category": "light",
+      "aliases": [
+        "nightlight"
+      ],
+      "units": []
+    },
+    {
+      "id": "night-shift-mode",
+      "name": "Night Shift mode",
+      "category": "light",
+      "aliases": [
+        "f.lux",
+        "flux",
+        "warm screen",
+        "true tone"
+      ],
+      "units": []
+    },
+    {
+      "id": "grayscale-phone",
+      "name": "Grayscale phone",
+      "category": "light",
+      "aliases": [
+        "grayscale",
+        "greyscale"
+      ],
+      "units": []
+    },
+    {
+      "id": "sunrise-alarm-clock",
+      "name": "Sunrise alarm clock",
+      "category": "light",
+      "aliases": [
+        "hatch",
+        "sunrise alarm",
+        "dawn simulator",
+        "wake-up light"
+      ],
+      "units": []
+    },
+    {
+      "id": "traditional-sauna",
+      "name": "Traditional sauna",
+      "category": "temperature",
+      "aliases": [
+        "sauna",
+        "finnish sauna",
+        "dry sauna",
+        "suana",
+        "sanua"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "infrared-sauna",
+      "name": "Infrared sauna",
+      "category": "temperature",
+      "aliases": [
+        "ir sauna",
+        "sunlighten",
+        "infrared"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "steam-room",
+      "name": "Steam room",
+      "category": "temperature",
+      "aliases": [
+        "steam",
+        "hammam"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "hot-tub",
+      "name": "Hot tub",
+      "category": "temperature",
+      "aliases": [
+        "jacuzzi",
+        "spa",
+        "whirlpool"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "cold-plunge",
+      "name": "Cold plunge",
+      "category": "temperature",
+      "aliases": [
+        "ice bath",
+        "cold tub",
+        "cold water immersion",
+        "plunge",
+        "cold plunge tub"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "cold-shower",
+      "name": "Cold shower",
+      "category": "temperature",
+      "aliases": [
+        "cold rinse"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "contrast-therapy",
+      "name": "Contrast therapy",
+      "category": "temperature",
+      "aliases": [
+        "hot cold contrast",
+        "sauna and plunge",
+        "sauna and cold plunge"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "cold-exposure-outdoors",
+      "name": "Cold exposure outdoors",
+      "category": "temperature",
+      "aliases": [
+        "cold walk",
+        "cold air exposure"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "hot-bath",
+      "name": "Hot bath",
+      "category": "temperature",
+      "aliases": [
+        "bath",
+        "warm bath"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "hot-shower-before-bed",
+      "name": "Hot shower before bed",
+      "category": "temperature",
+      "aliases": [
+        "warm shower",
+        "evening shower",
+        "hot shower"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "cooling-mattress-pad",
+      "name": "Cooling mattress pad",
+      "category": "temperature",
+      "aliases": [
+        "chilipad",
+        "chili pad",
+        "ooler",
+        "dock pro",
+        "sleepme",
+        "bedjet",
+        "cooling pad"
+      ],
+      "units": [
+        "°C",
+        "°F"
+      ]
+    },
+    {
+      "id": "eight-sleep",
+      "name": "Eight Sleep",
+      "category": "temperature",
+      "aliases": [
+        "8 sleep",
+        "eightsleep",
+        "eight sleep pod",
+        "pod"
+      ],
+      "units": [
+        "°C",
+        "°F"
+      ]
+    },
+    {
+      "id": "cool-bedroom",
+      "name": "Cool bedroom",
+      "category": "temperature",
+      "aliases": [
+        "cold room",
+        "ac on",
+        "air conditioning",
+        "aircon"
+      ],
+      "units": [
+        "°C",
+        "°F"
+      ]
+    },
+    {
+      "id": "warm-bedroom",
+      "name": "Warm bedroom",
+      "category": "temperature",
+      "aliases": [
+        "hot room",
+        "too hot",
+        "heat on",
+        "heating on"
+      ],
+      "units": [
+        "°C",
+        "°F"
+      ]
+    },
+    {
+      "id": "heatwave",
+      "name": "Heatwave",
+      "category": "temperature",
+      "aliases": [
+        "hot night",
+        "heat wave"
+      ],
+      "units": []
+    },
+    {
+      "id": "fan-on",
+      "name": "Fan on",
+      "category": "temperature",
+      "aliases": [
+        "fan",
+        "ceiling fan",
+        "box fan"
+      ],
+      "units": []
+    },
+    {
+      "id": "window-open",
+      "name": "Window open",
+      "category": "temperature",
+      "aliases": [
+        "open window",
+        "fresh air"
+      ],
+      "units": []
+    },
+    {
+      "id": "heated-blanket",
+      "name": "Heated blanket",
+      "category": "temperature",
+      "aliases": [
+        "electric blanket"
+      ],
+      "units": []
+    },
+    {
+      "id": "heavy-duvet",
+      "name": "Heavy duvet",
+      "category": "temperature",
+      "aliases": [
+        "thick comforter",
+        "extra blankets",
+        "heavy blanket"
+      ],
+      "units": []
+    },
+    {
+      "id": "cooling-sheets",
+      "name": "Cooling sheets",
+      "category": "temperature",
+      "aliases": [
+        "bamboo sheets",
+        "percale",
+        "cooling pillow"
+      ],
+      "units": []
+    },
+    {
+      "id": "warm-socks",
+      "name": "Warm socks",
+      "category": "temperature",
+      "aliases": [
+        "socks in bed",
+        "bed socks"
+      ],
+      "units": []
+    },
+    {
+      "id": "hot-water-bottle",
+      "name": "Hot water bottle",
+      "category": "temperature",
+      "aliases": [
+        "hot water bag"
+      ],
+      "units": []
+    },
+    {
+      "id": "away-from-home",
+      "name": "Away from home",
+      "category": "environment",
+      "aliases": [
+        "not home",
+        "traveling",
+        "away"
+      ],
+      "units": []
+    },
+    {
+      "id": "hotel",
+      "name": "Hotel",
+      "category": "environment",
+      "aliases": [
+        "hotel room",
+        "motel"
+      ],
+      "units": []
+    },
+    {
+      "id": "vacation-rental",
+      "name": "Vacation rental",
+      "category": "environment",
+      "aliases": [
+        "airbnb",
+        "vrbo"
+      ],
+      "units": []
+    },
+    {
+      "id": "friends-or-familys-house",
+      "name": "Friend's or family's house",
+      "category": "environment",
+      "aliases": [
+        "parents house",
+        "friends house",
+        "guest room",
+        "in-laws"
+      ],
+      "units": []
+    },
+    {
+      "id": "camping",
+      "name": "Camping",
+      "category": "environment",
+      "aliases": [
+        "tent",
+        "sleeping outside"
+      ],
+      "units": []
+    },
+    {
+      "id": "slept-on-plane",
+      "name": "Slept on plane",
+      "category": "environment",
+      "aliases": [
+        "red-eye",
+        "overnight flight",
+        "plane sleep"
+      ],
+      "units": []
+    },
+    {
+      "id": "slept-on-couch",
+      "name": "Slept on couch",
+      "category": "environment",
+      "aliases": [
+        "couch",
+        "sofa"
+      ],
+      "units": []
+    },
+    {
+      "id": "unfamiliar-bed",
+      "name": "Unfamiliar bed",
+      "category": "environment",
+      "aliases": [
+        "new bed",
+        "different bed"
+      ],
+      "units": []
+    },
+    {
+      "id": "noisy-night",
+      "name": "Noisy night",
+      "category": "environment",
+      "aliases": [
+        "noise",
+        "loud neighbors",
+        "traffic noise",
+        "construction",
+        "sirens"
+      ],
+      "units": []
+    },
+    {
+      "id": "white-noise",
+      "name": "White noise",
+      "category": "environment",
+      "aliases": [
+        "white noise machine",
+        "pink noise",
+        "brown noise",
+        "sound machine"
+      ],
+      "units": []
+    },
+    {
+      "id": "sleep-sounds",
+      "name": "Sleep sounds",
+      "category": "environment",
+      "aliases": [
+        "rain sounds",
+        "ocean sounds",
+        "nature sounds"
+      ],
+      "units": []
+    },
+    {
+      "id": "earplugs",
+      "name": "Earplugs",
+      "category": "environment",
+      "aliases": [
+        "ear plugs",
+        "loop earplugs",
+        "foam earplugs",
+        "earplug"
+      ],
+      "units": []
+    },
+    {
+      "id": "eye-mask",
+      "name": "Eye mask",
+      "category": "environment",
+      "aliases": [
+        "sleep mask",
+        "manta mask",
+        "blindfold"
+      ],
+      "units": []
+    },
+    {
+      "id": "partner-in-bed",
+      "name": "Partner in bed",
+      "category": "environment",
+      "aliases": [
+        "bed partner",
+        "shared bed",
+        "sleeping with partner"
+      ],
+      "units": []
+    },
+    {
+      "id": "slept-alone",
+      "name": "Slept alone",
+      "category": "environment",
+      "aliases": [
+        "alone",
+        "separate beds",
+        "sleep divorce"
+      ],
+      "units": []
+    },
+    {
+      "id": "partner-snoring",
+      "name": "Partner snoring",
+      "category": "environment",
+      "aliases": [
+        "snoring partner"
+      ],
+      "units": []
+    },
+    {
+      "id": "pet-in-bed",
+      "name": "Pet in bed",
+      "category": "environment",
+      "aliases": [
+        "dog in bed",
+        "cat in bed"
+      ],
+      "units": []
+    },
+    {
+      "id": "baby-in-room",
+      "name": "Baby in room",
+      "category": "environment",
+      "aliases": [
+        "co-sleeping",
+        "bassinet",
+        "cosleeping"
+      ],
+      "units": []
+    },
+    {
+      "id": "new-mattress",
+      "name": "New mattress",
+      "category": "environment",
+      "aliases": [
+        "mattress"
+      ],
+      "units": []
+    },
+    {
+      "id": "new-pillow",
+      "name": "New pillow",
+      "category": "environment",
+      "aliases": [
+        "pillow"
+      ],
+      "units": []
+    },
+    {
+      "id": "clean-sheets",
+      "name": "Clean sheets",
+      "category": "environment",
+      "aliases": [
+        "fresh sheets",
+        "new sheets"
+      ],
+      "units": []
+    },
+    {
+      "id": "weighted-blanket",
+      "name": "Weighted blanket",
+      "category": "environment",
+      "aliases": [
+        "gravity blanket"
+      ],
+      "units": []
+    },
+    {
+      "id": "air-purifier",
+      "name": "Air purifier",
+      "category": "environment",
+      "aliases": [
+        "hepa",
+        "hepa filter"
+      ],
+      "units": []
+    },
+    {
+      "id": "humidifier",
+      "name": "Humidifier",
+      "category": "environment",
+      "aliases": [],
+      "units": []
+    },
+    {
+      "id": "dehumidifier",
+      "name": "Dehumidifier",
+      "category": "environment",
+      "aliases": [],
+      "units": []
+    },
+    {
+      "id": "dry-air",
+      "name": "Dry air",
+      "category": "environment",
+      "aliases": [],
+      "units": []
+    },
+    {
+      "id": "stuffy-bedroom",
+      "name": "Stuffy bedroom",
+      "category": "environment",
+      "aliases": [
+        "stuffy room",
+        "high co2",
+        "co2",
+        "closed door"
+      ],
+      "units": []
+    },
+    {
+      "id": "poor-air-quality",
+      "name": "Poor air quality",
+      "category": "environment",
+      "aliases": [
+        "smoke",
+        "wildfire smoke",
+        "aqi",
+        "pollution"
+      ],
+      "units": []
+    },
+    {
+      "id": "high-altitude",
+      "name": "High altitude",
+      "category": "environment",
+      "aliases": [
+        "altitude",
+        "mountains"
+      ],
+      "units": []
+    },
+    {
+      "id": "thunderstorm",
+      "name": "Thunderstorm",
+      "category": "environment",
+      "aliases": [
+        "storm",
+        "thunder"
+      ],
+      "units": []
+    },
+    {
+      "id": "full-moon",
+      "name": "Full moon",
+      "category": "environment",
+      "aliases": [
+        "moon"
+      ],
+      "units": []
+    },
+    {
+      "id": "phone-out-of-bedroom",
+      "name": "Phone out of bedroom",
+      "category": "environment",
+      "aliases": [
+        "phone in another room",
+        "no phone in bedroom"
+      ],
+      "units": []
+    },
+    {
+      "id": "do-not-disturb",
+      "name": "Do Not Disturb",
+      "category": "environment",
+      "aliases": [
+        "dnd",
+        "sleep focus",
+        "focus mode"
+      ],
+      "units": []
+    },
+    {
+      "id": "aromatherapy",
+      "name": "Aromatherapy",
+      "category": "environment",
+      "aliases": [
+        "lavender",
+        "essential oil",
+        "diffuser",
+        "lavender spray",
+        "pillow spray"
+      ],
+      "units": []
+    },
+    {
+      "id": "meditation",
+      "name": "Meditation",
+      "category": "mindBody",
+      "aliases": [
+        "meditate",
+        "mindfulness",
+        "headspace",
+        "calm app",
+        "waking up app",
+        "meditaton"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "guided-meditation",
+      "name": "Guided meditation",
+      "category": "mindBody",
+      "aliases": [
+        "guided"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "nsdr",
+      "name": "NSDR",
+      "category": "mindBody",
+      "aliases": [
+        "non-sleep deep rest",
+        "nsdr protocol"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "yoga-nidra",
+      "name": "Yoga nidra",
+      "category": "mindBody",
+      "aliases": [
+        "yoganidra"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "box-breathing",
+      "name": "Box breathing",
+      "category": "mindBody",
+      "aliases": [
+        "square breathing"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "4-7-8-breathing",
+      "name": "4-7-8 breathing",
+      "category": "mindBody",
+      "aliases": [
+        "478 breathing",
+        "4 7 8",
+        "4-7-8"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "physiological-sigh",
+      "name": "Physiological sigh",
+      "category": "mindBody",
+      "aliases": [
+        "cyclic sighing",
+        "double inhale"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "slow-breathing",
+      "name": "Slow breathing",
+      "category": "mindBody",
+      "aliases": [
+        "resonant breathing",
+        "coherent breathing",
+        "hrv breathing",
+        "6 breaths per minute"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "wim-hof-breathing",
+      "name": "Wim Hof breathing",
+      "category": "mindBody",
+      "aliases": [
+        "wim hof",
+        "breathwork",
+        "tummo"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "alternate-nostril-breathing",
+      "name": "Alternate nostril breathing",
+      "category": "mindBody",
+      "aliases": [
+        "nadi shodhana"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "body-scan",
+      "name": "Body scan",
+      "category": "mindBody",
+      "aliases": [],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "progressive-muscle-relaxation",
+      "name": "Progressive muscle relaxation",
+      "category": "mindBody",
+      "aliases": [
+        "pmr"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "visualization",
+      "name": "Visualization",
+      "category": "mindBody",
+      "aliases": [
+        "imagery"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "cognitive-shuffle",
+      "name": "Cognitive shuffle",
+      "category": "mindBody",
+      "aliases": [
+        "serial diverse imagining"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "hypnosis",
+      "name": "Hypnosis",
+      "category": "mindBody",
+      "aliases": [
+        "self-hypnosis",
+        "reveri"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "eft-tapping",
+      "name": "EFT tapping",
+      "category": "mindBody",
+      "aliases": [
+        "tapping"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "journaling",
+      "name": "Journaling",
+      "category": "mindBody",
+      "aliases": [
+        "journal",
+        "brain dump",
+        "worry list",
+        "to-do list"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "gratitude-practice",
+      "name": "Gratitude practice",
+      "category": "mindBody",
+      "aliases": [
+        "gratitude",
+        "gratitude journal"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "reading-fiction",
+      "name": "Reading fiction",
+      "category": "mindBody",
+      "aliases": [
+        "reading",
+        "novel",
+        "book"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "reading-on-e-reader",
+      "name": "Reading on e-reader",
+      "category": "mindBody",
+      "aliases": [
+        "kindle",
+        "e-reader",
+        "ereader"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "sleep-story",
+      "name": "Sleep story",
+      "category": "mindBody",
+      "aliases": [
+        "bedtime story",
+        "calm sleep story"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "podcast-in-bed",
+      "name": "Podcast in bed",
+      "category": "mindBody",
+      "aliases": [
+        "podcast",
+        "audiobook"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "music-before-bed",
+      "name": "Music before bed",
+      "category": "mindBody",
+      "aliases": [
+        "calm music",
+        "listening to music"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "prayer",
+      "name": "Prayer",
+      "category": "mindBody",
+      "aliases": [
+        "pray"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "wind-down-routine",
+      "name": "Wind-down routine",
+      "category": "mindBody",
+      "aliases": [
+        "wind down",
+        "bedtime routine"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "stretching-before-bed",
+      "name": "Stretching before bed",
+      "category": "mindBody",
+      "aliases": [
+        "bedtime stretch",
+        "evening stretch"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "gentle-yoga-before-bed",
+      "name": "Gentle yoga before bed",
+      "category": "mindBody",
+      "aliases": [
+        "restorative yoga",
+        "yin yoga"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "tai-chi",
+      "name": "Tai chi",
+      "category": "mindBody",
+      "aliases": [
+        "qigong"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "therapy-session",
+      "name": "Therapy session",
+      "category": "mindBody",
+      "aliases": [
+        "therapist",
+        "counseling"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "time-with-friends",
+      "name": "Time with friends",
+      "category": "mindBody",
+      "aliases": [
+        "socializing",
+        "friends",
+        "social time"
+      ],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "cuddling",
+      "name": "Cuddling",
+      "category": "mindBody",
+      "aliases": [
+        "cuddle"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "sex",
+      "name": "Sex",
+      "category": "mindBody",
+      "aliases": [
+        "intimacy",
+        "sexual activity"
+      ],
+      "units": []
+    },
+    {
+      "id": "orgasm",
+      "name": "Orgasm",
+      "category": "mindBody",
+      "aliases": [
+        "masturbation"
+      ],
+      "units": []
+    },
+    {
+      "id": "mouth-tape",
+      "name": "Mouth tape",
+      "category": "device",
+      "aliases": [
+        "taped mouth",
+        "myotape",
+        "mouth taping",
+        "lip tape"
+      ],
+      "units": []
+    },
+    {
+      "id": "nasal-strips",
+      "name": "Nasal strips",
+      "category": "device",
+      "aliases": [
+        "breathe right",
+        "nasal strip"
+      ],
+      "units": []
+    },
+    {
+      "id": "nasal-dilator",
+      "name": "Nasal dilator",
+      "category": "device",
+      "aliases": [
+        "intake",
+        "mute",
+        "nasal cones",
+        "nasal dilators"
+      ],
+      "units": []
+    },
+    {
+      "id": "saline-nasal-rinse",
+      "name": "Saline nasal rinse",
+      "category": "device",
+      "aliases": [
+        "neti pot",
+        "sinus rinse",
+        "nasal rinse"
+      ],
+      "units": []
+    },
+    {
+      "id": "cpap",
+      "name": "CPAP",
+      "category": "device",
+      "aliases": [
+        "apap",
+        "bipap",
+        "cpap machine",
+        "c-pap"
+      ],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "mandibular-advancement-device",
+      "name": "Mandibular advancement device",
+      "category": "device",
+      "aliases": [
+        "mad device",
+        "snore guard",
+        "oral appliance",
+        "anti-snore mouthpiece"
+      ],
+      "units": []
+    },
+    {
+      "id": "night-guard",
+      "name": "Night guard",
+      "category": "device",
+      "aliases": [
+        "bruxism guard",
+        "mouth guard",
+        "occlusal splint",
+        "mouthguard"
+      ],
+      "units": []
+    },
+    {
+      "id": "chin-strap",
+      "name": "Chin strap",
+      "category": "device",
+      "aliases": [],
+      "units": []
+    },
+    {
+      "id": "exciteosa",
+      "name": "eXciteOSA",
+      "category": "device",
+      "aliases": [
+        "excite osa",
+        "tongue stimulator"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "positional-therapy",
+      "name": "Positional therapy",
+      "category": "device",
+      "aliases": [
+        "side sleeping",
+        "tennis ball",
+        "anti-snore pillow"
+      ],
+      "units": []
+    },
+    {
+      "id": "wedge-pillow",
+      "name": "Wedge pillow",
+      "category": "device",
+      "aliases": [
+        "bed incline",
+        "incline pillow"
+      ],
+      "units": []
+    },
+    {
+      "id": "adjustable-bed",
+      "name": "Adjustable bed",
+      "category": "device",
+      "aliases": [
+        "elevated head",
+        "raised head of bed"
+      ],
+      "units": []
+    },
+    {
+      "id": "sleep-headphones",
+      "name": "Sleep headphones",
+      "category": "device",
+      "aliases": [
+        "sleepphones",
+        "bose sleepbuds",
+        "ozlo",
+        "soundcore sleep",
+        "sleepbuds"
+      ],
+      "units": []
+    },
+    {
+      "id": "sleep-headband",
+      "name": "Sleep headband",
+      "category": "device",
+      "aliases": [
+        "elemind",
+        "dreem",
+        "muse s",
+        "kokoon"
+      ],
+      "units": []
+    },
+    {
+      "id": "smart-ring",
+      "name": "Smart ring",
+      "category": "device",
+      "aliases": [
+        "oura",
+        "oura ring",
+        "ultrahuman",
+        "ringconn",
+        "galaxy ring"
+      ],
+      "units": []
+    },
+    {
+      "id": "chest-strap",
+      "name": "Chest strap",
+      "category": "device",
+      "aliases": [
+        "polar h10",
+        "heart rate strap",
+        "garmin hrm",
+        "hrm"
+      ],
+      "units": []
+    },
+    {
+      "id": "continuous-glucose-monitor",
+      "name": "Continuous glucose monitor",
+      "category": "device",
+      "aliases": [
+        "cgm",
+        "levels",
+        "dexcom",
+        "libre",
+        "freestyle libre",
+        "stelo",
+        "lingo"
+      ],
+      "units": []
+    },
+    {
+      "id": "apple-watch-off-wrist",
+      "name": "Apple Watch off wrist",
+      "category": "device",
+      "aliases": [
+        "watch off",
+        "no apple watch",
+        "apple watch charging"
+      ],
+      "units": []
+    },
+    {
+      "id": "fitbit-off-wrist",
+      "name": "Fitbit off wrist",
+      "category": "device",
+      "aliases": [
+        "fitbit off",
+        "no fitbit",
+        "fitbit charging"
+      ],
+      "units": []
+    },
+    {
+      "id": "loose-band-fit",
+      "name": "Loose band fit",
+      "category": "device",
+      "aliases": [
+        "loose band",
+        "loose watch"
+      ],
+      "units": []
+    },
+    {
+      "id": "swapped-wrists",
+      "name": "Swapped wrists",
+      "category": "device",
+      "aliases": [
+        "other wrist",
+        "wrist swap"
+      ],
+      "units": []
+    },
+    {
+      "id": "both-devices-same-wrist",
+      "name": "Both devices same wrist",
+      "category": "device",
+      "aliases": [
+        "same wrist"
+      ],
+      "units": []
+    },
+    {
+      "id": "apollo-neuro",
+      "name": "Apollo Neuro",
+      "category": "device",
+      "aliases": [
+        "apollo"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "hapbee",
+      "name": "Hapbee",
+      "category": "device",
+      "aliases": [],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "pemf-mat",
+      "name": "PEMF mat",
+      "category": "device",
+      "aliases": [
+        "pemf",
+        "healy"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "ces-device",
+      "name": "CES device",
+      "category": "device",
+      "aliases": [
+        "alpha-stim",
+        "fisher wallace",
+        "cranial electrotherapy"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "vagus-nerve-stimulator",
+      "name": "Vagus nerve stimulator",
+      "category": "device",
+      "aliases": [
+        "tavns",
+        "nurosym",
+        "pulsetto",
+        "vns"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "grounding-sheet",
+      "name": "Grounding sheet",
+      "category": "device",
+      "aliases": [
+        "earthing",
+        "grounding mat",
+        "grounding"
+      ],
+      "units": []
+    },
+    {
+      "id": "massage",
+      "name": "Massage",
+      "category": "recovery",
+      "aliases": [
+        "deep tissue massage",
+        "sports massage",
+        "thai massage"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "foam-rolling",
+      "name": "Foam rolling",
+      "category": "recovery",
+      "aliases": [
+        "foam roller",
+        "foam roll"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "percussion-massage",
+      "name": "Percussion massage",
+      "category": "recovery",
+      "aliases": [
+        "massage gun",
+        "theragun",
+        "hypervolt"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "compression-boots",
+      "name": "Compression boots",
+      "category": "recovery",
+      "aliases": [
+        "normatec",
+        "pneumatic compression"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "compression-garments",
+      "name": "Compression garments",
+      "category": "recovery",
+      "aliases": [
+        "compression socks",
+        "compression tights"
+      ],
+      "units": []
+    },
+    {
+      "id": "epsom-salt-bath",
+      "name": "Epsom salt bath",
+      "category": "recovery",
+      "aliases": [
+        "epsom bath",
+        "magnesium sulfate bath",
+        "bath salts",
+        "epsom salts"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "magnesium-flakes-bath",
+      "name": "Magnesium flakes bath",
+      "category": "recovery",
+      "aliases": [
+        "magnesium chloride bath",
+        "mag flakes"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "float-tank",
+      "name": "Float tank",
+      "category": "recovery",
+      "aliases": [
+        "flotation tank",
+        "sensory deprivation",
+        "float",
+        "floatation"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "acupuncture",
+      "name": "Acupuncture",
+      "category": "recovery",
+      "aliases": [
+        "accupuncture"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "dry-needling",
+      "name": "Dry needling",
+      "category": "recovery",
+      "aliases": [],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "cupping",
+      "name": "Cupping",
+      "category": "recovery",
+      "aliases": [],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "chiropractic-adjustment",
+      "name": "Chiropractic adjustment",
+      "category": "recovery",
+      "aliases": [
+        "chiropractor",
+        "chiro"
+      ],
+      "units": []
+    },
+    {
+      "id": "physical-therapy",
+      "name": "Physical therapy",
+      "category": "recovery",
+      "aliases": [
+        "pt",
+        "physio",
+        "physiotherapy"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "stretching-session",
+      "name": "Stretching session",
+      "category": "recovery",
+      "aliases": [
+        "stretch",
+        "flexibility",
+        "mobility"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "assisted-stretching",
+      "name": "Assisted stretching",
+      "category": "recovery",
+      "aliases": [
+        "stretchlab"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "cryotherapy-chamber",
+      "name": "Cryotherapy chamber",
+      "category": "recovery",
+      "aliases": [
+        "cryo",
+        "whole body cryotherapy"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "hyperbaric-oxygen",
+      "name": "Hyperbaric oxygen",
+      "category": "recovery",
+      "aliases": [
+        "hbot",
+        "hyperbaric chamber"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "iv-drip",
+      "name": "IV drip",
+      "category": "recovery",
+      "aliases": [
+        "iv therapy",
+        "nad iv",
+        "iv hydration"
+      ],
+      "units": []
+    },
+    {
+      "id": "electrical-muscle-stimulation",
+      "name": "Electrical muscle stimulation",
+      "category": "recovery",
+      "aliases": [
+        "ems",
+        "tens",
+        "compex",
+        "electrical stimulation"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "lymphatic-drainage",
+      "name": "Lymphatic drainage",
+      "category": "recovery",
+      "aliases": [
+        "lymphatic massage"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "reflexology",
+      "name": "Reflexology",
+      "category": "recovery",
+      "aliases": [
+        "foot massage"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "late-bedtime",
+      "name": "Late bedtime",
+      "category": "schedule",
+      "aliases": [
+        "stayed up late",
+        "late night",
+        "bed late"
+      ],
+      "units": []
+    },
+    {
+      "id": "early-bedtime",
+      "name": "Early bedtime",
+      "category": "schedule",
+      "aliases": [
+        "early to bed",
+        "went to bed early"
+      ],
+      "units": []
+    },
+    {
+      "id": "consistent-bedtime",
+      "name": "Consistent bedtime",
+      "category": "schedule",
+      "aliases": [
+        "regular schedule",
+        "same bedtime"
+      ],
+      "units": []
+    },
+    {
+      "id": "slept-in",
+      "name": "Slept in",
+      "category": "schedule",
+      "aliases": [
+        "sleep in",
+        "lie in",
+        "overslept"
+      ],
+      "units": []
+    },
+    {
+      "id": "short-night",
+      "name": "Short night",
+      "category": "schedule",
+      "aliases": [
+        "sleep deprived",
+        "little sleep",
+        "short sleep"
+      ],
+      "units": []
+    },
+    {
+      "id": "all-nighter",
+      "name": "All-nighter",
+      "category": "schedule",
+      "aliases": [
+        "no sleep",
+        "all nighter",
+        "pulled an all nighter"
+      ],
+      "units": []
+    },
+    {
+      "id": "nap",
+      "name": "Nap",
+      "category": "schedule",
+      "aliases": [
+        "napped",
+        "siesta"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "short-nap",
+      "name": "Short nap",
+      "category": "schedule",
+      "aliases": [
+        "power nap",
+        "nap under 30 min"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "long-nap",
+      "name": "Long nap",
+      "category": "schedule",
+      "aliases": [
+        "nap over an hour"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "late-nap",
+      "name": "Late nap",
+      "category": "schedule",
+      "aliases": [
+        "afternoon nap",
+        "nap after 3pm",
+        "evening nap"
+      ],
+      "units": [
+        "min"
+      ]
+    },
+    {
+      "id": "split-sleep",
+      "name": "Split sleep",
+      "category": "schedule",
+      "aliases": [
+        "segmented sleep",
+        "biphasic",
+        "biphasic sleep"
+      ],
+      "units": []
+    },
+    {
+      "id": "jet-lag-eastbound",
+      "name": "Jet lag eastbound",
+      "category": "schedule",
+      "aliases": [
+        "flew east",
+        "eastbound travel"
+      ],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "jet-lag-westbound",
+      "name": "Jet lag westbound",
+      "category": "schedule",
+      "aliases": [
+        "flew west",
+        "westbound travel"
+      ],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "time-zone-change",
+      "name": "Time zone change",
+      "category": "schedule",
+      "aliases": [
+        "new time zone",
+        "timezone"
+      ],
+      "units": [
+        "h"
+      ]
+    },
+    {
+      "id": "daylight-saving-change",
+      "name": "Daylight saving change",
+      "category": "schedule",
+      "aliases": [
+        "dst",
+        "daylight savings",
+        "clocks changed",
+        "spring forward",
+        "fall back"
+      ],
+      "units": []
+    },
+    {
+      "id": "night-shift",
+      "name": "Night shift",
+      "category": "schedule",
+      "aliases": [
+        "shift work",
+        "overnight shift",
+        "graveyard shift"
+      ],
+      "units": []
+    },
+    {
+      "id": "early-alarm",
+      "name": "Early alarm",
+      "category": "schedule",
+      "aliases": [
+        "early wake",
+        "alarm",
+        "early flight"
+      ],
+      "units": []
+    },
+    {
+      "id": "no-alarm",
+      "name": "No alarm",
+      "category": "schedule",
+      "aliases": [
+        "woke naturally",
+        "natural wake"
+      ],
+      "units": []
+    },
+    {
+      "id": "snoozed-alarm",
+      "name": "Snoozed alarm",
+      "category": "schedule",
+      "aliases": [
+        "snooze"
+      ],
+      "units": []
+    },
+    {
+      "id": "woke-in-the-night",
+      "name": "Woke in the night",
+      "category": "schedule",
+      "aliases": [
+        "night waking",
+        "woke up at night",
+        "middle of the night waking"
+      ],
+      "units": []
+    },
+    {
+      "id": "baby-or-child-woke-me",
+      "name": "Baby or child woke me",
+      "category": "schedule",
+      "aliases": [
+        "kids woke me",
+        "baby",
+        "toddler",
+        "night feed",
+        "newborn"
+      ],
+      "units": []
+    },
+    {
+      "id": "pet-woke-me",
+      "name": "Pet woke me",
+      "category": "schedule",
+      "aliases": [
+        "dog woke me",
+        "cat woke me"
+      ],
+      "units": []
+    },
+    {
+      "id": "bathroom-trips",
+      "name": "Bathroom trips",
+      "category": "schedule",
+      "aliases": [
+        "nocturia",
+        "peed at night",
+        "woke to pee"
+      ],
+      "units": []
+    },
+    {
+      "id": "worked-late",
+      "name": "Worked late",
+      "category": "schedule",
+      "aliases": [
+        "late work",
+        "work email late",
+        "laptop late"
+      ],
+      "units": []
+    },
+    {
+      "id": "late-social-event",
+      "name": "Late social event",
+      "category": "schedule",
+      "aliases": [
+        "party",
+        "night out",
+        "dinner party",
+        "concert"
+      ],
+      "units": []
+    },
+    {
+      "id": "weekend",
+      "name": "Weekend",
+      "category": "schedule",
+      "aliases": [
+        "social jet lag",
+        "saturday"
+      ],
+      "units": []
+    },
+    {
+      "id": "vacation",
+      "name": "Vacation",
+      "category": "schedule",
+      "aliases": [
+        "holiday",
+        "pto",
+        "time off"
+      ],
+      "units": []
+    },
+    {
+      "id": "cbt-i-sleep-restriction",
+      "name": "CBT-I sleep restriction",
+      "category": "schedule",
+      "aliases": [
+        "cbt-i",
+        "cbti",
+        "sleep restriction therapy"
+      ],
+      "units": []
+    },
+    {
+      "id": "cold",
+      "name": "Cold",
+      "category": "health",
+      "aliases": [
+        "common cold",
+        "sick",
+        "head cold"
+      ],
+      "units": []
+    },
+    {
+      "id": "flu",
+      "name": "Flu",
+      "category": "health",
+      "aliases": [
+        "influenza"
+      ],
+      "units": []
+    },
+    {
+      "id": "covid",
+      "name": "COVID",
+      "category": "health",
+      "aliases": [
+        "covid-19",
+        "coronavirus",
+        "covid positive",
+        "covid19"
+      ],
+      "units": []
+    },
+    {
+      "id": "fever",
+      "name": "Fever",
+      "category": "health",
+      "aliases": [
+        "high temperature",
+        "febrile"
+      ],
+      "units": []
+    },
+    {
+      "id": "sore-throat",
+      "name": "Sore throat",
+      "category": "health",
+      "aliases": [
+        "strep"
+      ],
+      "units": []
+    },
+    {
+      "id": "stomach-bug",
+      "name": "Stomach bug",
+      "category": "health",
+      "aliases": [
+        "food poisoning",
+        "gastro",
+        "diarrhea",
+        "nausea",
+        "vomiting"
+      ],
+      "units": []
+    },
+    {
+      "id": "allergies",
+      "name": "Allergies",
+      "category": "health",
+      "aliases": [
+        "hay fever",
+        "pollen",
+        "seasonal allergies"
+      ],
+      "units": []
+    },
+    {
+      "id": "congestion",
+      "name": "Congestion",
+      "category": "health",
+      "aliases": [
+        "stuffy nose",
+        "blocked nose",
+        "sinus"
+      ],
+      "units": []
+    },
+    {
+      "id": "cough",
+      "name": "Cough",
+      "category": "health",
+      "aliases": [
+        "coughing"
+      ],
+      "units": []
+    },
+    {
+      "id": "asthma-flare",
+      "name": "Asthma flare",
+      "category": "health",
+      "aliases": [
+        "asthma"
+      ],
+      "units": []
+    },
+    {
+      "id": "acid-reflux",
+      "name": "Acid reflux",
+      "category": "health",
+      "aliases": [
+        "heartburn",
+        "gerd",
+        "reflux"
+      ],
+      "units": []
+    },
+    {
+      "id": "injury",
+      "name": "Injury",
+      "category": "health",
+      "aliases": [
+        "injured",
+        "sprain"
+      ],
+      "units": []
+    },
+    {
+      "id": "pain",
+      "name": "Pain",
+      "category": "health",
+      "aliases": [
+        "body pain",
+        "aches"
+      ],
+      "units": []
+    },
+    {
+      "id": "back-pain",
+      "name": "Back pain",
+      "category": "health",
+      "aliases": [
+        "lower back pain",
+        "sciatica"
+      ],
+      "units": []
+    },
+    {
+      "id": "muscle-soreness",
+      "name": "Muscle soreness",
+      "category": "health",
+      "aliases": [
+        "doms",
+        "sore muscles",
+        "sore"
+      ],
+      "units": []
+    },
+    {
+      "id": "headache",
+      "name": "Headache",
+      "category": "health",
+      "aliases": [
+        "head ache"
+      ],
+      "units": []
+    },
+    {
+      "id": "migraine",
+      "name": "Migraine",
+      "category": "health",
+      "aliases": [
+        "migrane"
+      ],
+      "units": []
+    },
+    {
+      "id": "restless-legs",
+      "name": "Restless legs",
+      "category": "health",
+      "aliases": [
+        "rls",
+        "restless leg syndrome"
+      ],
+      "units": []
+    },
+    {
+      "id": "itchy-skin",
+      "name": "Itchy skin",
+      "category": "health",
+      "aliases": [
+        "eczema",
+        "itchy",
+        "rash"
+      ],
+      "units": []
+    },
+    {
+      "id": "sunburn",
+      "name": "Sunburn",
+      "category": "health",
+      "aliases": [
+        "sun burn"
+      ],
+      "units": []
+    },
+    {
+      "id": "menstrual-period",
+      "name": "Menstrual period",
+      "category": "health",
+      "aliases": [
+        "period",
+        "menstruation",
+        "on my period"
+      ],
+      "units": []
+    },
+    {
+      "id": "pms",
+      "name": "PMS",
+      "category": "health",
+      "aliases": [
+        "premenstrual"
+      ],
+      "units": []
+    },
+    {
+      "id": "ovulation",
+      "name": "Ovulation",
+      "category": "health",
+      "aliases": [
+        "ovulating"
+      ],
+      "units": []
+    },
+    {
+      "id": "luteal-phase",
+      "name": "Luteal phase",
+      "category": "health",
+      "aliases": [
+        "luteal"
+      ],
+      "units": []
+    },
+    {
+      "id": "pregnancy",
+      "name": "Pregnancy",
+      "category": "health",
+      "aliases": [
+        "pregnant"
+      ],
+      "units": []
+    },
+    {
+      "id": "menopause-symptoms",
+      "name": "Menopause symptoms",
+      "category": "health",
+      "aliases": [
+        "hot flashes",
+        "night sweats",
+        "perimenopause",
+        "menopause"
+      ],
+      "units": []
+    },
+    {
+      "id": "vaccination",
+      "name": "Vaccination",
+      "category": "health",
+      "aliases": [
+        "vaccine",
+        "flu shot",
+        "covid booster",
+        "jab"
+      ],
+      "units": []
+    },
+    {
+      "id": "dental-work",
+      "name": "Dental work",
+      "category": "health",
+      "aliases": [
+        "dentist",
+        "tooth extraction",
+        "root canal",
+        "wisdom teeth"
+      ],
+      "units": []
+    },
+    {
+      "id": "surgery",
+      "name": "Surgery",
+      "category": "health",
+      "aliases": [
+        "operation",
+        "procedure",
+        "anesthesia"
+      ],
+      "units": []
+    },
+    {
+      "id": "blood-draw",
+      "name": "Blood draw",
+      "category": "health",
+      "aliases": [
+        "blood donation",
+        "gave blood",
+        "blood test"
+      ],
+      "units": []
+    },
+    {
+      "id": "new-medication",
+      "name": "New medication",
+      "category": "health",
+      "aliases": [
+        "started new med",
+        "new prescription"
+      ],
+      "units": []
+    },
+    {
+      "id": "dose-change",
+      "name": "Dose change",
+      "category": "health",
+      "aliases": [
+        "changed dose",
+        "new dose"
+      ],
+      "units": []
+    },
+    {
+      "id": "high-stress-day",
+      "name": "High stress day",
+      "category": "health",
+      "aliases": [
+        "stressed",
+        "stress",
+        "stressful day"
+      ],
+      "units": []
+    },
+    {
+      "id": "anxiety",
+      "name": "Anxiety",
+      "category": "health",
+      "aliases": [
+        "anxious",
+        "worried",
+        "panic"
+      ],
+      "units": []
+    },
+    {
+      "id": "racing-thoughts",
+      "name": "Racing thoughts",
+      "category": "health",
+      "aliases": [
+        "mind racing",
+        "couldn't switch off"
+      ],
+      "units": []
+    },
+    {
+      "id": "low-mood",
+      "name": "Low mood",
+      "category": "health",
+      "aliases": [
+        "sad",
+        "depressed",
+        "down"
+      ],
+      "units": []
+    },
+    {
+      "id": "grief",
+      "name": "Grief",
+      "category": "health",
+      "aliases": [
+        "bereavement",
+        "loss"
+      ],
+      "units": []
+    },
+    {
+      "id": "burnout",
+      "name": "Burnout",
+      "category": "health",
+      "aliases": [
+        "burnt out",
+        "exhausted"
+      ],
+      "units": []
+    },
+    {
+      "id": "conflict-or-argument",
+      "name": "Conflict or argument",
+      "category": "health",
+      "aliases": [
+        "fight",
+        "argument",
+        "conflict"
+      ],
+      "units": []
+    },
+    {
+      "id": "big-deadline",
+      "name": "Big deadline",
+      "category": "health",
+      "aliases": [
+        "deadline",
+        "crunch",
+        "exam",
+        "presentation"
+      ],
+      "units": []
+    },
+    {
+      "id": "excited",
+      "name": "Excited",
+      "category": "health",
+      "aliases": [
+        "excitement",
+        "big day tomorrow",
+        "anticipation"
+      ],
+      "units": []
+    },
+    {
+      "id": "celebration",
+      "name": "Celebration",
+      "category": "health",
+      "aliases": [
+        "birthday",
+        "wedding",
+        "holiday dinner"
+      ],
+      "units": []
+    },
+    {
+      "id": "travel-day",
+      "name": "Travel day",
+      "category": "health",
+      "aliases": [
+        "travel",
+        "flew",
+        "airport",
+        "long drive",
+        "road trip"
+      ],
+      "units": []
+    },
+    {
+      "id": "hangover",
+      "name": "Hangover",
+      "category": "health",
+      "aliases": [
+        "hungover"
+      ],
+      "units": []
+    },
+    {
+      "id": "overtraining",
+      "name": "Overtraining",
+      "category": "health",
+      "aliases": [
+        "overreaching"
+      ],
+      "units": []
+    },
+    {
+      "id": "nightmare",
+      "name": "Nightmare",
+      "category": "health",
+      "aliases": [
+        "bad dream",
+        "nightmares"
+      ],
+      "units": []
+    }
+  ]
+}

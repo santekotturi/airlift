@@ -26,6 +26,28 @@ import HealthKit
 @MainActor
 extension UIMock {
 
+    /// A few weeks of magnesium most nights, plus the odd late coffee and
+    /// sauna, so the journal and tag screens have something to show.
+    static func apply(journal: JournalStore) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let byID = Dictionary(journal.allItems.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for back in 0..<21 {
+            guard let night = calendar.date(byAdding: .day, value: -back, to: today) else { continue }
+            let key = JournalNight.key(night)
+            if back % 3 != 1, let magnesium = byID["magnesium-glycinate"] {
+                journal.add(magnesium, night: key, amount: 400, unit: "mg")
+            }
+            if back % 5 == 2, let sauna = journal.allItems.first(where: { $0.category == .temperature && $0.name.localizedCaseInsensitiveContains("sauna") }) {
+                journal.add(sauna, night: key, amount: 20, unit: "min")
+            }
+            if back % 7 == 3 {
+                journal.add(journal.customItem(named: "Late espresso"), night: key)
+            }
+        }
+        journal.setNote("Hot room, woke twice.", night: JournalNight.key(calendar.date(byAdding: .day, value: -2, to: today) ?? today))
+    }
+
     static func apply(recovery: RecoveryEngine) {
         recovery.seed(
             recoveryNights(),

@@ -61,6 +61,26 @@ struct CalendarView: View {
         .daybreakBackground()
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ShareLink(
+                    item: JournalCSV(text: JournalExport.csv(
+                        entries: model.journal.entries,
+                        notes: model.journal.notes,
+                        sleep: model.recovery.sleep
+                    )),
+                    preview: SharePreview("Airlift journal.csv")
+                ) {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundStyle(Daybreak.mid)
+                }
+                .accessibilityLabel("Export journal as CSV")
+            }
+        }
+        .task {
+            // The export carries each night's sleep, read by the Compare engine.
+            if case .idle = model.recovery.state { await model.recovery.load() }
+        }
         .navigationDestination(item: $pushedDay) { CalendarDayView(day: $0) }
         .navigationDestination(item: $browseTarget) {
             MetricHistoryPagerView(kind: $0.kind, startDay: $0.startDay)
@@ -161,9 +181,12 @@ struct CalendarView: View {
         let isFuture = day > Date()
         let entries = entriesByDay[CivilDay.string(from: day)] ?? []
         let dots = dotColors(for: entries)
+        let tagged = model.journal.taggedNights.contains(CivilDay.string(from: day))
 
+        // Any past day opens — a night can be tagged after the fact even
+        // when nothing synced for it.
         return Button {
-            if !entries.isEmpty { pushedDay = calendar.startOfDay(for: day) }
+            if !isFuture { pushedDay = calendar.startOfDay(for: day) }
         } label: {
             VStack(spacing: 4) {
                 Text(day, format: .dateTime.day())
@@ -178,6 +201,15 @@ struct CalendarView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: cellHeight)
+            .overlay(alignment: .topTrailing) {
+                if tagged {
+                    Image(systemName: "tag.fill")
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundStyle(Daybreak.plum)
+                        .padding(4)
+                        .accessibilityLabel("Tagged")
+                }
+            }
             .background(
                 isToday
                     ? RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -186,7 +218,7 @@ struct CalendarView: View {
             )
         }
         .buttonStyle(.plain)
-        .disabled(entries.isEmpty)
+        .disabled(isFuture)
     }
 
     /// Up to four dots, in stable kind order: green for landed data, amber
@@ -209,6 +241,14 @@ struct CalendarView: View {
             legendEntry(Daybreak.ok, "landed")
             legendEntry(Daybreak.warn, "needs review")
             legendEntry(Daybreak.faint, "removed")
+            HStack(spacing: 4) {
+                Image(systemName: "tag.fill")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundStyle(Daybreak.plum)
+                Text("tagged")
+                    .font(.system(.caption2, design: .rounded, weight: .medium))
+                    .foregroundStyle(Daybreak.mid)
+            }
             Spacer()
         }
         .padding(.horizontal, 4)
