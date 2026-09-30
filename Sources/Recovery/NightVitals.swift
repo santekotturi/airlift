@@ -19,7 +19,7 @@ struct NightVitals: Equatable {
         var name: String {
             switch kind {
             case .hrv: comparable ? "HRV" : "HRV (Watch SDNN)"
-            case .sleepingHR: "Heart rate asleep"
+            case .sleepingHR: "Sleep HR"
             case .restingHR: "Resting HR"
             case .respiratoryRate: "Breathing rate"
             case .oxygen: "Blood oxygen"
