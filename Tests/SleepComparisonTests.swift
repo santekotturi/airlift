@@ -101,6 +101,8 @@ final class NightVitalsTests: XCTestCase {
         XCTAssertEqual(heart?.watch, 52)
         XCTAssertEqual(heart?.fitbit, 58)
         XCTAssertEqual(heart?.difference, "+6")
+        XCTAssertEqual(heart?.percentDifference, "+12%")
+        XCTAssertEqual(vitals.rows.first { $0.kind == .steps }?.percentDifference, "−9%")
         let breathing = vitals.rows.first { $0.kind == .respiratoryRate }
         XCTAssertEqual(breathing?.watch, 14)
         XCTAssertEqual(breathing?.fitbit, 15)

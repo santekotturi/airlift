@@ -23,7 +23,7 @@ struct NightVitals: Equatable {
             case .restingHR: "Resting HR"
             case .respiratoryRate: "Breathing rate"
             case .oxygen: "Blood oxygen"
-            case .steps: "Steps the day before"
+            case .steps: "Steps"
             }
         }
 
@@ -35,6 +35,14 @@ struct NightVitals: Equatable {
             case .oxygen: String(format: "%.0f%%", value * 100)
             case .steps: value.formatted(.number.precision(.fractionLength(0)))
             }
+        }
+
+        /// Fitbit − Watch as a share of the Watch's value ("+12%"). Not for
+        /// blood oxygen, where the difference is already in percentage points
+        /// and a percent of a percent only confuses.
+        var percentDifference: String? {
+            guard kind != .oxygen, comparable, let watch, let fitbit else { return nil }
+            return NightVitals.percent(fitbit, of: watch)
         }
 
         /// Fitbit − Watch, in the row's units; nil unless both exist and mean
@@ -110,6 +118,15 @@ struct NightVitals: Equatable {
             watch: mean(samples.filter { $0.fromAppleDevice && watchWindow.contains($0.start) }.map(\.value)),
             fitbit: mean(samples.filter { $0.fromGoogleHealth && fitbitWindow.contains($0.start) }.map(\.value))
         )
+    }
+
+    /// "+12%" / "−8%" — `value` relative to `reference`; nil when the
+    /// reference is zero.
+    static func percent(_ value: Double, of reference: Double) -> String? {
+        guard reference != 0 else { return nil }
+        let percent = ((value - reference) / reference * 100).rounded()
+        if percent == 0 { return "±0%" }
+        return (percent > 0 ? "+" : "−") + String(format: "%.0f%%", abs(percent))
     }
 
     private static func mean(_ values: [Double]) -> Double? {

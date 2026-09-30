@@ -203,17 +203,19 @@ struct TodayView: View {
                     measure.displayName,
                     watch: watch.map(SleepCompareView.duration),
                     fitbit: fitbit.map(SleepCompareView.duration),
-                    delta: watch.flatMap { w in fitbit.map { SleepCompareView.signed($0 - w) } }
+                    delta: watch.flatMap { w in fitbit.map { SleepCompareView.signed($0 - w) } },
+                    percent: watch.flatMap { w in fitbit.flatMap { NightVitals.percent($0, of: w) } }
                 )
             }
             if !vitals.rows.isEmpty {
-                groupLabel("Heart, breathing & the day before")
+                groupLabel("Heart, breathing & steps")
                 ForEach(vitals.rows) { row in
                     statRow(
                         row.name,
                         watch: row.watch.map(row.format),
                         fitbit: row.fitbit.map(row.format),
-                        delta: row.difference
+                        delta: row.difference,
+                        percent: row.percentDifference
                     )
                 }
             }
@@ -239,7 +241,9 @@ struct TodayView: View {
             .padding(.top, 2)
     }
 
-    private func statRow(_ name: String, watch: String?, fitbit: String?, delta: String?) -> some View {
+    /// Delta column stacks the raw difference over its percent of the
+    /// Watch's value, so both fit the same narrow column.
+    private func statRow(_ name: String, watch: String?, fitbit: String?, delta: String?, percent: String? = nil) -> some View {
         HStack {
             Text(name)
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
@@ -253,9 +257,16 @@ struct TodayView: View {
             Text(fitbit ?? "—")
                 .frame(width: 64, alignment: .trailing)
                 .foregroundStyle(Daybreak.sunDeep)
-            Text(delta ?? "")
-                .frame(width: 56, alignment: .trailing)
-                .foregroundStyle(Daybreak.mid)
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(delta ?? "")
+                    .foregroundStyle(Daybreak.mid)
+                if let percent {
+                    Text(percent)
+                        .font(.system(.caption2, design: .rounded).monospacedDigit())
+                        .foregroundStyle(Daybreak.faint)
+                }
+            }
+            .frame(width: 56, alignment: .trailing)
         }
         .font(.system(.subheadline, design: .rounded).monospacedDigit())
         .lineLimit(1)
