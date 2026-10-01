@@ -25,4 +25,18 @@ enum StageMapper {
         case .unknown: return .asleepUnspecified
         }
     }
+
+    /// Inverse, for reading sleep back out of HealthKit. `.inBed` has no stage
+    /// — it overlaps real stages and says nothing about sleep state.
+    static func stage(for value: HKCategoryValueSleepAnalysis) -> SleepStage? {
+        switch value {
+        case .awake: return .wake
+        case .asleepCore: return .light
+        case .asleepDeep: return .deep
+        case .asleepREM: return .rem
+        case .asleepUnspecified: return .asleep
+        case .inBed: return nil
+        @unknown default: return nil
+        }
+    }
 }

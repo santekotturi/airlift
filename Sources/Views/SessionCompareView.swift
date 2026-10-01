@@ -34,7 +34,7 @@ enum LaneStage: String, CaseIterable {
     }
 }
 
-private extension LaneStage {
+extension LaneStage {
     /// Short legend wording ("Light", not "Light/Core").
     var legendName: String {
         switch self {
@@ -48,7 +48,7 @@ private extension LaneStage {
     }
 }
 
-private extension LaneStage {
+extension LaneStage {
     /// Hypnogram depth band: Awake at the top of the y-axis, Deep at the bottom.
     var depth: Double {
         switch self {

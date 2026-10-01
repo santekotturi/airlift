@@ -12,6 +12,12 @@ struct AppleSleepSegment: Equatable, Hashable, Identifiable {
     /// False for sleep another app wrote — Google Health, once it writes Fitbit
     /// sleep into Health itself, would otherwise pass for the Watch's own.
     var fromAppleDevice: Bool = true
+    /// Written by Google Health — Fitbit's own sleep, synced by the Fitbit app.
+    var fromGoogleHealth: Bool = false
+    /// `HKExternalUUID`. Google Health sets it to the Google sleep dataPoint ID
+    /// — the same ID Airlift dedups on — so a night it wrote can be matched
+    /// exactly rather than by overlapping times.
+    var externalID: String? = nil
 
     var duration: TimeInterval { end.timeIntervalSince(start) }
 
@@ -30,6 +36,7 @@ struct HRSample: Equatable, Hashable, Identifiable {
     let date: Date
     let bpm: Double
     var fromAppleDevice: Bool = true
+    var fromGoogleHealth: Bool = false
 }
 
 /// A generic quantity reading from HealthKit (Apple-side comparison data),
@@ -42,6 +49,8 @@ struct QuantitySample: Equatable, Hashable, Identifiable {
     /// `HKMetadataKeyAlgorithmVersion`, when the writer set one.
     var algorithmVersion: Int? = nil
     var fromAppleDevice: Bool = true
+    /// Written by Google Health (Fitbit's app) rather than any other third party.
+    var fromGoogleHealth: Bool = false
     var sourceName: String? = nil
     /// `HKDevice.hardwareVersion` — "Watch7,5" and the like.
     var hardware: String? = nil
@@ -90,7 +99,9 @@ final class HealthKitReader: @unchecked Sendable {
                 start: category.startDate,
                 end: category.endDate,
                 sourceName: category.sourceRevision.source.name,
-                fromAppleDevice: Self.isAppleDevice(category.sourceRevision.source)
+                fromAppleDevice: Self.isAppleDevice(category.sourceRevision.source),
+                fromGoogleHealth: Self.isGoogleHealth(category.sourceRevision.source),
+                externalID: category.metadata?[HKMetadataKeyExternalUUID] as? String
             )
         }
     }
@@ -101,7 +112,8 @@ final class HealthKitReader: @unchecked Sendable {
         try await quantitySamples(kind.hkIdentifier, unit: kind.hkUnit, in: interval)
     }
 
-    /// Apple's side of a sync comparison. For HRV that is the Watch's own
+    /// Apple's side of a sync comparison — what an Apple device recorded, never
+    /// another app's copy of Fitbit's data. For HRV that is the Watch's own
     /// RMSSD on a night it wrote any — Fitbit's statistic — and its ~60 s SDNN
     /// spot checks otherwise, so nights from watches without native RMSSD still
     /// have something to compare against. The continuous 5-minute SDNN newer
@@ -111,7 +123,7 @@ final class HealthKitReader: @unchecked Sendable {
         _ kind: MetricKind, in interval: DateInterval
     ) async throws -> (samples: [QuantitySample], isRMSSD: Bool) {
         guard kind == .heartRateVariability else {
-            return (try await quantitySamples(kind, in: interval), false)
+            return (try await quantitySamples(kind, in: interval).filter(\.fromAppleDevice), false)
         }
         let rmssd = try await rmssdSamples(in: interval).filter(\.fromAppleDevice)
         if !rmssd.isEmpty { return (rmssd, true) }
@@ -169,6 +181,7 @@ final class HealthKitReader: @unchecked Sendable {
             value: quantity.quantity.doubleValue(for: unit),
             algorithmVersion: (version as? NSNumber)?.intValue ?? (version as? String).flatMap { Int($0) },
             fromAppleDevice: isAppleDevice(quantity.sourceRevision.source),
+            fromGoogleHealth: isGoogleHealth(quantity.sourceRevision.source),
             sourceName: quantity.sourceRevision.source.name,
             hardware: quantity.device?.hardwareVersion
         )
@@ -180,14 +193,48 @@ final class HealthKitReader: @unchecked Sendable {
         source.bundleIdentifier.hasPrefix("com.apple.health")
     }
 
-    /// Sum of one cumulative metric over `interval` from sources other than
-    /// Airlift, via a statistics query — HealthKit deduplicates overlapping
+    /// Google Health still ships under the Fitbit app's bundle ID. Matching
+    /// the writer exactly keeps other trackers' data (WHOOP, Garmin Connect)
+    /// from passing for Fitbit's.
+    static let googleHealthBundleID = "com.fitbit.FitbitMobile"
+
+    static func isGoogleHealth(_ source: HKSource) -> Bool {
+        source.bundleIdentifier == googleHealthBundleID
+    }
+
+    /// Whether Google Health wrote any sample of `type` inside `interval` —
+    /// i.e. its own Apple Health sync already carries this data, and Airlift
+    /// writing it too would duplicate it. One source lookup plus a one-sample
+    /// query, so it stays cheap on types as dense as heart rate.
+    func googleHealthWrote(_ type: HKSampleType, in interval: DateInterval) async throws -> Bool {
+        guard let source = try await sources(for: type).first(where: Self.isGoogleHealth) else { return false }
+        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            HKQuery.predicateForSamples(withStart: interval.start, end: interval.end, options: []),
+            HKQuery.predicateForObjects(from: source),
+        ])
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type, predicate: predicate, limit: 1, sortDescriptors: nil
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: !(samples ?? []).isEmpty)
+                }
+            }
+            store.execute(query)
+        }
+    }
+
+    /// Sum of one cumulative metric over `interval` from Apple's own devices,
+    /// via a statistics query — HealthKit deduplicates overlapping
     /// iPhone + Watch samples the same way the Health app's totals do, which
     /// naively summing samples does not.
     func cumulativeTotal(_ kind: MetricKind, in interval: DateInterval) async throws -> Double {
         let type = HKQuantityType(kind.hkIdentifier)
-        let ownBundleID = Bundle.main.bundleIdentifier
-        let others = try await sources(for: type).filter { $0.bundleIdentifier != ownBundleID }
+        // Apple devices only: Google Health's Fitbit steps are the thing being
+        // compared, and would otherwise count on both sides.
+        let others = try await sources(for: type).filter(Self.isAppleDevice)
         guard !others.isEmpty else { return 0 }
 
         let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
@@ -215,8 +262,9 @@ final class HealthKitReader: @unchecked Sendable {
     /// as `cumulativeTotal`.
     func hourlyTotals(_ kind: MetricKind, in interval: DateInterval) async throws -> [QuantitySample] {
         let type = HKQuantityType(kind.hkIdentifier)
-        let ownBundleID = Bundle.main.bundleIdentifier
-        let others = try await sources(for: type).filter { $0.bundleIdentifier != ownBundleID }
+        // Apple devices only: Google Health's Fitbit steps are the thing being
+        // compared, and would otherwise count on both sides.
+        let others = try await sources(for: type).filter(Self.isAppleDevice)
         guard !others.isEmpty else { return [] }
 
         let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
@@ -420,7 +468,8 @@ final class HealthKitReader: @unchecked Sendable {
                 id: quantity.uuid,
                 date: quantity.startDate,
                 bpm: quantity.quantity.doubleValue(for: bpmUnit),
-                fromAppleDevice: Self.isAppleDevice(quantity.sourceRevision.source)
+                fromAppleDevice: Self.isAppleDevice(quantity.sourceRevision.source),
+                fromGoogleHealth: Self.isGoogleHealth(quantity.sourceRevision.source)
             )
         }
     }

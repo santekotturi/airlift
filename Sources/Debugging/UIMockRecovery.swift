@@ -26,6 +26,28 @@ import HealthKit
 @MainActor
 extension UIMock {
 
+    /// A few weeks of magnesium most nights, plus the odd late coffee and
+    /// sauna, so the journal and tag screens have something to show.
+    static func apply(journal: JournalStore) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let byID = Dictionary(journal.allItems.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for back in 0..<21 {
+            guard let night = calendar.date(byAdding: .day, value: -back, to: today) else { continue }
+            let key = JournalNight.key(night)
+            if back % 3 != 1, let magnesium = byID["magnesium-glycinate"] {
+                journal.add(magnesium, night: key, amount: 400, unit: "mg")
+            }
+            if back % 5 == 2, let sauna = journal.allItems.first(where: { $0.category == .temperature && $0.name.localizedCaseInsensitiveContains("sauna") }) {
+                journal.add(sauna, night: key, amount: 20, unit: "min")
+            }
+            if back % 7 == 3 {
+                journal.add(journal.customItem(named: "Late espresso"), night: key)
+            }
+        }
+        journal.setNote("Hot room, woke twice.", night: JournalNight.key(calendar.date(byAdding: .day, value: -2, to: today) ?? today))
+    }
+
     static func apply(recovery: RecoveryEngine) {
         recovery.seed(
             recoveryNights(),
@@ -67,14 +89,19 @@ extension UIMock {
         )
         // Lights out around 11pm, five cycles, up around 6:30.
         let bedtime = window.start.addingTimeInterval(5 * 3600 + noise(index, salt: 1) * 1800)
-        let cycles = 5
+        // Four to six cycles, so nights differ in length and stage totals.
+        let cycles = 4 + index % 3
 
         /// How recovered this night was, roughly −1 to +1. Everything below is
         /// a noisy view of this one number.
         let latent = sin(Double(index) * 0.7) * 0.6 + noise(index, salt: 2) * 0.7
 
         let appleSleep = segments(from: bedtime, cycle: appleCycle, cycles: cycles)
-        let fitbitSleep = segments(from: bedtime, cycle: fitbitCycle, cycles: cycles)
+        // The band is off some nights, and on others scores a cycle fewer —
+        // the gaps and spread the Sleep screen has to draw honestly.
+        let fitbitSleep = index % 6 == 4
+            ? []
+            : segments(from: bedtime, cycle: fitbitCycle, cycles: cycles - (index % 4 == 1 ? 1 : 0))
         let appleIndex = StageIndex(apple: appleSleep)
         let sleepEnd = appleSleep.last?.end ?? bedtime.addingTimeInterval(7.5 * 3600)
 

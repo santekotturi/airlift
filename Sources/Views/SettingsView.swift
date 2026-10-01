@@ -23,6 +23,10 @@ struct SettingsView: View {
 
     @State private var confirmingHRVMigration = false
 
+    @State private var reminderOn = MorningReminder.shared.isEnabled
+    @State private var reminderTime = SettingsView.date(minutesAfterMidnight: MorningReminder.shared.minutesAfterMidnight)
+    @State private var reminderShortcut = MorningReminder.shared.shortcutName
+
     #if DEBUG
     @State private var pushedJSONKey: String?
     #endif
@@ -37,6 +41,7 @@ struct SettingsView: View {
                 hrvMigrationCard
                 modeCard
                 whatSyncsCard
+                morningReminderCard
                 appearanceCard
                 connectionCard
                 deviceCard
@@ -54,7 +59,10 @@ struct SettingsView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: engine.syncMode)
-        .task { await engine.refreshHRVMigration() }
+        .task {
+            await engine.refreshHRVMigration()
+            await engine.refreshGoogleHealthWrites()
+        }
         .sheet(isPresented: $reportingBug) {
             BugReportView()
         }
@@ -139,7 +147,8 @@ struct SettingsView: View {
             syncToggle(
                 title: "Sleep",
                 symbol: "moon.zzz.fill",
-                isOn: Binding(get: { engine.syncSleep }, set: { engine.syncSleep = $0 })
+                isOn: Binding(get: { engine.syncSleep }, set: { engine.syncSleep = $0 }),
+                writtenByGoogleHealth: engine.googleHealthWrites.contains(sleepLedgerKind)
             )
             ForEach(MetricKind.allCases) { kind in
                 Divider().overlay(Daybreak.line)
@@ -153,7 +162,8 @@ struct SettingsView: View {
                             if on { set.insert(kind) } else { set.remove(kind) }
                             engine.enabledKinds = set
                         }
-                    )
+                    ),
+                    writtenByGoogleHealth: engine.googleHealthWrites.contains(kind.rawValue)
                 )
             }
             Text("Only what's on is fetched from Google and written to Apple Health. Turning something off stops new syncs — it doesn't remove what's already there (use Calendar → a day → Remove for that).")
@@ -166,16 +176,29 @@ struct SettingsView: View {
         .daybreakCard()
     }
 
-    private func syncToggle(title: String, symbol: String, isOn: Binding<Bool>) -> some View {
+    /// `writtenByGoogleHealth`: Google Health's own Apple Health sync is
+    /// already carrying this type, so Airlift syncing it would only find days
+    /// to skip.
+    private func syncToggle(
+        title: String, symbol: String, isOn: Binding<Bool>, writtenByGoogleHealth: Bool = false
+    ) -> some View {
         Toggle(isOn: isOn) {
-            HStack(spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
                 Image(systemName: symbol)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(isOn.wrappedValue ? Daybreak.plum : Daybreak.faint)
                     .frame(width: 24)
-                Text(title)
-                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                    .foregroundStyle(Daybreak.ink)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        .foregroundStyle(Daybreak.ink)
+                    if writtenByGoogleHealth {
+                        Text("Google Health already writes this to Apple Health — Airlift skips any day it has written.")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(Daybreak.mid)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
         }
         .tint(Daybreak.ok)
@@ -297,6 +320,68 @@ struct SettingsView: View {
             return "Sign-in expired — reconnect to keep the bridge open"
         }
         return "Not connected"
+    }
+
+    // MARK: - Morning reminder
+
+    /// A daily notification whose tap runs the user's sync shortcut — the
+    /// unattended path for people who stop their alarm on an Apple Watch and
+    /// leave the phone locked. See `MorningReminder`.
+    private var morningReminderCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Morning sync")
+                .daybreakSectionLabel()
+            Toggle(isOn: $reminderOn) {
+                Text("Daily reminder")
+                    .font(.system(.body, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Daybreak.ink)
+            }
+            .tint(Daybreak.ok)
+            if reminderOn {
+                DatePicker("Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    .font(Daybreak.bodyFont)
+                    .foregroundStyle(Daybreak.ink)
+                HStack {
+                    Text("Shortcut")
+                        .font(Daybreak.bodyFont)
+                        .foregroundStyle(Daybreak.ink)
+                    TextField(MorningReminder.defaultShortcutName, text: $reminderShortcut)
+                        .multilineTextAlignment(.trailing)
+                        .font(Daybreak.bodyFont)
+                        .foregroundStyle(Daybreak.plum)
+                        .autocorrectionDisabled()
+                        .submitLabel(.done)
+                }
+            }
+            Text("Tapping the reminder runs this shortcut. Build it in Shortcuts as Open App → Google Health, Wait 60 seconds, then Airlift's Sync New Data.")
+                .font(.system(.caption, design: .rounded))
+                .foregroundStyle(Daybreak.mid)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .daybreakCard()
+        .onChange(of: reminderOn) { _, on in
+            MorningReminder.shared.isEnabled = on
+            Task {
+                if on { await ReconnectNotifier().requestAuthorization() }
+                await MorningReminder.shared.reschedule()
+            }
+        }
+        .onChange(of: reminderTime) { _, time in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: time)
+            MorningReminder.shared.minutesAfterMidnight = (parts.hour ?? 9) * 60 + (parts.minute ?? 0)
+            Task { await MorningReminder.shared.reschedule() }
+        }
+        .onChange(of: reminderShortcut) { _, name in
+            let trimmed = name.trimmingCharacters(in: .whitespaces)
+            MorningReminder.shared.shortcutName = trimmed.isEmpty ? MorningReminder.defaultShortcutName : trimmed
+        }
+    }
+
+    private static func date(minutesAfterMidnight minutes: Int) -> Date {
+        Calendar.current.date(
+            bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()
+        ) ?? Date()
     }
 
     // MARK: - HRV migration

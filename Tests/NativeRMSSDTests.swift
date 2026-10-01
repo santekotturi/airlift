@@ -158,7 +158,7 @@ final class NativeRMSSDTests: XCTestCase {
         var raw = fixtureRaw()
         let google = QuantitySample(
             id: UUID(), start: at(8 * 3600), end: at(8 * 3600), value: 55,
-            fromAppleDevice: false, sourceName: "Google Health"
+            fromAppleDevice: false, fromGoogleHealth: true, sourceName: "Google Health"
         )
         raw.rmssd.append(google)
         let viaGoogle = try assemble(raw)
@@ -176,13 +176,26 @@ final class NativeRMSSDTests: XCTestCase {
         raw.appleSleep.append(
             AppleSleepSegment(
                 id: UUID(), value: .asleepDeep, start: at(6 * 3600), end: at(7 * 3600),
-                sourceName: "Google Health", fromAppleDevice: false
+                sourceName: "Google Health", fromAppleDevice: false, fromGoogleHealth: true
             )
         )
         let night = try assemble(raw)
         XCTAssertEqual(night.appleSleep.count, Ultra4NightFixture.sleep.count)
         XCTAssertEqual(night.airliftedSleep.count, 1)
         XCTAssertEqual(night.stageIndex(.fitbit).stage(at: at(6 * 3600 + 60)), .deep)
+    }
+
+    func testOtherTrackersSleepIsNeitherFitbitsNorApples() throws {
+        var raw = fixtureRaw()
+        raw.appleSleep.append(
+            AppleSleepSegment(
+                id: UUID(), value: .asleepDeep, start: at(6 * 3600), end: at(7 * 3600),
+                sourceName: "WHOOP", fromAppleDevice: false
+            )
+        )
+        let night = try assemble(raw)
+        XCTAssertEqual(night.appleSleep.count, Ultra4NightFixture.sleep.count)
+        XCTAssertTrue(night.airliftedSleep.isEmpty)
     }
 
     func testOnlyTheWatchsHeartRateCountsAsApples() throws {

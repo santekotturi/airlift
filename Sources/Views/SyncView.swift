@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// Home: time-of-day greeting, the bridge card (live engine status + CTA),
-/// the ready-for-review queue, recent crossings, and the pre-GA heads-up.
-struct HomeView: View {
+/// Sync tab: the bridge card (live engine status + CTA), the ready-for-review
+/// queue, recent crossings, and the pre-GA heads-up — the plumbing, kept off
+/// Today so the everyday screens lead with sleep rather than sync state.
+struct SyncView: View {
     @Environment(AppModel.self) private var model
 
     private var engine: SyncEngine { model.syncEngine }
@@ -14,9 +15,7 @@ struct HomeView: View {
     @State private var pushedBatch: StagedMetricBatch?
     @State private var showHistory = false
     @State private var showPager = false
-    @State private var showRecovery = false
-    @State private var showHRV = false
-    @State private var browseTarget: BrowseTarget?
+    @State private var confirmingClearQueue = false
 
     // Banner numerals keep their exact Daybreak proportions but still track
     // Dynamic Type — these scale the sizes handed to `Daybreak.numberFont`.
@@ -31,14 +30,6 @@ struct HomeView: View {
         return false
     }
 
-    /// Home → metric history pager entry (newest day, swipe back from there).
-    struct BrowseTarget: Hashable, Identifiable {
-        let kindRaw: String?
-        let startDay: Date
-        var id: String { kindRaw ?? "sleep" }
-        var kind: MetricKind? { kindRaw.flatMap(MetricKind.init) }
-    }
-
     var body: some View {
         List {
             greetingHeader
@@ -49,8 +40,6 @@ struct HomeView: View {
             }
             bridgeCard
                 .homeRow(bottom: 26)
-            metricsSection
-            recoveryRow
             recentSection
             HeadsUpCard.forMode(engine.syncMode)
                 .homeRow(bottom: 24)
@@ -65,11 +54,6 @@ struct HomeView: View {
         .navigationDestination(item: $pushedBatch) { MetricCompareView(batch: $0) }
         .navigationDestination(isPresented: $showHistory) { HistoryView() }
         .navigationDestination(isPresented: $showPager) { ReviewPagerView() }
-        .navigationDestination(isPresented: $showRecovery) { RecoveryView() }
-        .navigationDestination(isPresented: $showHRV) { HRVView() }
-        .navigationDestination(item: $browseTarget) {
-            MetricHistoryPagerView(kind: $0.kind, startDay: $0.startDay)
-        }
     }
 
     // MARK: - Greeting
@@ -86,13 +70,7 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var greeting: String {
-        switch Calendar.current.component(.hour, from: Date()) {
-        case 5..<12: "Good morning ☀️"
-        case 12..<17: "Good afternoon 🌤️"
-        default: "Good evening 🌙"
-        }
-    }
+    private var greeting: String { "Sync" }
 
     private var greetingSubline: String {
         if let landed = log.entries.first(where: { $0.kind == .imported || $0.kind == .autoImported }),
@@ -237,6 +215,21 @@ struct HomeView: View {
                 .buttonStyle(.daybreakPrimary)
             }
             fetchMenu
+            Button("Clear queue", role: .destructive) {
+                confirmingClearQueue = true
+            }
+            .font(.system(.footnote, design: .rounded, weight: .semibold))
+            .foregroundStyle(Daybreak.fail)
+            .disabled(isSyncing)
+            .confirmationDialog(
+                "Clear all \(waitingCount) held item\(waitingCount == 1 ? "" : "s")?",
+                isPresented: $confirmingClearQueue,
+                titleVisibility: .visible
+            ) {
+                Button("Clear queue", role: .destructive) { engine.clearReviewQueue() }
+            } message: {
+                Text("Nothing is written to Apple Health and nothing already there changes. Fetching those days again brings them back.")
+            }
         }
     }
 
@@ -513,154 +506,6 @@ struct HomeView: View {
                 await engine.autoImportClean()
             }
         }
-    }
-
-    // MARK: - Your metrics
-
-    /// One row per data kind that has ever landed in Apple Health — tapping
-    /// opens the day-swipeable history on its newest day.
-    private struct MetricRowInfo: Identifiable {
-        let kindRaw: String?
-        let name: String
-        let symbol: String
-        let dayCount: Int
-        let newestDay: Date
-        var id: String { kindRaw ?? "sleep" }
-
-        /// "18 nights of sleep" / "20 days of heart rate" — what the count
-        /// actually counts.
-        var countLine: String {
-            guard let kindRaw else {
-                return "\(dayCount) night\(dayCount == 1 ? "" : "s") of sleep synced"
-            }
-            let noun = MetricKind(rawValue: kindRaw)?.inlineName ?? name.lowercased()
-            return "\(dayCount) day\(dayCount == 1 ? "" : "s") of \(noun) synced"
-        }
-    }
-
-    private var metricRows: [MetricRowInfo] {
-        var rows: [MetricRowInfo] = []
-        let sleepDays = engine.daysWithData(kind: nil)
-        if let newest = sleepDays.last {
-            rows.append(MetricRowInfo(kindRaw: nil, name: "Sleep", symbol: "moon.zzz.fill", dayCount: sleepDays.count, newestDay: newest))
-        }
-        for kind in MetricKind.allCases {
-            let days = engine.daysWithData(kind: kind)
-            guard let newest = days.last else { continue }
-            rows.append(MetricRowInfo(kindRaw: kind.rawValue, name: kind.displayName, symbol: kind.systemImage, dayCount: days.count, newestDay: newest))
-        }
-        return rows
-    }
-
-    @ViewBuilder
-    private var metricsSection: some View {
-        let rows = metricRows
-        if !rows.isEmpty {
-            Text("Your metrics")
-                .daybreakSectionLabel()
-                .homeRow(bottom: 10)
-            VStack(alignment: .leading, spacing: 14) {
-                ForEach(rows) { row in
-                    Button {
-                        browseTarget = BrowseTarget(kindRaw: row.kindRaw, startDay: row.newestDay)
-                    } label: {
-                        HStack(spacing: 12) {
-                            Circle()
-                                .fill(Daybreak.newChipBackground)
-                                .frame(width: 34, height: 34)
-                                .overlay {
-                                    Image(systemName: row.symbol)
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundStyle(Daybreak.plum)
-                                }
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(row.name)
-                                    .font(.system(.subheadline, design: .rounded, weight: .bold))
-                                    .foregroundStyle(Daybreak.ink)
-                                Text(row.countLine)
-                                    .font(.system(.caption, design: .rounded))
-                                    .foregroundStyle(Daybreak.mid)
-                                Text("Newest · \(row.newestDay.formatted(date: .abbreviated, time: .omitted))")
-                                    .font(.system(.caption2, design: .rounded))
-                                    .foregroundStyle(Daybreak.faint)
-                            }
-                            Spacer(minLength: 0)
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Daybreak.faint)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    if row.id != rows.last?.id {
-                        Divider().overlay(Daybreak.line)
-                    }
-                }
-            }
-            .daybreakCard(padding: 16)
-            .homeRow(bottom: 26)
-        }
-    }
-
-    // MARK: - Recovery
-
-    /// Entry to the read-only comparison screen. Only offered once both sides
-    /// exist in Health — with nothing airlifted there is no Fitbit series to
-    /// compare the Watch against, and the screen would open on an empty state.
-    /// Always offered, never gated on the sync ledger.
-    ///
-    /// These screens read Health directly, so they work on data imported by any
-    /// earlier install — while the ledger is local state that a reinstall wipes.
-    /// Gating on it hid the analysis from exactly the person most likely to
-    /// want it: someone who has been airlifting for months and just rebuilt.
-    private var recoveryRow: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            analysisRow(
-                icon: "waveform.path.ecg",
-                title: "HRV",
-                detail: "Apple's number, your own recomputation, and Fitbit — reading by reading."
-            ) { showHRV = true }
-            Divider().overlay(Daybreak.line)
-            analysisRow(
-                icon: "bed.double.fill",
-                title: "Recovery",
-                detail: "Every metric together, restricted to the stages that carry recovery."
-            ) { showRecovery = true }
-        }
-        .daybreakCard(padding: 16)
-        .homeRow(bottom: 26)
-    }
-
-    private func analysisRow(
-        icon: String, title: String, detail: String, action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Circle()
-                    .fill(Daybreak.newChipBackground)
-                    .frame(width: 34, height: 34)
-                    .overlay {
-                        Image(systemName: icon)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Daybreak.plum)
-                    }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(.subheadline, design: .rounded, weight: .bold))
-                        .foregroundStyle(Daybreak.ink)
-                    Text(detail)
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(Daybreak.mid)
-                        .multilineTextAlignment(.leading)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Daybreak.faint)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Recent crossings

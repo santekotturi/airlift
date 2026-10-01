@@ -93,4 +93,13 @@ final class SyncGateTests: XCTestCase {
         XCTAssertEqual(SyncGate.heldStatus(for: .warn), .quarantined)
         XCTAssertEqual(SyncGate.heldStatus(for: .fail), .quarantined)
     }
+
+    func testRemoveForgetsACell() {
+        let ledger = InMemorySyncLedger()
+        ledger.set(.quarantined, kind: "sleep", day: "2026-09-20")
+        ledger.set(.alreadyInHealth, kind: "sleep", day: "2026-09-21")
+        ledger.remove(kind: "sleep", day: "2026-09-20")
+        XCTAssertNil(ledger.status(kind: "sleep", day: "2026-09-20"))
+        XCTAssertEqual(ledger.status(kind: "sleep", day: "2026-09-21"), .alreadyInHealth)
+    }
 }

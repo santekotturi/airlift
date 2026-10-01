@@ -38,6 +38,9 @@ final class RecoveryEngine {
 
     private(set) var state: State = .idle
     private(set) var nightCount = RecoveryEngine.defaultNightCount
+    /// Watch vs Fitbit sleep, night by night. Independent of staging and stage
+    /// selection, so only a fresh read changes it.
+    private(set) var sleep: SleepComparisonReport = .empty
 
     /// Toggling either of these rebuilds the report from the cached nights.
     var selection: StageSelection = .coreAndDeep {
@@ -100,11 +103,57 @@ final class RecoveryEngine {
             cached = Self.assemble(
                 span: window, samples: samples, tachograms: tachograms, calendar: calendar
             )
+            sleep = SleepComparisonReport.build(cached)
             self.probe = probe
             rebuild()
         } catch {
             state = .failed(error.localizedDescription)
         }
+    }
+
+    /// Everything Today shows beside sleep for one night: whole-night HRV from
+    /// the cached read, plus vitals and the day before's steps read fresh —
+    /// a handful of small queries over one night.
+    func vitals(for night: Date) async -> NightVitals {
+        let window = SyncEngine.metricDayInterval(kind: .heartRateVariability, day: night, calendar: calendar)
+        let wakeDay = DateInterval(
+            start: calendar.startOfDay(for: night),
+            end: calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: night)) ?? night
+        )
+        let dayBefore = DateInterval(
+            start: calendar.date(byAdding: .day, value: -1, to: wakeDay.start) ?? wakeDay.start,
+            end: wakeDay.start
+        )
+        let samples = cached.first { $0.night == night }
+        let hrv = samples?.recovery(selection: .allSleep, staging: .apple)
+        let watchNight = SleepNightMatcher.mainNight(samples?.appleSleep ?? []).filter(\.isAsleep)
+        let asleep = watchNight.isEmpty ? nil : DateInterval(
+            start: watchNight.map(\.start).min()!, end: watchNight.map(\.end).max()!
+        )
+
+        async let heartRate = try? reader.heartRate(in: window)
+        async let resting = try? reader.quantitySamples(.restingHeartRate, in: wakeDay)
+        async let breathing = try? reader.quantitySamples(.respiratoryRate, in: window)
+        async let oxygen = try? reader.quantitySamples(.oxygenSaturation, in: window)
+        async let watchSteps = try? reader.cumulativeTotal(.steps, in: dayBefore)
+        async let fitbitSteps = try? reader.quantitySamples(.steps, in: dayBefore)
+        let googleSteps = (await fitbitSteps ?? []).filter(\.fromGoogleHealth)
+        let appleSteps = await watchSteps
+
+        return NightVitals.build(
+            hrv: hrv,
+            heartRate: await heartRate ?? [],
+            restingHR: await resting ?? [],
+            respiratoryRate: await breathing ?? [],
+            oxygen: await oxygen ?? [],
+            steps: (
+                appleSteps.flatMap { $0 > 0 ? $0 : nil },
+                googleSteps.isEmpty ? nil : googleSteps.reduce(0) { $0 + $1.value }
+            ),
+            asleep: asleep,
+            night: window,
+            wakeDay: wakeDay
+        )
     }
 
     /// Recomputes the report from cached nights — no HealthKit, no waiting.
@@ -207,7 +256,9 @@ final class RecoveryEngine {
         }
 
         let appleSleep = Dictionary(grouping: samples.appleSleep.filter(\.fromAppleDevice)) { key($0.start) }
-        let otherSleep = Dictionary(grouping: samples.appleSleep.filter { !$0.fromAppleDevice }) { key($0.start) }
+        // Only Google Health's writes stand in for Fitbit — WHOOP or Garmin
+        // sleep in the same type is some other tracker's night.
+        let otherSleep = Dictionary(grouping: samples.appleSleep.filter(\.fromGoogleHealth)) { key($0.start) }
         let airliftedSleep = Dictionary(grouping: samples.airliftedSleep) { key($0.start) }
         // Airlift's own Fitbit heart rate, and Google Health's, live in the same
         // type; "Apple heart rate" has to mean the Watch's.
@@ -217,7 +268,7 @@ final class RecoveryEngine {
         ) { key($0.start) }
         let airliftedHRV = Dictionary(grouping: samples.airliftedHRV) { key($0.start) }
         let nativeRMSSD = Dictionary(grouping: samples.rmssd.filter(\.fromAppleDevice)) { key($0.start) }
-        let otherRMSSD = Dictionary(grouping: samples.rmssd.filter { !$0.fromAppleDevice }) { key($0.start) }
+        let otherRMSSD = Dictionary(grouping: samples.rmssd.filter(\.fromGoogleHealth)) { key($0.start) }
         let beats = Dictionary(grouping: tachograms) { key($0.start) }
 
         // Every night that any source saw something on, so a night missing from
@@ -257,6 +308,7 @@ final class RecoveryEngine {
     /// simulator, where HealthKit holds no overnight data at all.
     func seed(_ nights: [NightSamples], probe: HeartbeatSeriesReader.Probe? = nil) {
         cached = nights
+        sleep = SleepComparisonReport.build(nights)
         self.probe = probe
         rebuild()
     }

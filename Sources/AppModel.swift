@@ -17,6 +17,9 @@ final class AppModel {
     /// writes, and it must not be able to.
     let recovery: RecoveryEngine
 
+    /// Per-night tags and notes — what was taken or done before bed.
+    let journal: JournalStore
+
     /// True until the user fills in `Config.xcconfig` — the UI shows a setup
     /// hint. Forced true under the UI mock so no setup path can appear.
     let isConfigured: Bool
@@ -49,6 +52,8 @@ final class AppModel {
         let log = SyncLogStore(defaults: isUIMock ? nil : .standard)
 
         self.syncLog = log
+        // In-memory under the mock, so fixture tags never reach the real journal.
+        self.journal = JournalStore(catalog: .load(), url: isUIMock ? nil : JournalStore.defaultURL)
         // The writer is handed over only for its authorization request — the
         // analysis screens never write.
         self.recovery = RecoveryEngine(reader: reader, writer: writer)
@@ -77,6 +82,7 @@ final class AppModel {
         if isUIMock {
             UIMock.apply(engine: syncEngine, log: log)
             UIMock.apply(recovery: recovery)
+            UIMock.apply(journal: journal)
         }
         #endif
     }

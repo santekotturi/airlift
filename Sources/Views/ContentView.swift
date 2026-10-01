@@ -12,14 +12,14 @@ struct SourcePriorityRoute: Hashable {}
 /// Navigation token for the review-all pager.
 struct PagerRoute: Hashable {}
 
-/// Daybreak shell: two tabs — Home (the bridge) and Calendar (history) — each
-/// a `NavigationStack` with typed destinations, on the system tab bar (Liquid
-/// Glass on modern iOS, exactly like Health's Summary/Sharing bar). Every
-/// token has a Daybreak (light) and Nightfall (dark) face; the user can
-/// follow the system or pin either via Settings.
+/// Daybreak shell: four tabs — Today (last night), Compare (the analyses),
+/// Journal (the calendar record) and Sync (the bridge) — each a
+/// `NavigationStack` with typed destinations. Every token has a Daybreak
+/// (light) and Nightfall (dark) face; the user can follow the system or pin
+/// either via Settings.
 struct ContentView: View {
     enum Tab: Hashable {
-        case home, calendar
+        case today, compare, journal, sync
     }
 
     @Environment(AppModel.self) private var model
@@ -30,8 +30,9 @@ struct ContentView: View {
     @AppStorage("airlift.hasCompletedOnboarding")
     private var hasCompletedOnboarding = false
 
-    @State private var tab = Tab.home
-    @State private var path = NavigationPath()
+    @State private var tab = Tab.today
+    @State private var comparePath = NavigationPath()
+    @State private var syncPath = NavigationPath()
     @State private var appliedMockRoute = false
 
     // The pill is a tight fixed-proportion layout, so its icon and label
@@ -44,14 +45,12 @@ struct ContentView: View {
         // state; the bar is a custom bottom-leading glass pill (Health-style)
         // rather than the system's centered one.
         ZStack(alignment: .bottomLeading) {
-            homeStack
-                .contentMargins(.bottom, 80, for: .scrollContent)
-                .opacity(tab == .home ? 1 : 0)
-                .allowsHitTesting(tab == .home)
-            calendarStack
-                .contentMargins(.bottom, 80, for: .scrollContent)
-                .opacity(tab == .calendar ? 1 : 0)
-                .allowsHitTesting(tab == .calendar)
+            ForEach([Tab.today, .compare, .journal, .sync], id: \.self) { item in
+                stack(for: item)
+                    .contentMargins(.bottom, 80, for: .scrollContent)
+                    .opacity(tab == item ? 1 : 0)
+                    .allowsHitTesting(tab == item)
+            }
             glassTabPill
         }
         .tint(Daybreak.sunDeep)
@@ -84,34 +83,41 @@ struct ContentView: View {
         return !hasCompletedOnboarding
     }
 
-    private var homeStack: some View {
-        NavigationStack(path: $path) {
-            HomeView()
-                .navigationDestination(for: StagedSession.self) { SessionCompareView(staged: $0) }
-                .navigationDestination(for: StagedMetricBatch.self) { MetricCompareView(batch: $0) }
-                .navigationDestination(for: HistoryRoute.self) { _ in HistoryView() }
-                .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
-                .navigationDestination(for: SourcePriorityRoute.self) { _ in SourcePriorityView() }
-                .navigationDestination(for: PagerRoute.self) { _ in ReviewPagerView() }
-                .navigationDestination(for: RecoveryRoute.self) { _ in RecoveryView() }
-                .navigationDestination(for: HRVRoute.self) { _ in HRVView() }
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            path.append(SettingsRoute())
-                        } label: {
-                            Image(systemName: "gearshape.fill")
-                                .foregroundStyle(Daybreak.mid)
-                        }
-                        .accessibilityLabel("Settings")
-                    }
-                }
-                .toolbarBackground(.hidden, for: .navigationBar)
+    @ViewBuilder
+    private func stack(for tab: Tab) -> some View {
+        switch tab {
+        case .today: todayStack
+        case .compare: compareStack
+        case .journal: journalStack
+        case .sync: syncStack
+        }
+    }
+
+    private var todayStack: some View {
+        NavigationStack {
+            TodayView(
+                openCompare: { select(.compare) },
+                openSync: { select(.sync) }
+            )
+            .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
+            .navigationDestination(for: SourcePriorityRoute.self) { _ in SourcePriorityView() }
+            .toolbar { settingsButton }
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
         .daybreakBackground()
     }
 
-    private var calendarStack: some View {
+    private var compareStack: some View {
+        NavigationStack(path: $comparePath) {
+            CompareView()
+                .navigationDestination(for: SleepRoute.self) { _ in SleepCompareView() }
+                .navigationDestination(for: HRVRoute.self) { _ in HRVView() }
+                .navigationDestination(for: RecoveryRoute.self) { _ in RecoveryView() }
+        }
+        .daybreakBackground()
+    }
+
+    private var journalStack: some View {
         NavigationStack {
             CalendarView()
                 .navigationDestination(for: StagedSession.self) { SessionCompareView(staged: $0) }
@@ -120,14 +126,46 @@ struct ContentView: View {
         .daybreakBackground()
     }
 
+    private var syncStack: some View {
+        NavigationStack(path: $syncPath) {
+            SyncView()
+                .navigationDestination(for: StagedSession.self) { SessionCompareView(staged: $0) }
+                .navigationDestination(for: StagedMetricBatch.self) { MetricCompareView(batch: $0) }
+                .navigationDestination(for: HistoryRoute.self) { _ in HistoryView() }
+                .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
+                .navigationDestination(for: SourcePriorityRoute.self) { _ in SourcePriorityView() }
+                .navigationDestination(for: PagerRoute.self) { _ in ReviewPagerView() }
+                .toolbar { settingsButton }
+                .toolbarBackground(.hidden, for: .navigationBar)
+        }
+        .daybreakBackground()
+    }
+
+    /// Settings opens in whichever tab asked for it.
+    private var settingsButton: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            NavigationLink(value: SettingsRoute()) {
+                Image(systemName: "gearshape.fill")
+                    .foregroundStyle(Daybreak.mid)
+            }
+            .accessibilityLabel("Settings")
+        }
+    }
+
+    private func select(_ target: Tab) {
+        withAnimation(.snappy(duration: 0.2)) { tab = target }
+    }
+
     // MARK: - Glass tab pill
 
     /// Bottom-leading floating tab switcher — Liquid Glass on iOS 26, frosted
     /// material before that — mirroring the Health app's mini toolbar.
     private var glassTabPill: some View {
         HStack(spacing: 2) {
-            pillItem(.home, icon: "sun.horizon.fill", label: "Home")
-            pillItem(.calendar, icon: "calendar", label: "Calendar")
+            pillItem(.today, icon: "sun.horizon.fill", label: "Today")
+            pillItem(.compare, icon: "chart.bar.xaxis", label: "Compare")
+            pillItem(.journal, icon: "book.closed.fill", label: "Journal")
+            pillItem(.sync, icon: "arrow.triangle.2.circlepath", label: "Sync")
         }
         .padding(5)
         .modifier(GlassPillBackground())
@@ -137,7 +175,7 @@ struct ContentView: View {
 
     private func pillItem(_ target: Tab, icon: String, label: String) -> some View {
         Button {
-            withAnimation(.snappy(duration: 0.2)) { tab = target }
+            select(target)
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: icon)
@@ -146,7 +184,7 @@ struct ContentView: View {
                     .font(.system(size: pillLabelSize, weight: .semibold, design: .rounded))
             }
             .foregroundStyle(tab == target ? Daybreak.sunDeep : Daybreak.mid)
-            .frame(width: 78, height: 60)
+            .frame(width: 70, height: 58)
             .background {
                 if tab == target {
                     Capsule().fill(Daybreak.sunDeep.opacity(0.14))
@@ -168,30 +206,45 @@ struct ContentView: View {
         appliedMockRoute = true
         switch UIMock.screen {
         case "session":
+            tab = .sync
             if let held = model.syncEngine.staged.first(where: { $0.worstSeverity != .pass })
                 ?? model.syncEngine.staged.first {
-                path.append(held)
+                syncPath.append(held)
             }
         case "metric":
+            tab = .sync
             if let heartRate = model.syncEngine.stagedMetrics.first(where: { $0.kind == .heartRate }) {
-                path.append(heartRate)
+                syncPath.append(heartRate)
             }
+        case "sync", "home":
+            tab = .sync
         case "history":
-            path.append(HistoryRoute())
+            tab = .sync
+            syncPath.append(HistoryRoute())
         case "settings":
-            path.append(SettingsRoute())
+            tab = .sync
+            syncPath.append(SettingsRoute())
         case "priming":
             model.syncEngine.primeNotificationsForUIMock()
         case "pager":
-            path.append(PagerRoute())
+            tab = .sync
+            syncPath.append(PagerRoute())
         case "priority":
-            path.append(SourcePriorityRoute())
+            tab = .sync
+            syncPath.append(SourcePriorityRoute())
+        case "compare":
+            tab = .compare
         case "recovery":
-            path.append(RecoveryRoute())
+            tab = .compare
+            comparePath.append(RecoveryRoute())
         case "hrv":
-            path.append(HRVRoute())
-        case "calendar", "day", "history-pager":
-            tab = .calendar
+            tab = .compare
+            comparePath.append(HRVRoute())
+        case "sleep":
+            tab = .compare
+            comparePath.append(SleepRoute())
+        case "calendar", "journal", "day", "history-pager":
+            tab = .journal
         default:
             break
         }

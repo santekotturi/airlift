@@ -26,6 +26,7 @@ struct CalendarDayView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
+                NightLogCard(night: day)
                 if let snapshots {
                     if snapshots.isEmpty && stagedForDay.isEmpty && stagedBatchesForDay.isEmpty {
                         emptyCard
@@ -72,7 +73,7 @@ struct CalendarDayView: View {
             Text(day.formatted(.dateTime.weekday(.wide).month(.wide).day()))
                 .font(Daybreak.titleFont)
                 .foregroundStyle(Daybreak.ink)
-            Text("What the airlift carried this day.")
+            Text("\(JournalNight.label(day)) — what you logged, and what landed in Apple Health.")
                 .font(Daybreak.bodyFont)
                 .foregroundStyle(Daybreak.mid)
         }
