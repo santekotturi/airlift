@@ -86,11 +86,11 @@ https://github.com/santekotturi/airlift
 ## Privacy Policy URL
 
 ```
-https://github.com/santekotturi/airlift/blob/main/PRIVACY.md
+https://santekotturi.github.io/airlift/privacy.html
 ```
 
-(Better: enable GitHub Pages and host a rendered page, e.g.
-`https://santekotturi.github.io/airlift/privacy`.)
+Served by GitHub Pages from `docs/privacy.html`. Keep it in sync with
+`PRIVACY.md`. Use the same URL on Google's OAuth consent screen.
 
 ## Category
 

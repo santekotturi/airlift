@@ -286,13 +286,14 @@ struct SettingsView: View {
                     titleVisibility: .visible
                 ) {
                     Button("Disconnect", role: .destructive) {
-                        engine.disconnect()
+                        Task { await engine.disconnect() }
                     }
                     Button("Stay connected", role: .cancel) {}
                 } message: {
-                    Text("Airlift forgets your Google sign-in on this iPhone. Everything already in Apple Health stays put.")
+                    Text("Airlift forgets your Google sign-in on this iPhone and revokes its access at Google. Everything already in Apple Health stays put.")
                 }
             } else {
+                TrustList()
                 Button("Connect Google Health") {
                     Task { await engine.connect() }
                 }
@@ -584,6 +585,15 @@ struct SettingsView: View {
             Link(destination: AppInfo.repositoryURL) {
                 HStack(spacing: 5) {
                     Text("README & source")
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(.caption2, weight: .bold))
+                }
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(Daybreak.plum)
+            }
+            Link(destination: AppInfo.privacyPolicyURL) {
+                HStack(spacing: 5) {
+                    Text("Privacy policy")
                     Image(systemName: "arrow.up.right")
                         .font(.system(.caption2, weight: .bold))
                 }
