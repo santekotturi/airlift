@@ -196,14 +196,18 @@ struct BridgeView: View {
         }
     }
 
+    /// A fixed white tile, like Apple's fixed red one — the card color went
+    /// near-invisible on Nightfall's purple. A neutral readings glyph rather
+    /// than Google's logo, whose use outside sign-in buttons needs permission;
+    /// the caption names the device.
     private var googleBadge: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(Daybreak.card)
+            .fill(Color.white)
             .frame(width: 46, height: 46)
             .shadow(color: Daybreak.plum.opacity(0.18), radius: 8, y: 4)
             .overlay {
-                Text("G")
-                    .font(.system(size: 24, weight: .bold, design: .serif))
+                Image(systemName: "waveform.path.ecg")
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Color(daybreakHex: 0x4285F4))
             }
     }
