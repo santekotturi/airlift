@@ -227,6 +227,7 @@ final class SyncEngine {
     private let dedup: DedupStoring
     private let tossed: DedupStoring
     private let fingerprints: SessionFingerprintStoring
+    private let fitbitDailyHRV: FitbitDailyHRVStore
     private var state: SyncStateStoring
     private var settings: SyncSettingsStoring
     private var healthAuthorized = false
@@ -250,6 +251,7 @@ final class SyncEngine {
         dedup: DedupStoring,
         tossed: DedupStoring,
         fingerprints: SessionFingerprintStoring,
+        fitbitDailyHRV: FitbitDailyHRVStore,
         state: SyncStateStoring,
         settings: SyncSettingsStoring,
         ledger: SyncLedgerStoring,
@@ -264,6 +266,7 @@ final class SyncEngine {
         self.dedup = dedup
         self.tossed = tossed
         self.fingerprints = fingerprints
+        self.fitbitDailyHRV = fitbitDailyHRV
         self.state = state
         self.settings = settings
         self.ledger = ledger
@@ -602,6 +605,24 @@ final class SyncEngine {
                     Log.sync.error("Fetch failed for \(kind.rawValue): \(error.localizedDescription) — skipping")
                 }
             }
+            // Fitbit's own nightly HRV, for Compare. Read-only and best-effort:
+            // it is never written to Health, so a failure costs nothing but
+            // the comparison falling back to Airlift's own reconstruction.
+            do {
+                let nightly = try await withFreshToken { token in
+                    try await self.api.fetchFitbitDailyHRV(
+                        since: min(oldestSince, now.addingTimeInterval(-60 * 86_400)),
+                        accessToken: token,
+                        onRawPage: self.captureRaw(key: "daily_heart_rate_variability")
+                    )
+                }
+                fitbitDailyHRV.merge(nightly)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                Log.sync.error("Fitbit nightly HRV fetch failed: \(error.localizedDescription)")
+            }
+
             // Merge: keep unresolved batches this pass didn't cover — failed
             // or disabled kinds, and days older than that kind's fetch window.
             let carriedBatches = stagedMetrics.filter { old in

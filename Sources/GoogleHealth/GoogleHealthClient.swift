@@ -147,6 +147,39 @@ struct GoogleHealthClient {
         return samples
     }
 
+    /// Fitbit's own nightly HRV (`daily-heart-rate-variability`) for wake
+    /// days on/after `from`. Daily types arrive newest-first and are tiny —
+    /// two points a day, one of them Google's Apple-derived copy — so the
+    /// list is paged unfiltered and cut client-side rather than relying on a
+    /// filter member this type may not support.
+    func fetchFitbitDailyHRV(
+        since from: Date,
+        accessToken: String,
+        onRawPage: (@Sendable (Data) -> Void)? = nil
+    ) async throws -> [FitbitDailyHRV] {
+        let cutoff = Calendar.current.startOfDay(for: from)
+        var values: [FitbitDailyHRV] = []
+        var pageToken: String?
+        var pages = 0
+        repeat {
+            let page: QuantityDataPointsResponse = try await withRetry(policy: backoff) {
+                try await self.fetchDecodedPage(
+                    dataTypePath: "daily-heart-rate-variability",
+                    filter: nil,
+                    pageSize: 500,
+                    pageToken: pageToken,
+                    accessToken: accessToken,
+                    onRaw: onRawPage
+                )
+            }
+            values.append(contentsOf: page.fitbitDailyHRV())
+            pageToken = page.nextPageToken
+            pages += 1
+            if let oldest = page.oldestDailyDate, oldest < cutoff { break }
+        } while pageToken != nil && pages < 20
+        return values.filter { (CivilDay.date(from: $0.day) ?? .distantPast) >= cutoff }
+    }
+
     #if DEBUG
     // MARK: - Discovery (debug bring-up; callers exist only behind the dump
     // opt-in, so none of this ships in release binaries)

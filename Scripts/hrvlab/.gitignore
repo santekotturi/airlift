@@ -1,0 +1,4 @@
+# Health data never leaves this machine.
+data/
+.venv/
+__pycache__/

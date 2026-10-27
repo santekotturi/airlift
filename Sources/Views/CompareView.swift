@@ -55,11 +55,8 @@ struct CompareView: View {
         }
     }
 
-    /// `DaybreakNavRow`'s look without its button — the row sits inside a
-    /// `NavigationLink`, which owns the tap.
     private func row(icon: String, title: String, detail: String, footnote: String?) -> some View {
-        DaybreakNavRow(icon: icon, title: title, detail: detail, footnote: footnote) {}
-            .allowsHitTesting(false)
+        DaybreakNavRowLabel(icon: icon, title: title, detail: detail, footnote: footnote)
     }
 
     private var sleepHeadline: String? {

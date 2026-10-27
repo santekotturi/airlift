@@ -73,6 +73,12 @@ final class NativeRMSSDTests: XCTestCase {
         XCTAssertGreaterThan(asleep.count, 80)
     }
 
+    /// Apple's Vitals app showed Recovery HRV 72 ms for this night.
+    func testRecoveryHRVMatchesApplesOwnNumberForThisNight() throws {
+        let value = try XCTUnwrap(try assemble(fixtureRaw()).appleRecoveryHRV)
+        XCTAssertEqual(value.rounded(), 72)
+    }
+
     func testNightlyWatchRMSSDIsTheMeanOfItsReadingsInZone() throws {
         let recovery = try assemble(fixtureRaw()).recovery(selection: .allSleep, staging: .apple)
         let native = try XCTUnwrap(recovery.appleNativeRMSSD)

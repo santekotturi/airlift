@@ -66,6 +66,8 @@ struct NightVitals: Equatable {
 
     /// - Parameters:
     ///   - hrv: the night's whole-sleep HRV from the Recovery engine.
+    ///   - nightlyHRV: Apple's Recovery HRV as reconstructed, and Fitbit's
+    ///     published nightly HRV — preferred over `hrv` where present.
     ///   - asleep: when the night's sleep ran, for heart rate and the Watch's
     ///     overnight readings; nil falls back to the whole night window.
     ///   - night: the 6pm→6pm window the night is filed under.
@@ -73,6 +75,7 @@ struct NightVitals: Equatable {
     ///     daily figure on both devices.
     static func build(
         hrv: NightRecovery?,
+        nightlyHRV: (apple: Double?, fitbit: Double?) = (nil, nil),
         heartRate: [HRSample],
         restingHR: [QuantitySample],
         respiratoryRate: [QuantitySample],
@@ -84,7 +87,15 @@ struct NightVitals: Equatable {
     ) -> NightVitals {
         var rows: [Row] = []
 
-        if let hrv {
+        // Each app's own nightly number when known — what the user sees in
+        // Apple's Vitals and the Fitbit app — else the staged reconstruction.
+        if nightlyHRV.apple != nil || nightlyHRV.fitbit != nil {
+            rows.append(Row(
+                kind: .hrv,
+                watch: nightlyHRV.apple ?? hrv?.appleNativeRMSSD?.value,
+                fitbit: nightlyHRV.fitbit ?? hrv?.fitbitRMSSD?.value
+            ))
+        } else if let hrv {
             let watch = hrv.appleNativeRMSSD ?? hrv.appleSDNN
             rows.append(Row(
                 kind: .hrv,
@@ -115,7 +126,10 @@ struct NightVitals: Equatable {
     }
 
     private static func pair(
-        _ kind: Row.Kind, _ samples: [QuantitySample], watchWindow: DateInterval, fitbitWindow: DateInterval
+        _ kind: Row.Kind,
+        _ samples: [QuantitySample],
+        watchWindow: DateInterval,
+        fitbitWindow: DateInterval
     ) -> Row {
         Row(
             kind: kind,

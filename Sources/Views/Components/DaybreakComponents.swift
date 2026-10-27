@@ -674,36 +674,49 @@ struct DaybreakNavRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Circle()
-                    .fill(Daybreak.newChipBackground)
-                    .frame(width: 34, height: 34)
-                    .overlay {
-                        Image(systemName: icon)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Daybreak.plum)
-                    }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(.subheadline, design: .rounded, weight: .bold))
-                        .foregroundStyle(Daybreak.ink)
-                    Text(detail)
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(Daybreak.mid)
-                        .multilineTextAlignment(.leading)
-                    if let footnote {
-                        Text(footnote)
-                            .font(.system(.caption2, design: .rounded))
-                            .foregroundStyle(Daybreak.faint)
-                    }
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Daybreak.faint)
-            }
-            .contentShape(Rectangle())
+            DaybreakNavRowLabel(icon: icon, title: title, detail: detail, footnote: footnote)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// `DaybreakNavRow`'s look without its button, for rows that sit inside a
+/// `NavigationLink` — the link owns the tap.
+struct DaybreakNavRowLabel: View {
+    let icon: String
+    let title: String
+    let detail: String
+    var footnote: String? = nil
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Daybreak.newChipBackground)
+                .frame(width: 34, height: 34)
+                .overlay {
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Daybreak.plum)
+                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .foregroundStyle(Daybreak.ink)
+                Text(detail)
+                    .font(.system(.caption, design: .rounded))
+                    .foregroundStyle(Daybreak.mid)
+                    .multilineTextAlignment(.leading)
+                if let footnote {
+                    Text(footnote)
+                        .font(.system(.caption2, design: .rounded))
+                        .foregroundStyle(Daybreak.faint)
+                }
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Daybreak.faint)
+        }
+        .contentShape(Rectangle())
     }
 }

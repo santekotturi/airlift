@@ -123,6 +123,10 @@ struct HRVView: View {
     @ViewBuilder
     private func body(for report: HRVReport, staging: StagingSource) -> some View {
         let isMatched = report.completeWindowCount >= 3
+        if !engine.nightlyHRV.isEmpty {
+            Text("Each app's nightly number").daybreakSectionLabel()
+            nightlyCard(engine.nightlyHRV)
+        }
         if report.windows.isEmpty {
             card(
                 "No Apple HRV readings",
@@ -144,6 +148,52 @@ struct HRVView: View {
             }
             densityCard(report)
         }
+    }
+
+    // MARK: - Nightly
+
+    /// The two numbers people actually see each morning — Apple's Recovery
+    /// HRV in Vitals and Fitbit's HRV — side by side, before any of the
+    /// reading-level analysis below.
+    private func nightlyCard(_ nights: [RecoveryEngine.NightlyHRV]) -> some View {
+        let shown = Array(nights.prefix(14))
+        let hasFitbit = nights.contains { $0.fitbit != nil }
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("").frame(maxWidth: .infinity, alignment: .leading)
+                Text("Apple").frame(width: 64, alignment: .trailing)
+                Text("Fitbit").frame(width: 64, alignment: .trailing)
+                Text("Δ").frame(width: 56, alignment: .trailing)
+            }
+            .font(.system(.caption2, design: .rounded, weight: .semibold))
+            .foregroundStyle(Daybreak.faint)
+            ForEach(shown) { night in
+                HStack {
+                    Text(night.night.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                        .foregroundStyle(Daybreak.ink)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(night.apple.map { String(format: "%.0f", $0) } ?? "—")
+                        .foregroundStyle(Daybreak.teal)
+                        .frame(width: 64, alignment: .trailing)
+                    Text(night.fitbit.map { String(format: "%.0f", $0) } ?? "—")
+                        .foregroundStyle(Daybreak.sunDeep)
+                        .frame(width: 64, alignment: .trailing)
+                    Text(night.apple.flatMap { apple in night.fitbit.flatMap { NightVitals.percent($0, of: apple) } } ?? "")
+                        .foregroundStyle(Daybreak.mid)
+                        .frame(width: 56, alignment: .trailing)
+                }
+                .font(.system(.subheadline, design: .rounded).monospacedDigit())
+            }
+            Divider().overlay(Daybreak.line)
+            Text("Apple: the Watch's own readings averaged across its sleep, the way Vitals computes Recovery HRV — this matched Apple's number to the ms on 22 of 24 checked nights and was never more than 1.4 ms off. "
+                 + (hasFitbit
+                    ? "Fitbit: Fitbit's own nightly HRV, read from Google Health. Both in ms."
+                    : "Fitbit's own nightly number arrives with the next sync."))
+                .font(Daybreak.captionFont)
+                .foregroundStyle(Daybreak.faint)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .daybreakCard()
     }
 
     private func unmatchedMessage(_ report: HRVReport) -> String {
