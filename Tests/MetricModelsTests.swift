@@ -302,19 +302,28 @@ final class MetricModelsTests: XCTestCase {
     }
 
     func testMatchingAveragesPass() {
-        let google = (0..<10).map { sample("g\($0)", value: 60, minute: $0) }
-        let appleSamples = (0..<10).map { apple(62, minute: $0) }
+        // An hour of shared wear — heart rate compares only over the time both
+        // were worn, and needs at least half an hour of it.
+        let google = (0..<60).map { sample("g\($0)", value: 60, minute: $0) }
+        let appleSamples = stride(from: 0, to: 60, by: 5).map { apple(62, minute: $0) }
         let results = SanityChecks.runMetric(kind: .heartRate, samples: google, apple: appleSamples)
         let comparison = results.first { $0.name == "Apple comparison" }
         XCTAssertEqual(comparison?.severity, .pass)
     }
 
     func testDivergentAveragesWarn() {
-        let google = [sample("g", value: 120)]
-        let appleSamples = [apple(60)]
+        let google = (0..<60).map { sample("g\($0)", value: 120, minute: $0) }
+        let appleSamples = stride(from: 0, to: 60, by: 5).map { apple(60, minute: $0) }
         let results = SanityChecks.runMetric(kind: .heartRate, samples: google, apple: appleSamples)
         let comparison = results.first { $0.name == "Apple comparison" }
         XCTAssertEqual(comparison?.severity, .warn)
+    }
+
+    func testHeartRateWithNoSharedWearIsInfo() {
+        let google = (0..<60).map { sample("g\($0)", value: 120, minute: $0) }
+        let appleSamples = stride(from: 120, to: 180, by: 5).map { apple(60, minute: $0) }
+        let results = SanityChecks.runMetric(kind: .heartRate, samples: google, apple: appleSamples)
+        XCTAssertEqual(results.first { $0.name == "Apple comparison" }?.severity, .info)
     }
 
     func testCumulativeComparesTotals() {

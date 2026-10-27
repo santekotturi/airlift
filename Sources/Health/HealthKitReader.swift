@@ -37,6 +37,7 @@ struct HRSample: Equatable, Hashable, Identifiable {
     let bpm: Double
     var fromAppleDevice: Bool = true
     var fromGoogleHealth: Bool = false
+    var fromAirlift: Bool = false
 }
 
 /// A generic quantity reading from HealthKit (Apple-side comparison data),
@@ -51,6 +52,7 @@ struct QuantitySample: Equatable, Hashable, Identifiable {
     var fromAppleDevice: Bool = true
     /// Written by Google Health (Fitbit's app) rather than any other third party.
     var fromGoogleHealth: Bool = false
+    var fromAirlift: Bool = false
     var sourceName: String? = nil
     /// `HKDevice.hardwareVersion` — "Watch7,5" and the like.
     var hardware: String? = nil
@@ -147,6 +149,16 @@ final class HealthKitReader: @unchecked Sendable {
         }
     }
 
+    /// Device comparison reads include Airlift's imported Fitbit readings.
+    /// Sync validation continues to use `quantitySamples`, which excludes them.
+    func deviceQuantitySamples(_ kind: MetricKind, in interval: DateInterval) async throws -> [QuantitySample] {
+        let samples = try await querySamples(type: HKQuantityType(kind.hkIdentifier), interval: interval)
+        return samples.compactMap { sample in
+            guard let quantity = sample as? HKQuantitySample else { return nil }
+            return Self.quantitySample(quantity, unit: kind.hkUnit)
+        }
+    }
+
     /// RMSSD samples from every source except Airlift. The type only exists
     /// from iOS 27, where Apple Watch Ultra 4 writes it every ~5 minutes asleep;
     /// earlier systems get an empty array, not an error.
@@ -182,6 +194,7 @@ final class HealthKitReader: @unchecked Sendable {
             algorithmVersion: (version as? NSNumber)?.intValue ?? (version as? String).flatMap { Int($0) },
             fromAppleDevice: isAppleDevice(quantity.sourceRevision.source),
             fromGoogleHealth: isGoogleHealth(quantity.sourceRevision.source),
+            fromAirlift: isAirlift(quantity.sourceRevision.source),
             sourceName: quantity.sourceRevision.source.name,
             hardware: quantity.device?.hardwareVersion
         )
@@ -191,6 +204,10 @@ final class HealthKitReader: @unchecked Sendable {
     /// all `com.apple.health.<device UUID>`; any other app's bundle ID is its own.
     static func isAppleDevice(_ source: HKSource) -> Bool {
         source.bundleIdentifier.hasPrefix("com.apple.health")
+    }
+
+    private static func isAirlift(_ source: HKSource) -> Bool {
+        source.bundleIdentifier == Bundle.main.bundleIdentifier || source.name == appDisplayName
     }
 
     /// Google Health still ships under the Fitbit app's bundle ID. Matching
@@ -469,7 +486,8 @@ final class HealthKitReader: @unchecked Sendable {
                 date: quantity.startDate,
                 bpm: quantity.quantity.doubleValue(for: bpmUnit),
                 fromAppleDevice: Self.isAppleDevice(quantity.sourceRevision.source),
-                fromGoogleHealth: Self.isGoogleHealth(quantity.sourceRevision.source)
+                fromGoogleHealth: Self.isGoogleHealth(quantity.sourceRevision.source),
+                fromAirlift: Self.isAirlift(quantity.sourceRevision.source)
             )
         }
     }

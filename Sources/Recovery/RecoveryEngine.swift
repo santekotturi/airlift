@@ -132,12 +132,12 @@ final class RecoveryEngine {
         )
 
         async let heartRate = try? reader.heartRate(in: window)
-        async let resting = try? reader.quantitySamples(.restingHeartRate, in: wakeDay)
-        async let breathing = try? reader.quantitySamples(.respiratoryRate, in: window)
-        async let oxygen = try? reader.quantitySamples(.oxygenSaturation, in: window)
+        async let resting = try? reader.deviceQuantitySamples(.restingHeartRate, in: wakeDay)
+        async let breathing = try? reader.deviceQuantitySamples(.respiratoryRate, in: window)
+        async let oxygen = try? reader.deviceQuantitySamples(.oxygenSaturation, in: window)
         async let watchSteps = try? reader.cumulativeTotal(.steps, in: dayBefore)
-        async let fitbitSteps = try? reader.quantitySamples(.steps, in: dayBefore)
-        let googleSteps = (await fitbitSteps ?? []).filter(\.fromGoogleHealth)
+        async let fitbitSteps = try? reader.deviceQuantitySamples(.steps, in: dayBefore)
+        let googleSteps = NightVitals.fitbitSamples(await fitbitSteps ?? [], in: dayBefore)
         let appleSteps = await watchSteps
 
         return NightVitals.build(
