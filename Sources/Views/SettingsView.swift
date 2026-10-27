@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// Settings: how syncing works (the two mode option cards), appearance
-/// (Daybreak/Nightfall), the Google connection, and the about block with the
-/// pre-GA heads-up.
+/// (Daybreak/Nightfall), the Google connection, and the about block.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
 
@@ -555,7 +554,7 @@ struct SettingsView: View {
         if let detected = engine.detectedDeviceLabel {
             return "Detected \u{201c}\(detected)\u{201d} from Google. Set a name here to override how it appears in Airlift and on new Apple Health samples."
         }
-        return "Google isn't naming your device yet (pre-release API). Set a name — like \u{201c}Fitbit Air\u{201d} — and Airlift will use it everywhere, including new Apple Health samples."
+        return "Google isn't naming your device. Set a name — like \u{201c}Fitbit Air\u{201d} — and Airlift will use it everywhere, including new Apple Health samples."
     }
 
     private var aboutCard: some View {
@@ -590,7 +589,6 @@ struct SettingsView: View {
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(Daybreak.plum)
             }
-            HeadsUpCard.forMode(engine.syncMode)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .daybreakCard()

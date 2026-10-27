@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Sync tab: the bridge card (live engine status + CTA), the ready-for-review
-/// queue, recent crossings, and the pre-GA heads-up — the plumbing, kept off
+/// queue and recent crossings — the plumbing, kept off
 /// Today so the everyday screens lead with sleep rather than sync state.
 struct SyncView: View {
     @Environment(AppModel.self) private var model
@@ -41,7 +41,6 @@ struct SyncView: View {
             bridgeCard
                 .homeRow(bottom: 26)
             recentSection
-            HeadsUpCard.forMode(engine.syncMode)
                 .homeRow(bottom: 24)
         }
         .listStyle(.plain)
@@ -391,7 +390,7 @@ struct SyncView: View {
             }
             .buttonStyle(.daybreakPrimary)
             .disabled(!model.isConfigured)
-            Text("One Google limitation while their Health API is pre-release: sign-ins last about 7 days, so you'll reconnect weekly. Airlift sends a reminder when it's time.")
+            Text("If your Google Cloud project is still in Testing mode, sign-ins last about 7 days, so you'll reconnect weekly. Airlift sends a reminder when it's time.")
                 .font(.system(.caption2, design: .rounded))
                 .foregroundStyle(Daybreak.faint)
                 .multilineTextAlignment(.center)

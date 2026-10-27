@@ -469,27 +469,17 @@ struct MiniStat: View {
 
 // MARK: - Heads up
 
-/// Warm pre-GA note: glowing sun + plain-language caveat about the pre-release
-/// Google Health API.
+/// Warm note: glowing sun + a plain-language caveat.
 struct HeadsUpCard: View {
     let lead: String
     let message: String
 
-    /// Review-everything copy (the default).
-    static let reviewMessage = "Google's Health API is still pre-release. Until it's final (Sept 2026), fields can change — that's exactly why Airlift shows you every night before it lands in Apple Health."
-    /// Automatic-mode variant of the same note.
-    static let automaticMessage = "Google's Health API is still pre-release. Until it's final (Sept 2026), fields can change — anything unusual is held for your review."
-    /// History-screen variant.
+    /// History-screen copy.
     static let historyMessage = "If Google changes the API, affected nights show up here as held for review — never written quietly."
 
-    init(lead: String = "Heads up:", message: String = HeadsUpCard.reviewMessage) {
+    init(lead: String = "Heads up:", message: String) {
         self.lead = lead
         self.message = message
-    }
-
-    /// The variant matching the user's sync mode.
-    static func forMode(_ mode: SyncMode) -> HeadsUpCard {
-        HeadsUpCard(message: mode == .automatic ? automaticMessage : reviewMessage)
     }
 
     var body: some View {
