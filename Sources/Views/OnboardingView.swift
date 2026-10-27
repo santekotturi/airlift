@@ -53,7 +53,7 @@ struct OnboardingView: View {
             symbol: "lock.fill",
             tint: Daybreak.plum,
             title: "Private by design",
-            body: "Airlift runs entirely on your iPhone. Your Google sign-in stays in the Keychain and never leaves the device — there's no server, and no account with us."
+            body: "Airlift runs entirely on your iPhone. It reads your Fitbit data from Google only to write it into Apple Health, and never shares it with anyone else. Your Google sign-in stays in the Keychain — there's no server, and no account with us."
         ),
     ]
 

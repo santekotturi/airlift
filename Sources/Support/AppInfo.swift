@@ -8,6 +8,10 @@ enum AppInfo {
     /// Public source repository. Used by the About link and bug reporting.
     static let repositoryURL = URL(string: "https://github.com/santekotturi/airlift")!
 
+    /// Hosted privacy policy (GitHub Pages, from `docs/privacy.html`). The same
+    /// URL goes on Google's OAuth consent screen and in App Store Connect.
+    static let privacyPolicyURL = URL(string: "https://santekotturi.github.io/airlift/privacy.html")!
+
     /// Marketing version, e.g. "0.1.0".
     static var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"

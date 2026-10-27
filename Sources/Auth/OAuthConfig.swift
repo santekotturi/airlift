@@ -22,6 +22,7 @@ enum OAuthConfig {
 
     static let authorizationEndpoint = URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!
     static let tokenEndpoint = URL(string: "https://oauth2.googleapis.com/token")!
+    static let revocationEndpoint = URL(string: "https://oauth2.googleapis.com/revoke")!
 
     /// Exactly the read-only scopes the app consumes — least privilege, so the
     /// stored refresh token can never grant more than the app actually reads:

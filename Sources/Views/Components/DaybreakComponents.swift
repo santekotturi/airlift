@@ -590,6 +590,23 @@ struct TrustList: View {
                 title: "Read-only at Google",
                 detail: "Airlift can only read your Fitbit data — it can never change or delete anything there."
             )
+            TrustRow(
+                symbol: "heart.text.square.fill",
+                tint: Daybreak.sunDeep,
+                background: Daybreak.failChipBackground,
+                title: "Used only for Apple Health",
+                detail: "Airlift reads your sleep, heart rate, HRV, SpO₂, respiratory rate, steps and distance from Google only to show them to you and write them into Apple Health. They're never shared with anyone else, sold, or used for ads."
+            )
+            Link(destination: AppInfo.privacyPolicyURL) {
+                HStack(spacing: 5) {
+                    Text("Privacy policy")
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(.caption2, weight: .bold))
+                }
+                .font(.system(.footnote, design: .rounded, weight: .semibold))
+                .foregroundStyle(Daybreak.plum)
+            }
+            .padding(.leading, 42)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
