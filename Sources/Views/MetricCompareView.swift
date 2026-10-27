@@ -22,6 +22,59 @@ struct MetricCompareView: View {
     /// via metric rather than snapping to a text style.
     @ScaledMetric(relativeTo: .title) private var statValueSize: CGFloat = 26
 
+    /// Everything derived from the samples, worked out once per view rather
+    /// than on every body pass — a heart-rate day is thousands of samples,
+    /// and the chart reads these per mark.
+    private let appleDeviceLabel: String?
+    private let googleLine: [LinePoint]
+    private let appleLine: [LinePoint]
+    private let dataDomain: ClosedRange<Date>?
+    /// Heart rate: the comparison over only the time both were worn.
+    private let wear: WearOverlap.Comparison?
+
+    init(batch: StagedMetricBatch, mode: CompareMode = .review, onDecision: (() -> Void)? = nil) {
+        self.batch = batch
+        self.mode = mode
+        self.onDecision = onDecision
+        appleDeviceLabel = batch.appleDeviceLabel
+        let continuous = batch.kind.comparesOverWearOverlap
+        googleLine = LinePoint.runs(batch.samples.wearReadings, splitAtGaps: continuous)
+        // The Watch samples every few seconds mid-workout; minute means draw
+        // the same line from a fraction of the marks.
+        let appleReadings = continuous
+            ? batch.appleSamples.map { MetricSample(id: "", start: $0.start, end: $0.end, value: $0.value) }
+                .downsampled(bucket: 60, kind: batch.kind).wearReadings
+            : batch.appleSamples.wearReadings
+        appleLine = LinePoint.runs(appleReadings, splitAtGaps: continuous)
+        let dates = batch.samples.flatMap { [$0.start, $0.end] } + batch.appleSamples.flatMap { [$0.start, $0.end] }
+        if let lo = dates.min(), let hi = dates.max(), hi > lo { dataDomain = lo...hi } else { dataDomain = nil }
+        wear = continuous && !batch.appleSamples.isEmpty
+            ? WearOverlap.compare(google: batch.samples.wearReadings, apple: batch.appleSamples.wearReadings)
+            : nil
+    }
+
+    /// One plotted point; `run` splits a series into separately drawn
+    /// stretches so a device off the wrist leaves a gap, not a bridging line.
+    private struct LinePoint: Identifiable {
+        let id: Int
+        let date: Date
+        let value: Double
+        let run: Int
+
+        static func runs(_ readings: [WearOverlap.Reading], splitAtGaps: Bool) -> [LinePoint] {
+            let runs = splitAtGaps
+                ? WearOverlap.wornRuns(readings)
+                : [readings.sorted { $0.date < $1.date }]
+            var points: [LinePoint] = []
+            for (run, members) in runs.enumerated() {
+                for r in members {
+                    points.append(LinePoint(id: points.count, date: r.date, value: r.value, run: run))
+                }
+            }
+            return points
+        }
+    }
+
     /// "Google Fitbit Air · RMSSD" — the device, and for HRV the statistic,
     /// since the two sides are not always the same one.
     private var googleSeries: String {
@@ -30,7 +83,7 @@ struct MetricCompareView: View {
     /// "Watch Ultra 2 · SDNN". Falls back to "Apple Health" when the samples
     /// do not say which device wrote them.
     private var appleSeries: String {
-        [batch.appleDeviceLabel ?? "Apple Health", batch.appleStatistic].compactMap { $0 }.joined(separator: " · ")
+        [appleDeviceLabel ?? "Apple Health", batch.appleStatistic].compactMap { $0 }.joined(separator: " · ")
     }
 
     var body: some View {
@@ -87,7 +140,7 @@ struct MetricCompareView: View {
             }
             Text(batch.appleSamples.isEmpty
                  ? "\(model.syncEngine.sourceDeviceName)'s reading — Apple Health has nothing for this day yet."
-                 : "\(model.syncEngine.sourceDeviceName)'s reading vs. \(batch.appleDeviceLabel.map { "the \($0)'s" } ?? "what's already") in Apple Health.")
+                 : "\(model.syncEngine.sourceDeviceName)'s reading vs. \(appleDeviceLabel.map { "the \($0)'s" } ?? "what's already") in Apple Health.")
                 .font(Daybreak.bodyFont)
                 .foregroundStyle(Daybreak.mid)
         }
@@ -152,9 +205,8 @@ struct MetricCompareView: View {
             let hi = dayInterval.upperBound.addingTimeInterval(1800)
             return lo...hi
         }
-        let dates = batch.samples.flatMap { [$0.start, $0.end] }
-            + batch.appleSamples.flatMap { [$0.start, $0.end] }
-        guard let min = dates.min(), let max = dates.max(), max > min else { return dayInterval }
+        guard let dataDomain else { return dayInterval }
+        let (min, max) = (dataDomain.lowerBound, dataDomain.upperBound)
         let pad = Swift.max(900, (max.timeIntervalSince(min)) * 0.04)
         return min.addingTimeInterval(-pad)...max.addingTimeInterval(pad)
     }
@@ -162,8 +214,8 @@ struct MetricCompareView: View {
     /// A "nice" hour stride (1/2/3/4/6) chosen to keep ~4–5 x-axis labels for
     /// the visible span — never so few they're uninformative, never so many
     /// they crowd and clip.
-    private var hourStride: Int {
-        let hours = chartDomain.upperBound.timeIntervalSince(chartDomain.lowerBound) / 3600
+    private func hourStride(for domain: ClosedRange<Date>) -> Int {
+        let hours = domain.upperBound.timeIntervalSince(domain.lowerBound) / 3600
         switch hours {
         case ..<5: return 1
         case ..<9: return 2
@@ -174,7 +226,8 @@ struct MetricCompareView: View {
     }
 
     private var chartCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        let domain = chartDomain
+        return VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 16) {
                 legendEntry(color: Daybreak.sunDeep, label: googleSeries)
                 legendEntry(
@@ -183,7 +236,12 @@ struct MetricCompareView: View {
                 )
                 Spacer(minLength: 0)
             }
-            styledChart
+            styledChart(domain: domain)
+            if let gap = wear?.longestAppleGap {
+                Text("No Watch readings \(gap.start.formatted(date: .omitted, time: .shortened))–\(gap.end.formatted(date: .omitted, time: .shortened)) — off the wrist? Those hours are left out of the comparison.")
+                    .font(Daybreak.captionFont)
+                    .foregroundStyle(Daybreak.mid)
+            }
             if batch.appleSamples.isEmpty {
                 Text("No Apple \(kindNoun) for this day — nothing to compare against.")
                     .font(Daybreak.captionFont)
@@ -202,17 +260,18 @@ struct MetricCompareView: View {
         }
     }
 
-    private var styledChart: some View {
-        comparisonChart
+    private func styledChart(domain: ClosedRange<Date>) -> some View {
+        let google = googleSeries, apple = appleSeries
+        return comparisonChart(google: google, apple: apple)
             .chartForegroundStyleScale([
-                googleSeries: Daybreak.sunDeep,
-                appleSeries: Daybreak.plum,
+                google: Daybreak.sunDeep,
+                apple: Daybreak.plum,
             ])
             .chartLegend(.hidden)
-            .chartXScale(domain: chartDomain)
+            .chartXScale(domain: domain)
             .chartYScale(domain: .automatic(includesZero: batch.kind.isCumulative))
             .chartXAxis {
-                AxisMarks(values: clockAlignedTicks(in: chartDomain, everyHours: hourStride)) { _ in
+                AxisMarks(values: clockAlignedTicks(in: domain, everyHours: hourStride(for: domain))) { _ in
                     AxisGridLine().foregroundStyle(Daybreak.line)
                     AxisValueLabel(format: .dateTime.hour())
                         .font(.system(.caption2, design: .rounded, weight: .medium))
@@ -253,26 +312,27 @@ struct MetricCompareView: View {
         }
     }
 
+    /// Series names come in precomputed: they're read once per mark.
     @ViewBuilder
-    private var comparisonChart: some View {
+    private func comparisonChart(google googleSeries: String, apple appleSeries: String) -> some View {
         switch style {
         case .lines:
             Chart {
-                ForEach(batch.samples) { sample in
+                ForEach(googleLine) { point in
                     LineMark(
-                        x: .value("Time", sample.start),
-                        y: .value(batch.kind.displayName, sample.value),
-                        series: .value("Source", googleSeries)
+                        x: .value("Time", point.date),
+                        y: .value(batch.kind.displayName, point.value),
+                        series: .value("Run", "g\(point.run)")
                     )
                     .foregroundStyle(by: .value("Source", googleSeries))
                     .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
                     .interpolationMethod(.monotone)
                 }
-                ForEach(batch.appleSamples) { sample in
+                ForEach(appleLine) { point in
                     LineMark(
-                        x: .value("Time", sample.start),
-                        y: .value(batch.kind.displayName, sample.value),
-                        series: .value("Source", appleSeries)
+                        x: .value("Time", point.date),
+                        y: .value(batch.kind.displayName, point.value),
+                        series: .value("Run", "a\(point.run)")
                     )
                     .foregroundStyle(by: .value("Source", appleSeries))
                     .lineStyle(StrokeStyle(lineWidth: 1.6, lineCap: .round))
@@ -350,6 +410,7 @@ struct MetricCompareView: View {
 
     /// Google's headline: day total for cumulative kinds, average otherwise.
     private var googleValue: Double {
+        if let wear { return wear.google }
         let sum = batch.samples.reduce(0) { $0 + $1.value }
         return batch.kind.isCumulative ? sum : sum / Double(max(batch.samples.count, 1))
     }
@@ -360,6 +421,7 @@ struct MetricCompareView: View {
     private var appleValue: Double? {
         guard !batch.appleSamples.isEmpty else { return nil }
         if batch.kind.isCumulative { return batch.appleTotal }
+        if batch.kind.comparesOverWearOverlap { return wear?.apple }
         let sum = batch.appleSamples.reduce(0) { $0 + $1.value }
         return sum / Double(batch.appleSamples.count)
     }
@@ -411,6 +473,9 @@ struct MetricCompareView: View {
 
     private var googleCaption: String {
         guard !batch.samples.isEmpty else { return "no data" }
+        if let wear {
+            return "over the \(WearOverlap.hoursLabel(wear.overlap)) both were worn · \(yAxisLabel(wear.googleRange.lowerBound))–\(batch.kind.format(wear.googleRange.upperBound))"
+        }
         let count = "\(batch.samples.count) reading\(batch.samples.count == 1 ? "" : "s")"
         if batch.kind.isCumulative { return "total across \(count)" }
         if batch.samples.count == 1 { return "single daily reading" }
@@ -421,6 +486,8 @@ struct MetricCompareView: View {
     private var appleCaption: String {
         guard !batch.appleSamples.isEmpty else { return "no data for this day" }
         if batch.kind.isCumulative { return "day total, deduplicated" }
+        if let wear { return "time-weighted, \(wear.appleCount) samples in that window" }
+        if batch.kind.comparesOverWearOverlap { return "never worn at the same time as Fitbit" }
         let count = batch.appleSamples.count
         return "average of \(count) sample\(count == 1 ? "" : "s") via Apple Health"
     }

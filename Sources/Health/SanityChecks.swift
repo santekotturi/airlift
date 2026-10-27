@@ -204,6 +204,17 @@ enum SanityChecks {
             googleValue = samples.reduce(0) { $0 + $1.value }
             appleValue = appleTotal ?? apple.reduce(0) { $0 + $1.value }
             comparison = appleTotal != nil ? "totals, Apple deduplicated" : "totals"
+        } else if kind.comparesOverWearOverlap {
+            // Only the hours both were on the wrist, time-weighted — a Watch
+            // on its charger or a densely sampled workout otherwise decides
+            // the average on its own.
+            guard let shared = WearOverlap.compare(google: samples.wearReadings, apple: apple.wearReadings) else {
+                results.append(CheckResult(name: "Apple comparison", severity: .info, detail: "Fitbit and Watch weren't worn at the same time long enough to compare"))
+                return results
+            }
+            googleValue = shared.google
+            appleValue = shared.apple
+            comparison = "time-weighted over \(WearOverlap.hoursLabel(shared.overlap)) both were worn"
         } else {
             googleValue = samples.reduce(0) { $0 + $1.value } / Double(samples.count)
             appleValue = apple.reduce(0) { $0 + $1.value } / Double(apple.count)

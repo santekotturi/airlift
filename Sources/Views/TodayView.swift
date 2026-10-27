@@ -35,13 +35,28 @@ struct TodayView: View {
         .daybreakBackground()
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await recovery.load() }
-        .task(id: latest?.night) {
-            guard let night = latest?.night else { return }
-            vitals = await recovery.vitals(for: night)
+        .refreshable { await refreshComparison(force: true) }
+        // Re-read after every sync: a pass that lands last night's Fitbit
+        // data would otherwise leave the column on the pre-sync "—".
+        .task(id: sync.lastSyncedDate) {
+            await refreshComparison(force: false)
         }
-        .task {
-            if case .idle = recovery.state { await recovery.load() }
+    }
+
+    /// The sync this screen last re-read Health for, so coming back to the
+    /// tab doesn't re-query sixty nights when nothing new has landed.
+    @State private var readThroughSync: Date?
+
+    private func refreshComparison(force: Bool) async {
+        let idle = if case .idle = recovery.state { true } else { false }
+        if force || idle || readThroughSync != sync.lastSyncedDate {
+            readThroughSync = sync.lastSyncedDate
+            await recovery.load()
+        }
+        if let night = latest?.night {
+            vitals = await recovery.vitals(for: night)
+        } else {
+            vitals = .empty
         }
     }
 

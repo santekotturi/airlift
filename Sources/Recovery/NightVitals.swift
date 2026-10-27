@@ -95,10 +95,14 @@ struct NightVitals: Equatable {
         }
 
         let sleepWindow = asleep ?? night
+        let importedHeartRate = heartRate.filter { $0.fromAirlift && sleepWindow.contains($0.date) }
+        let fitbitHeartRate = importedHeartRate.isEmpty
+            ? heartRate.filter { $0.fromGoogleHealth && sleepWindow.contains($0.date) }
+            : importedHeartRate
         rows.append(Row(
             kind: .sleepingHR,
             watch: mean(heartRate.filter { $0.fromAppleDevice && sleepWindow.contains($0.date) }.map(\.bpm)),
-            fitbit: mean(heartRate.filter { $0.fromGoogleHealth && sleepWindow.contains($0.date) }.map(\.bpm))
+            fitbit: mean(fitbitHeartRate.map(\.bpm))
         ))
         rows.append(pair(.restingHR, restingHR, watchWindow: wakeDay, fitbitWindow: wakeDay))
         // The Watch samples these through the night; Google Health writes one
@@ -116,8 +120,16 @@ struct NightVitals: Equatable {
         Row(
             kind: kind,
             watch: mean(samples.filter { $0.fromAppleDevice && watchWindow.contains($0.start) }.map(\.value)),
-            fitbit: mean(samples.filter { $0.fromGoogleHealth && fitbitWindow.contains($0.start) }.map(\.value))
+            fitbit: mean(fitbitSamples(samples, in: fitbitWindow).map(\.value))
         )
+    }
+
+    /// Prefer the controlled Airlift import; use older Google Health writes
+    /// only when this window has no Airlift readings. Never count both copies.
+    static func fitbitSamples(_ samples: [QuantitySample], in window: DateInterval) -> [QuantitySample] {
+        let inside = samples.filter { window.contains($0.start) }
+        let imported = inside.filter(\.fromAirlift)
+        return imported.isEmpty ? inside.filter(\.fromGoogleHealth) : imported
     }
 
     /// "+12%" / "−8%" — `value` relative to `reference`; nil when the
