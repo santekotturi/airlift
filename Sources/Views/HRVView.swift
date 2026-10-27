@@ -22,6 +22,8 @@ struct HRVView: View {
     /// `Int.max` into "last".
     @State private var nightIndex = Int.max
     @State private var visible: Set<HRVSource> = Set(HRVSource.allCases)
+    /// Nightly rows tapped open to show the raw percent gap.
+    @State private var rawGapNights: Set<Date> = []
 
     @ScaledMetric(relativeTo: .title) private var statValueSize: CGFloat = 26
 
@@ -158,12 +160,24 @@ struct HRVView: View {
     private func nightlyCard(_ nights: [RecoveryEngine.NightlyHRV]) -> some View {
         let shown = Array(nights.prefix(14))
         let hasFitbit = nights.contains { $0.fitbit != nil }
+        // The typical gap, over every night on hand — the rows then only
+        // call out nights that break it.
+        let offset = NightlyOffset(pairs: nights.compactMap { night in
+            guard let apple = night.apple, let fitbit = night.fitbit else { return nil }
+            return (apple, fitbit)
+        })
         return VStack(alignment: .leading, spacing: 10) {
+            if let offset {
+                Text(offset.summary(other: "Fitbit", reference: "Apple"))
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Daybreak.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack {
                 Text("").frame(maxWidth: .infinity, alignment: .leading)
-                Text("Apple").frame(width: 64, alignment: .trailing)
-                Text("Fitbit").frame(width: 64, alignment: .trailing)
-                Text("Δ").frame(width: 56, alignment: .trailing)
+                Text("Apple").frame(width: 56, alignment: .trailing)
+                Text("Fitbit").frame(width: 56, alignment: .trailing)
+                Text(offset == nil ? "Δ" : "vs usual").frame(width: 72, alignment: .trailing)
             }
             .font(.system(.caption2, design: .rounded, weight: .semibold))
             .foregroundStyle(Daybreak.faint)
@@ -174,26 +188,49 @@ struct HRVView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text(night.apple.map { String(format: "%.0f", $0) } ?? "—")
                         .foregroundStyle(Daybreak.teal)
-                        .frame(width: 64, alignment: .trailing)
+                        .frame(width: 56, alignment: .trailing)
                     Text(night.fitbit.map { String(format: "%.0f", $0) } ?? "—")
                         .foregroundStyle(Daybreak.sunDeep)
-                        .frame(width: 64, alignment: .trailing)
-                    Text(night.apple.flatMap { apple in night.fitbit.flatMap { NightVitals.percent($0, of: apple) } } ?? "")
-                        .foregroundStyle(Daybreak.mid)
                         .frame(width: 56, alignment: .trailing)
+                    gapCell(night, offset: offset)
+                        .frame(width: 72, alignment: .trailing)
                 }
                 .font(.system(.subheadline, design: .rounded).monospacedDigit())
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if rawGapNights.contains(night.night) { rawGapNights.remove(night.night) } else { rawGapNights.insert(night.night) }
+                }
             }
             Divider().overlay(Daybreak.line)
             Text("Apple: the Watch's own readings averaged across its sleep, the way Vitals computes Recovery HRV — this matched Apple's number to the ms on 22 of 24 checked nights and was never more than 1.4 ms off. "
                  + (hasFitbit
-                    ? "Fitbit: Fitbit's own nightly HRV, read from Google Health. Both in ms."
+                    ? "Fitbit: Fitbit's own nightly HRV, read from Google Health. Both in ms. Tap a night for its raw gap."
                     : "Fitbit's own nightly number arrives with the next sync."))
                 .font(Daybreak.captionFont)
                 .foregroundStyle(Daybreak.faint)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .daybreakCard()
+    }
+
+    /// "·" for a night within the usual gap, the deviation for one that
+    /// breaks it, or — tapped open, or before there's a typical gap — the
+    /// raw Fitbit-vs-Apple percent.
+    @ViewBuilder
+    private func gapCell(_ night: RecoveryEngine.NightlyHRV, offset: NightlyOffset?) -> some View {
+        let raw = night.apple.flatMap { apple in night.fitbit.flatMap { NightVitals.percent($0, of: apple) } } ?? ""
+        if let offset, !rawGapNights.contains(night.night) {
+            if let deviation = offset.unusualDeviation(reference: night.apple, other: night.fitbit) {
+                Text(String(format: "%+.0f%%", deviation * 100))
+                    .foregroundStyle(Daybreak.warn)
+                    .fontWeight(.semibold)
+            } else {
+                Text(night.apple != nil && night.fitbit != nil ? "·" : "")
+                    .foregroundStyle(Daybreak.faint)
+            }
+        } else {
+            Text(raw).foregroundStyle(Daybreak.mid)
+        }
     }
 
     private func unmatchedMessage(_ report: HRVReport) -> String {
