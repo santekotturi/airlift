@@ -54,8 +54,7 @@ release `Config.xcconfig` (kept out of git).
 ## App Store Connect fields
 
 - [ ] **Privacy Policy URL** — required for HealthKit apps. Use
-      `https://github.com/santekotturi/airlift/blob/main/PRIVACY.md` or a GitHub
-      Pages URL.
+      `https://airlift.santekotturi.com/privacy.html`.
 - [ ] **Support URL** — the GitHub repo.
 - [ ] **App Privacy ("nutrition labels")** — suggested answers:
   - Health & Fitness data: the app **reads/writes HealthKit on-device only** and
