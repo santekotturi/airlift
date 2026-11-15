@@ -196,14 +196,18 @@ struct BridgeView: View {
         }
     }
 
+    /// A fixed white tile, like Apple's fixed red one — the card color went
+    /// near-invisible on Nightfall's purple. A neutral readings glyph rather
+    /// than Google's logo, whose use outside sign-in buttons needs permission;
+    /// the caption names the device.
     private var googleBadge: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(Daybreak.card)
+            .fill(Color.white)
             .frame(width: 46, height: 46)
             .shadow(color: Daybreak.plum.opacity(0.18), radius: 8, y: 4)
             .overlay {
-                Text("G")
-                    .font(.system(size: 24, weight: .bold, design: .serif))
+                Image(systemName: "waveform.path.ecg")
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Color(daybreakHex: 0x4285F4))
             }
     }
@@ -469,27 +473,17 @@ struct MiniStat: View {
 
 // MARK: - Heads up
 
-/// Warm pre-GA note: glowing sun + plain-language caveat about the pre-release
-/// Google Health API.
+/// Warm note: glowing sun + a plain-language caveat.
 struct HeadsUpCard: View {
     let lead: String
     let message: String
 
-    /// Review-everything copy (the default).
-    static let reviewMessage = "Google's Health API is still pre-release. Until it's final (Sept 2026), fields can change — that's exactly why Airlift shows you every night before it lands in Apple Health."
-    /// Automatic-mode variant of the same note.
-    static let automaticMessage = "Google's Health API is still pre-release. Until it's final (Sept 2026), fields can change — anything unusual is held for your review."
-    /// History-screen variant.
+    /// History-screen copy.
     static let historyMessage = "If Google changes the API, affected nights show up here as held for review — never written quietly."
 
-    init(lead: String = "Heads up:", message: String = HeadsUpCard.reviewMessage) {
+    init(lead: String = "Heads up:", message: String) {
         self.lead = lead
         self.message = message
-    }
-
-    /// The variant matching the user's sync mode.
-    static func forMode(_ mode: SyncMode) -> HeadsUpCard {
-        HeadsUpCard(message: mode == .automatic ? automaticMessage : reviewMessage)
     }
 
     var body: some View {
@@ -674,36 +668,49 @@ struct DaybreakNavRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Circle()
-                    .fill(Daybreak.newChipBackground)
-                    .frame(width: 34, height: 34)
-                    .overlay {
-                        Image(systemName: icon)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Daybreak.plum)
-                    }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(.subheadline, design: .rounded, weight: .bold))
-                        .foregroundStyle(Daybreak.ink)
-                    Text(detail)
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundStyle(Daybreak.mid)
-                        .multilineTextAlignment(.leading)
-                    if let footnote {
-                        Text(footnote)
-                            .font(.system(.caption2, design: .rounded))
-                            .foregroundStyle(Daybreak.faint)
-                    }
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Daybreak.faint)
-            }
-            .contentShape(Rectangle())
+            DaybreakNavRowLabel(icon: icon, title: title, detail: detail, footnote: footnote)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// `DaybreakNavRow`'s look without its button, for rows that sit inside a
+/// `NavigationLink` — the link owns the tap.
+struct DaybreakNavRowLabel: View {
+    let icon: String
+    let title: String
+    let detail: String
+    var footnote: String? = nil
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Daybreak.newChipBackground)
+                .frame(width: 34, height: 34)
+                .overlay {
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Daybreak.plum)
+                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .foregroundStyle(Daybreak.ink)
+                Text(detail)
+                    .font(.system(.caption, design: .rounded))
+                    .foregroundStyle(Daybreak.mid)
+                    .multilineTextAlignment(.leading)
+                if let footnote {
+                    Text(footnote)
+                        .font(.system(.caption2, design: .rounded))
+                        .foregroundStyle(Daybreak.faint)
+                }
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Daybreak.faint)
+        }
+        .contentShape(Rectangle())
     }
 }

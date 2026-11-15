@@ -109,4 +109,32 @@ final class NightVitalsTests: XCTestCase {
         XCTAssertEqual(vitals.rows.first { $0.kind == .steps }?.difference, "−800")
         XCTAssertNil(vitals.rows.first { $0.kind == .oxygen }, "No data on either side, no row")
     }
+
+    private func imported(_ value: Double, _ hour: Double) -> QuantitySample {
+        QuantitySample(id: UUID(), start: at(hour), end: at(hour), value: value,
+                       fromAppleDevice: false, fromAirlift: true)
+    }
+
+    /// Airlift's import of Fitbit's data is preferred; Google Health's own
+    /// copy fills in only where Airlift wrote nothing — never both at once.
+    func testFitbitPrefersAirliftsImportAndFallsBackToGoogleHealth() {
+        let vitals = NightVitals.build(
+            hrv: nil,
+            heartRate: [
+                HRSample(id: UUID(), date: at(2), bpm: 50, fromAppleDevice: false, fromGoogleHealth: true),
+                HRSample(id: UUID(), date: at(2), bpm: 55, fromAppleDevice: false, fromAirlift: true),
+                HRSample(id: UUID(), date: at(4), bpm: 57, fromAppleDevice: false, fromAirlift: true),
+                HRSample(id: UUID(), date: at(12), bpm: 80, fromAppleDevice: false, fromAirlift: true),
+            ],
+            restingHR: [],
+            respiratoryRate: [sample(14, 3, apple: true), sample(15, 10, apple: false), imported(16, 10)],
+            oxygen: [sample(0.96, 3, apple: false)],
+            asleep: DateInterval(start: at(0), end: at(8)),
+            night: DateInterval(start: at(-6), end: at(18)),
+            wakeDay: DateInterval(start: at(-1), end: at(23))
+        )
+        XCTAssertEqual(vitals.rows.first { $0.kind == .sleepingHR }?.fitbit, 56, "Airlift's asleep readings only")
+        XCTAssertEqual(vitals.rows.first { $0.kind == .respiratoryRate }?.fitbit, 16, "Airlift's import wins")
+        XCTAssertEqual(vitals.rows.first { $0.kind == .oxygen }?.fitbit ?? 0, 0.96, accuracy: 1e-9, "Google Health fills the gap")
+    }
 }

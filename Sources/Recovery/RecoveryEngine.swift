@@ -36,7 +36,17 @@ final class RecoveryEngine {
     /// between the metrics — and short enough to stay one quick read.
     static let defaultNightCount = 60
 
+    /// Each app's own nightly HRV, newest first — Apple's reconstructed from
+    /// the Watch's readings, Fitbit's as Fitbit publishes it.
+    struct NightlyHRV: Identifiable, Equatable {
+        let night: Date
+        let apple: Double?
+        let fitbit: Double?
+        var id: Date { night }
+    }
+
     private(set) var state: State = .idle
+    private(set) var nightlyHRV: [NightlyHRV] = []
     private(set) var nightCount = RecoveryEngine.defaultNightCount
     /// Watch vs Fitbit sleep, night by night. Independent of staging and stage
     /// selection, so only a fresh read changes it.
@@ -53,6 +63,7 @@ final class RecoveryEngine {
     private let reader: HealthKitReader
     private let heartbeats: HeartbeatSeriesReader
     private let writer: HealthKitWriter?
+    private let fitbitDailyHRV: FitbitDailyHRVStore?
     private let calendar: Calendar
     private var cached: [NightSamples] = []
     private var probe: HeartbeatSeriesReader.Probe?
@@ -62,11 +73,13 @@ final class RecoveryEngine {
         reader: HealthKitReader,
         heartbeats: HeartbeatSeriesReader = HeartbeatSeriesReader(),
         writer: HealthKitWriter? = nil,
+        fitbitDailyHRV: FitbitDailyHRVStore? = nil,
         calendar: Calendar = .current
     ) {
         self.reader = reader
         self.heartbeats = heartbeats
         self.writer = writer
+        self.fitbitDailyHRV = fitbitDailyHRV
         self.calendar = calendar
     }
 
@@ -104,6 +117,11 @@ final class RecoveryEngine {
                 span: window, samples: samples, tachograms: tachograms, calendar: calendar
             )
             sleep = SleepComparisonReport.build(cached)
+            nightlyHRV = cached.reversed().compactMap { night in
+                let apple = night.appleRecoveryHRV
+                let fitbit = fitbitDailyHRV?.value(forWakeDay: night.night)?.average
+                return apple == nil && fitbit == nil ? nil : NightlyHRV(night: night.night, apple: apple, fitbit: fitbit)
+            }
             self.probe = probe
             rebuild()
         } catch {
@@ -142,6 +160,7 @@ final class RecoveryEngine {
 
         return NightVitals.build(
             hrv: hrv,
+            nightlyHRV: (samples?.appleRecoveryHRV, fitbitDailyHRV?.value(forWakeDay: night)?.average),
             heartRate: await heartRate ?? [],
             restingHR: await resting ?? [],
             respiratoryRate: await breathing ?? [],

@@ -29,6 +29,24 @@ struct NightSamples {
     /// watchOS 27 writes it; empty for every night before that.
     var appleNativeRMSSD: [QuantitySample] = []
 
+    /// Apple's nightly "Recovery HRV" (Health → Vitals), reconstructed: the
+    /// plain mean of every RMSSD reading the Watch wrote that *ends* inside
+    /// its sleep session, awake minutes included. Apple stores no nightly
+    /// value, only the readings, so this is the closest thing to reading it
+    /// back.
+    ///
+    /// Checked against Apple's own number on 24 nights (`Scripts/hrvlab`):
+    /// exact to the ms on 22, mean error 0.26 ms, never off
+    /// by more than 1.4 ms. Counting readings by their start instead drops it
+    /// to 18; stage filters, medians and duration weighting all did worse.
+    var appleRecoveryHRV: Double? {
+        let session = SleepNightMatcher.mainNight(appleSleep)
+        guard let start = session.map(\.start).min(), let end = session.map(\.end).max() else { return nil }
+        let values = appleNativeRMSSD.filter { $0.end > start && $0.end <= end }.map(\.value)
+        guard !values.isEmpty else { return nil }
+        return values.reduce(0, +) / Double(values.count)
+    }
+
     func stageIndex(_ source: StagingSource) -> StageIndex {
         switch source {
         case .apple: StageIndex(apple: appleSleep)

@@ -47,6 +47,10 @@ final class AppModel {
         let api = GoogleHealthClient()
         let writer = HealthKitWriter(store: healthStore)
         let reader = HealthKitReader(store: healthStore)
+        // In memory under the mock, so fixture nights never persist.
+        let fitbitDailyHRV = isUIMock
+            ? FitbitDailyHRVStore(url: nil)
+            : FitbitDailyHRVStore(legacyDefaults: .standard)
         // In-memory log under the mock — fixture entries must not pollute the
         // real history (the engine's mock paths skip the other stores).
         let log = SyncLogStore(defaults: isUIMock ? nil : .standard)
@@ -56,7 +60,7 @@ final class AppModel {
         self.journal = JournalStore(catalog: .load(), url: isUIMock ? nil : JournalStore.defaultURL)
         // The writer is handed over only for its authorization request — the
         // analysis screens never write.
-        self.recovery = RecoveryEngine(reader: reader, writer: writer)
+        self.recovery = RecoveryEngine(reader: reader, writer: writer, fitbitDailyHRV: fitbitDailyHRV)
         self.syncEngine = SyncEngine(
             oauth: oauth,
             api: api,
@@ -69,6 +73,7 @@ final class AppModel {
             fingerprints: isUIMock
                 ? InMemorySessionFingerprintStore()
                 : UserDefaultsSessionFingerprintStore(),
+            fitbitDailyHRV: fitbitDailyHRV,
             state: state,
             settings: UserDefaultsSyncSettings(),
             // In-memory ledger under the mock — fixture days must not

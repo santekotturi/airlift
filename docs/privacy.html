@@ -43,6 +43,7 @@
 
     <h2>What data Airlift handles, and where it goes</h2>
     <p><b>Google / Fitbit health data.</b> When you connect your Google account, Airlift reads your sleep sessions and the metrics you enable (heart rate, resting heart rate, HRV, blood oxygen, respiratory rate, steps, distance) directly from Google's Health API, processes them on your device, and writes them into Apple Health. They are never transmitted anywhere else.</p>
+    <p><b>Fitbit's nightly HRV.</b> When HRV is enabled, Airlift also reads the nightly HRV figure the Fitbit app shows, so the Compare screen can put it beside Apple's. It is not written to Apple Health. Airlift keeps it in a small file on your iPhone that is encrypted while the phone is locked, excluded from iCloud and computer backups, and deleted when you disconnect Google.</p>
     <p><b>Apple Health (HealthKit).</b> Airlift writes the above into Apple Health, and reads your existing Apple Health samples <b>only</b> to compare against the Fitbit data so it can avoid duplicates and flag discrepancies. HealthKit data is never used for advertising, never sent off your device by Airlift, never shared with third parties, and never stored in iCloud by Airlift.</p>
     <p><b>Your Google sign-in.</b> The token that keeps you signed in lives in the iOS Keychain, marked device-only (excluded from backups and transfers). It leaves your phone only when your phone sends it to Google for a fresh access token.</p>
 
@@ -60,7 +61,7 @@
     <p>Airlift is not directed at children and does not knowingly collect data from children.</p>
 
     <h2>Your control</h2>
-    <p>Disconnect your Google account any time in Settings (this removes the sign-in from the Keychain). Remove anything Airlift wrote to Apple Health from within the app or from the Health app directly. Deleting the app removes its local data and the stored sign-in.</p>
+    <p>Disconnect your Google account any time in Settings (this removes the sign-in from the Keychain and deletes the cached Fitbit nightly HRV). Remove anything Airlift wrote to Apple Health from within the app or from the Health app directly. Deleting the app removes its local data and the stored sign-in.</p>
 
     <h2>Changes</h2>
     <p>If this policy changes, the updated version will be posted here with a new date above.</p>
