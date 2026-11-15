@@ -333,6 +333,7 @@ final class SyncEngine {
         }
         #endif
         try? tokens.clear()
+        fitbitDailyHRV.clear()
         isConnected = false
         status = .idle
         log.record(.disconnected, title: "Disconnected from Google Health", detail: "Your Google sign-in was removed from this iPhone. Reconnect whenever you're ready.")
@@ -608,19 +609,22 @@ final class SyncEngine {
             // Fitbit's own nightly HRV, for Compare. Read-only and best-effort:
             // it is never written to Health, so a failure costs nothing but
             // the comparison falling back to Airlift's own reconstruction.
-            do {
-                let nightly = try await withFreshToken { token in
-                    try await self.api.fetchFitbitDailyHRV(
-                        since: min(oldestSince, now.addingTimeInterval(-60 * 86_400)),
-                        accessToken: token,
-                        onRawPage: self.captureRaw(key: "daily_heart_rate_variability")
-                    )
+            // Only when HRV is switched on — Airlift reads what you enable.
+            if kinds.contains(.heartRateVariability) {
+                do {
+                    let nightly = try await withFreshToken { token in
+                        try await self.api.fetchFitbitDailyHRV(
+                            since: min(oldestSince, now.addingTimeInterval(-60 * 86_400)),
+                            accessToken: token,
+                            onRawPage: self.captureRaw(key: "daily_heart_rate_variability")
+                        )
+                    }
+                    fitbitDailyHRV.merge(nightly)
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    Log.sync.error("Fitbit nightly HRV fetch failed: \(error.localizedDescription)")
                 }
-                fitbitDailyHRV.merge(nightly)
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                Log.sync.error("Fitbit nightly HRV fetch failed: \(error.localizedDescription)")
             }
 
             // Merge: keep unresolved batches this pass didn't cover — failed

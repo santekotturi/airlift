@@ -37,11 +37,36 @@ final class FitbitDailyHRVTests: XCTestCase {
     }
 
     func testStoreLooksUpByWakeDayAndLaterFetchesWin() throws {
-        let store = FitbitDailyHRVStore(defaults: nil)
+        let store = FitbitDailyHRVStore(url: nil)
         store.merge(try decode().fitbitDailyHRV())
         let wake = try XCTUnwrap(CivilDay.date(from: "2026-01-15"))
         XCTAssertEqual(store.value(forWakeDay: wake)?.average, 48.3)
         store.merge([FitbitDailyHRV(day: "2026-01-15", average: 49.0, deepSleepRMSSD: nil, nonREMHeartRate: nil)])
         XCTAssertEqual(store.value(forWakeDay: wake)?.average, 49.0)
+    }
+
+    func testStorePersistsToABackupExcludedFileAndClears() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("fitbit-daily-hrv.json")
+        let wake = try XCTUnwrap(CivilDay.date(from: "2026-01-15"))
+
+        FitbitDailyHRVStore(url: url).merge(try decode().fitbitDailyHRV())
+        XCTAssertEqual(FitbitDailyHRVStore(url: url).value(forWakeDay: wake)?.average, 48.3, "Reloads from the file")
+        XCTAssertEqual(try url.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup, true)
+
+        let store = FitbitDailyHRVStore(url: url)
+        store.clear()
+        XCTAssertNil(store.value(forWakeDay: wake))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path), "Disconnect leaves nothing behind")
+    }
+
+    func testDropsTheOldBackedUpDefaultsCopy() throws {
+        let suite = "FitbitDailyHRVTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(Data("{}".utf8), forKey: FitbitDailyHRVStore.legacyDefaultsKey)
+        _ = FitbitDailyHRVStore(url: nil, legacyDefaults: defaults)
+        XCTAssertNil(defaults.data(forKey: FitbitDailyHRVStore.legacyDefaultsKey))
     }
 }

@@ -48,7 +48,9 @@ final class AppModel {
         let writer = HealthKitWriter(store: healthStore)
         let reader = HealthKitReader(store: healthStore)
         // In memory under the mock, so fixture nights never persist.
-        let fitbitDailyHRV = FitbitDailyHRVStore(defaults: isUIMock ? nil : .standard)
+        let fitbitDailyHRV = isUIMock
+            ? FitbitDailyHRVStore(url: nil)
+            : FitbitDailyHRVStore(legacyDefaults: .standard)
         // In-memory log under the mock — fixture entries must not pollute the
         // real history (the engine's mock paths skip the other stores).
         let log = SyncLogStore(defaults: isUIMock ? nil : .standard)

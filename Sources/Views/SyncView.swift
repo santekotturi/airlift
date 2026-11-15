@@ -390,7 +390,7 @@ struct SyncView: View {
             }
             .buttonStyle(.daybreakPrimary)
             .disabled(!model.isConfigured)
-            Text("If your Google Cloud project is still in Testing mode, sign-ins last about 7 days, so you'll reconnect weekly. Airlift sends a reminder when it's time.")
+            Text("If Google ever signs you out, Airlift sends a reminder to reconnect. Building Airlift yourself with a Google project in Testing mode? Those sign-ins last about 7 days.")
                 .font(.system(.caption2, design: .rounded))
                 .foregroundStyle(Daybreak.faint)
                 .multilineTextAlignment(.center)

@@ -47,20 +47,35 @@ extension QuantityDataPointsResponse {
     }
 }
 
-/// Fitbit's nightly HRV by wake day. Persisted so Compare can show it
-/// without a network round trip; `nil` defaults keeps it in memory (UI mock).
+/// Fitbit's nightly HRV by wake day, cached so Compare can show it without a
+/// network round trip.
+///
+/// These are health readings, so the cache is a file with complete data
+/// protection, excluded from iCloud/Finder backups, and wiped on disconnect.
+/// `url == nil` keeps it in memory (tests and the UI mock).
 final class FitbitDailyHRVStore: @unchecked Sendable {
-    private let defaults: UserDefaults?
-    private let key = "airlift.fitbitDailyHRV"
+    /// Where builds before the file cache kept this; read once to clear it.
+    static let legacyDefaultsKey = "airlift.fitbitDailyHRV"
+
+    private let url: URL?
     private let lock = NSLock()
     private var memory: [String: FitbitDailyHRV] = [:]
 
-    init(defaults: UserDefaults? = .standard) {
-        self.defaults = defaults
-        if let data = defaults?.data(forKey: key),
+    init(url: URL? = FitbitDailyHRVStore.defaultURL, legacyDefaults: UserDefaults? = nil) {
+        self.url = url
+        if let url, let data = try? Data(contentsOf: url),
            let stored = try? JSONDecoder().decode([String: FitbitDailyHRV].self, from: data) {
             memory = stored
         }
+        // The old cache sat in UserDefaults, which is backed up. Drop it; the
+        // next sync refetches the nights into the protected file.
+        legacyDefaults?.removeObject(forKey: Self.legacyDefaultsKey)
+    }
+
+    static var defaultURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Airlift", isDirectory: true)
+            .appendingPathComponent("fitbit-daily-hrv.json")
     }
 
     /// Fitbit's value for the night that ended on `wakeDay`.
@@ -73,9 +88,30 @@ final class FitbitDailyHRVStore: @unchecked Sendable {
         guard !values.isEmpty else { return }
         lock.withLock {
             for value in values { memory[value.day] = value }
-            if let defaults, let data = try? JSONEncoder().encode(memory) {
-                defaults.set(data, forKey: key)
-            }
+            persist()
+        }
+    }
+
+    /// Forgets every cached night — on disconnect, so nothing fetched from
+    /// Google outlives the sign-in.
+    func clear() {
+        lock.withLock {
+            memory = [:]
+            if let url { try? FileManager.default.removeItem(at: url) }
+        }
+    }
+
+    /// Caller holds `lock`.
+    private func persist() {
+        guard var url else { return }
+        do {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONEncoder().encode(memory).write(to: url, options: [.atomic, .completeFileProtection])
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try url.setResourceValues(values)
+        } catch {
+            Log.sync.error("Fitbit nightly HRV cache write failed: \(error.localizedDescription)")
         }
     }
 }

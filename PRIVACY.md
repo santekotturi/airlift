@@ -24,6 +24,12 @@ heart rate, heart-rate variability, blood oxygen, respiratory rate, steps, and
 distance) directly from Google's Health API. This data is processed on your
 device and written into Apple Health. It is never transmitted anywhere else.
 
+**Fitbit's nightly HRV.** When heart-rate variability is enabled, Airlift also
+reads the nightly HRV figure the Fitbit app shows, so the Compare screen can put
+it beside Apple's. It is not written to Apple Health. Airlift keeps it in a
+small file on your iPhone that is encrypted while the phone is locked, excluded
+from iCloud and computer backups, and deleted when you disconnect Google.
+
 **Apple Health (HealthKit) data.** Airlift writes the above data into Apple
 Health, and reads your existing Apple Health samples **only** to compare them
 against the Fitbit data (so it can avoid duplicates and flag discrepancies).
@@ -66,7 +72,7 @@ children.
 ## Your control
 
 You can disconnect your Google account at any time in Settings, which removes the
-sign-in from the Keychain. You can remove any data Airlift wrote to Apple Health
+sign-in from the Keychain and deletes the cached Fitbit nightly HRV. You can remove any data Airlift wrote to Apple Health
 from within the app (Calendar → a day → "Remove from Apple Health") or from the
 Apple Health app directly. Deleting the app removes its local data and the stored
 sign-in.
