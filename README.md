@@ -11,6 +11,20 @@ writes it all into HealthKit, with full sleep-stage detail (wake / light / deep 
 It runs entirely on your device. Your Google refresh token never leaves your phone —
 there is no backend, unlike most of the commercial Fitbit↔Health sync apps.
 
+## Try the beta
+
+**[Join the public beta on TestFlight →](https://testflight.apple.com/join/NNVBqZ2D)**
+
+No Mac or Xcode needed: install Apple's TestFlight app, open the link on your iPhone, and
+tap Connect. Two things to know:
+
+- **Limited to 90 testers** while Google's verification of the app is in progress.
+- **Google shows a "Google hasn't verified this app" screen** at sign-in for the same
+  reason. Tap **Advanced → Go to Airlift** to continue. Airlift asks only for read-only
+  access, and nothing leaves your phone ([privacy policy](https://airlift.santekotturi.com/privacy.html)).
+
+Prefer to build it yourself with your own Google client? See [Setup](#setup).
+
 > **Status:** early / v0.1. The Google Health API is pre-GA ("built in public"); its
 > schemas and scopes may shift before its September 2026 GA. The wire models here are
 > defensive but expect to verify them against a real payload (see [Limitations](#limitations--known-unknowns)).
@@ -81,10 +95,11 @@ it as a bridge until (and if) native sync makes it redundant.
   paid ($99/yr) account removes that limit. (The Simulator can't run HealthKit writes against
   real data, but the app builds and the unit tests run there with no account at all.)
 
-> **Why build it yourself?** Airlift can't ship on the public App Store yet — that needs one
-> shared, Google-verified OAuth client (a restricted-scope security assessment) and the
-> Google Health API to reach GA. Until then it's a build-it-yourself / sideload app, or
-> TestFlight to a small allowlisted group. See [docs/app-store-checklist.md](docs/app-store-checklist.md).
+> **Why build it yourself?** You don't have to — the [TestFlight beta](https://testflight.apple.com/join/NNVBqZ2D)
+> needs no setup. Building it yourself gives you your own Google client (no shared tester
+> limit) and lets you change the code. Airlift isn't on the public App Store yet: that needs
+> Google's restricted-scope verification of the shared client. See
+> [docs/app-store-checklist.md](docs/app-store-checklist.md).
 
 ## Setup
 
